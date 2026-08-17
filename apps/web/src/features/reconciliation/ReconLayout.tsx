@@ -96,6 +96,7 @@ export function ReconRecoBar() {
               Confidence <Box component="strong" sx={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{aiRecoCard.confidence}</Box>
             </Typography>
             <Typography sx={{ fontSize: 12, color: "success.main", fontWeight: 700 }}>{aiRecoCard.impact}</Typography>
+            <Typography sx={{ fontSize: 12 }}>Execution time {aiRecoCard.executionTime}</Typography>
           </Stack>
         </Box>
         <Button variant="contained" onClick={() => navigate("/rules/simulation")}>

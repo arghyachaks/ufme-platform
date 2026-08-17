@@ -8,6 +8,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Drawer,
   LinearProgress,
   MenuItem,
   Select,
@@ -24,7 +25,9 @@ import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { ReconRecoBar } from "./ReconLayout";
-import { reconActivity, runKpis, runTrends, runs } from "./data";
+import { reconActivity, runKpis, runTrends, runs, trendDays } from "./data";
+
+type Run = (typeof runs)[number];
 
 const statusTone: Record<string, "ok" | "warn" | "crit"> = {
   Completed: "ok",
@@ -35,13 +38,21 @@ const statusTone: Record<string, "ok" | "warn" | "crit"> = {
   Failed: "crit",
 };
 
+const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
+  High: "crit",
+  Medium: "warn",
+  Low: "ok",
+};
+
 export function RunsPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("All");
   const [entity, setEntity] = useState("All");
   const [selected, setSelected] = useState<string[]>([]);
   const [compareOpen, setCompareOpen] = useState(false);
-  const [auditRun, setAuditRun] = useState<(typeof runs)[number] | null>(null);
+  const [trendKey, setTrendKey] = useState<"matchRate" | "exposure" | "exceptions" | null>(null);
+  const [detailRun, setDetailRun] = useState<Run | null>(null);
+  const [auditRun, setAuditRun] = useState<Run | null>(null);
   const [toast, setToast] = useState("");
 
   const filtered = useMemo(() => {
@@ -52,9 +63,16 @@ export function RunsPage() {
   }, [status, entity]);
 
   const compareRows = runs.filter((run) => selected.includes(run.id));
+  const allSelected = filtered.length > 0 && filtered.every((run) => selected.includes(run.id));
 
   const toggle = (id: string) => {
     setSelected((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
+  };
+
+  const bulk = (action: string) => {
+    if (!selected.length) return;
+    setToast(`${action} ${selected.length} runs`);
+    if (action === "Archived") setSelected([]);
   };
 
   return (
@@ -74,9 +92,9 @@ export function RunsPage() {
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
-        <TrendCard title="7-day match rate" unit="%" values={runTrends.matchRate} />
-        <TrendCard title="7-day exposure" unit="M" prefix="$" values={runTrends.exposure} />
-        <TrendCard title="7-day exceptions" unit="k" values={runTrends.exceptions} />
+        <TrendCard title="7-day match rate" unit="%" values={runTrends.matchRate} onOpen={() => setTrendKey("matchRate")} />
+        <TrendCard title="7-day exposure" unit="M" prefix="$" values={runTrends.exposure} onOpen={() => setTrendKey("exposure")} />
+        <TrendCard title="7-day exceptions" unit="k" values={runTrends.exceptions} onOpen={() => setTrendKey("exceptions")} />
       </Box>
 
       <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
@@ -97,13 +115,29 @@ export function RunsPage() {
         <Button size="small" variant="outlined" disabled={selected.length < 2} onClick={() => setCompareOpen(true)}>
           Compare selected ({selected.length})
         </Button>
+        <Button size="small" variant="outlined" disabled={!selected.length} onClick={() => bulk("Reran")}>
+          Bulk rerun
+        </Button>
+        <Button size="small" variant="outlined" disabled={!selected.length} onClick={() => bulk("Exported")}>
+          Bulk export
+        </Button>
+        <Button size="small" variant="outlined" disabled={!selected.length} onClick={() => bulk("Archived")}>
+          Bulk archive
+        </Button>
       </Stack>
 
       <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto" }}>
         <Table size="small">
           <TableHead>
             <TableRow>
-              <TableCell padding="checkbox" />
+              <TableCell padding="checkbox">
+                <Checkbox
+                  size="small"
+                  checked={allSelected}
+                  indeterminate={selected.length > 0 && !allSelected}
+                  onChange={() => setSelected(allSelected ? [] : filtered.map((run) => run.id))}
+                />
+              </TableCell>
               <TableCell>Run ID</TableCell>
               <TableCell>Type</TableCell>
               <TableCell>Entity</TableCell>
@@ -111,6 +145,7 @@ export function RunsPage() {
               <TableCell>Status</TableCell>
               <TableCell>Match Rate</TableCell>
               <TableCell>Exposure</TableCell>
+              <TableCell>Materiality</TableCell>
               <TableCell>Rule / Model</TableCell>
               <TableCell>Start</TableCell>
               <TableCell>Duration</TableCell>
@@ -123,7 +158,11 @@ export function RunsPage() {
                 <TableCell padding="checkbox">
                   <Checkbox size="small" checked={selected.includes(run.id)} onChange={() => toggle(run.id)} />
                 </TableCell>
-                <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>{run.id}</TableCell>
+                <TableCell>
+                  <Button size="small" sx={{ px: 0, fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }} onClick={() => setDetailRun(run)}>
+                    {run.id}
+                  </Button>
+                </TableCell>
                 <TableCell>{run.type}</TableCell>
                 <TableCell>{run.entity}</TableCell>
                 <TableCell>{run.period}</TableCell>
@@ -140,6 +179,9 @@ export function RunsPage() {
                 </TableCell>
                 <TableCell>{run.matchRate}</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>{run.exposure}</TableCell>
+                <TableCell>
+                  <StatusPill label={run.materiality} tone={materialityTone[run.materiality]} />
+                </TableCell>
                 <TableCell>
                   <Typography sx={{ fontSize: 11 }}>{run.ruleVersion}</Typography>
                   <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{run.modelVersion}</Typography>
@@ -171,6 +213,54 @@ export function RunsPage() {
       </Box>
       <ActivityTimeline />
 
+      <Drawer anchor="right" open={Boolean(detailRun)} onClose={() => setDetailRun(null)}>
+        <Box sx={{ width: { xs: 320, sm: 420 }, p: 2.5 }}>
+          <Typography variant="h6" sx={{ mb: 0.5 }}>
+            Run summary
+          </Typography>
+          <Typography sx={{ fontSize: 13, fontWeight: 700, mb: 2 }}>{detailRun?.id}</Typography>
+          <Detail label="Data source" value={detailRun?.dataSource} />
+          <Detail label="Transactions processed" value={detailRun?.transactionsProcessed} />
+          <Detail label="Rules executed" value={detailRun?.rulesExecuted.join(", ")} />
+          <Detail label="AI model" value={detailRun?.modelVersion} />
+          <Detail label="Rule version" value={detailRun?.ruleVersion} />
+          <Detail label="Exception summary" value={detailRun?.exceptionSummary} />
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mt: 2, mb: 1 }}>Runtime breakdown</Typography>
+          {detailRun?.runtimeBreakdown.map((item) => (
+            <Detail key={item.step} label={item.step} value={item.time} />
+          ))}
+          <Button sx={{ mt: 2 }} variant="contained" onClick={() => detailRun && navigate(`/reconciliation/review?run=${detailRun.id}`)}>
+            Open review
+          </Button>
+        </Box>
+      </Drawer>
+
+      <Dialog open={Boolean(trendKey)} onClose={() => setTrendKey(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Trend analytics</DialogTitle>
+        <DialogContent>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Day</TableCell>
+                <TableCell>{trendKey === "matchRate" ? "Match rate %" : trendKey === "exposure" ? "Exposure $M" : "Exceptions k"}</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {trendKey &&
+                runTrends[trendKey].map((value, index) => (
+                  <TableRow key={trendDays[index]}>
+                    <TableCell>{trendDays[index]}</TableCell>
+                    <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>{value}</TableCell>
+                  </TableRow>
+                ))}
+            </TableBody>
+          </Table>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setTrendKey(null)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
       <Dialog open={compareOpen} onClose={() => setCompareOpen(false)} maxWidth="md" fullWidth>
         <DialogTitle>Run comparison</DialogTitle>
         <DialogContent>
@@ -185,18 +275,19 @@ export function RunsPage() {
             </TableHead>
             <TableBody>
               {[
-                ["Entity", (run: (typeof runs)[number]) => run.entity],
-                ["Status", (run: (typeof runs)[number]) => run.status],
-                ["Match rate", (run: (typeof runs)[number]) => run.matchRate],
-                ["Exposure", (run: (typeof runs)[number]) => run.exposure],
-                ["Rule version", (run: (typeof runs)[number]) => run.ruleVersion],
-                ["AI model", (run: (typeof runs)[number]) => run.modelVersion],
-                ["Duration", (run: (typeof runs)[number]) => run.duration],
+                ["Entity", (run: Run) => run.entity],
+                ["Status", (run: Run) => run.status],
+                ["Match rate", (run: Run) => run.matchRate],
+                ["Exposure", (run: Run) => run.exposure],
+                ["Materiality", (run: Run) => run.materiality],
+                ["Rule version", (run: Run) => run.ruleVersion],
+                ["AI model", (run: Run) => run.modelVersion],
+                ["Duration", (run: Run) => run.duration],
               ].map(([label, getter]) => (
                 <TableRow key={String(label)}>
                   <TableCell sx={{ fontWeight: 700 }}>{label as string}</TableCell>
                   {compareRows.map((run) => (
-                    <TableCell key={run.id}>{(getter as (run: (typeof runs)[number]) => string)(run)}</TableCell>
+                    <TableCell key={run.id}>{(getter as (run: Run) => string)(run)}</TableCell>
                   ))}
                 </TableRow>
               ))}
@@ -232,16 +323,27 @@ export function RunsPage() {
   );
 }
 
+function Detail({ label, value }: { label: string; value?: string }) {
+  return (
+    <Stack direction="row" justifyContent="space-between" gap={2} sx={{ py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
+      <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{label}</Typography>
+      <Typography sx={{ fontSize: 12, fontWeight: 700, textAlign: "right" }}>{value}</Typography>
+    </Stack>
+  );
+}
+
 function TrendCard({
   title,
   values,
   unit,
   prefix = "",
+  onOpen,
 }: {
   title: string;
   values: number[];
   unit: string;
   prefix?: string;
+  onOpen: () => void;
 }) {
   const latest = values[values.length - 1];
   const previous = values[values.length - 2];
@@ -249,8 +351,25 @@ function TrendCard({
   const max = Math.max(...values);
   const min = Math.min(...values);
   return (
-    <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+    <Box
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") onOpen();
+      }}
+      sx={{
+        p: 2,
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
+        borderRadius: 1,
+        cursor: "pointer",
+        "&:hover": { borderColor: "primary.main" },
+      }}
+    >
       <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{title}</Typography>
+      <Typography sx={{ fontSize: 11, color: "primary.main", fontWeight: 700 }}>Open analytics</Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 1 }}>
         <Box>
           <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 22, fontWeight: 700 }}>

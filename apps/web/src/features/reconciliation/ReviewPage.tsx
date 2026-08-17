@@ -20,15 +20,24 @@ const matchTypes = ["1:1", "1:M", "M:1", "M:M"] as const;
 
 type SideARow = (typeof sideA)[number];
 
+const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
+  High: "crit",
+  Medium: "warn",
+  Low: "ok",
+};
+
 export function ReviewPage() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [queueSelected, setQueueSelected] = useState(false);
   const [drawerRow, setDrawerRow] = useState<SideARow | null>(null);
   const [toast, setToast] = useState("");
   const left = sideA[index] ?? sideA[0];
   const runId = params.get("run") ?? "IC-2026-08-17";
+  const selectedCount = queueSelected ? suggestedMatch.queueSize : selectedIds.length;
+  const allVisibleSelected = sideA.every((row) => selectedIds.includes(row.id));
 
   const goNext = () => setIndex((value) => Math.min(sideA.length - 1, value + 1));
 
@@ -50,22 +59,25 @@ export function ReviewPage() {
   }, [left.id, navigate]);
 
   const toggleSelect = (id: string) => {
+    setQueueSelected(false);
     setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
   const batch = (action: string) => {
-    if (!selectedIds.length) return;
-    setToast(`${action} ${selectedIds.length} matches`);
+    if (!selectedCount) return;
+    setToast(`${action} ${selectedCount} matches`);
     setSelectedIds([]);
+    setQueueSelected(false);
   };
 
   return (
     <>
       <PageHeader
         title="Review Workbench"
-        description={`Run ${runId}. Shortcuts: A approve · R reject · E escalate · N next.`}
+        description={`Run ${runId}. Shortcuts: A approve · R reject · E escalate · N next. Queue ${suggestedMatch.queueSize}.`}
         actions={
-          <Stack direction="row" spacing={1}>
+          <Stack direction="row" spacing={1} alignItems="center">
+            <StatusPill label={`SLA: ${left.slaRemaining}`} tone={left.slaRemaining.startsWith("6h") ? "crit" : "warn"} />
             <Button size="small" disabled={index === 0} onClick={() => setIndex((value) => value - 1)}>
               Previous
             </Button>
@@ -78,28 +90,34 @@ export function ReviewPage() {
 
       <ReconRecoBar />
 
-      {selectedIds.length > 0 && (
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ md: "center" }}
-          gap={1.5}
-          sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "primary.main", borderRadius: 1 }}
-        >
-          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedIds.length} matches selected</Typography>
-          <Stack direction="row" spacing={1} flexWrap="wrap">
-            <Button size="small" variant="contained" color="success" onClick={() => batch("Approved")}>
-              Approve group
-            </Button>
-            <Button size="small" variant="outlined" color="error" onClick={() => batch("Rejected")}>
-              Reject group
-            </Button>
-            <Button size="small" variant="outlined" onClick={() => batch("Escalated")}>
-              Escalate group
-            </Button>
-          </Stack>
+      <Stack
+        direction={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ md: "center" }}
+        gap={1.5}
+        sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: selectedCount ? "primary.main" : "divider", borderRadius: 1 }}
+      >
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedCount} selected</Typography>
+          <Button size="small" onClick={() => setSelectedIds(allVisibleSelected ? [] : sideA.map((row) => row.id))}>
+            {allVisibleSelected ? "Clear view" : "Select all in view"}
+          </Button>
+          <Button size="small" onClick={() => setQueueSelected(true)}>
+            Select all {suggestedMatch.queueSize} in queue
+          </Button>
         </Stack>
-      )}
+        <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Button size="small" variant="contained" color="success" disabled={!selectedCount} onClick={() => batch("Approved")}>
+            Approve all
+          </Button>
+          <Button size="small" variant="outlined" color="error" disabled={!selectedCount} onClick={() => batch("Rejected")}>
+            Reject all
+          </Button>
+          <Button size="small" variant="outlined" disabled={!selectedCount} onClick={() => batch("Escalated")}>
+            Escalate all
+          </Button>
+        </Stack>
+      </Stack>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1.25fr 1fr" }, gap: 2.5, minHeight: 420 }}>
         <TxnList
@@ -108,41 +126,81 @@ export function ReviewPage() {
           selectedId={left.id}
           selectedIds={selectedIds}
           onToggle={toggleSelect}
-          onSelect={(id) => setIndex(sideA.findIndex((row) => row.id === id))}
-          onOpen={(row) => setDrawerRow(row)}
+          onSelect={(id) => {
+            setIndex(sideA.findIndex((row) => row.id === id));
+            const row = sideA.find((item) => item.id === id);
+            if (row) setDrawerRow(row);
+          }}
         />
 
         <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.25 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
             <Typography variant="h6">Suggested match</Typography>
-            <Stack direction="row" spacing={0.5}>
-              {matchTypes.map((type) => (
-                <Box
-                  key={type}
-                  sx={{
-                    px: 1,
-                    py: 0.4,
-                    borderRadius: 10,
-                    fontSize: 11,
-                    fontWeight: 800,
-                    border: "1px solid",
-                    borderColor: type === suggestedMatch.type ? "primary.main" : "divider",
-                    bgcolor: type === suggestedMatch.type ? "var(--indigo-soft)" : "transparent",
-                    color: type === suggestedMatch.type ? "primary.main" : "text.secondary",
-                  }}
-                >
-                  {type}
-                </Box>
-              ))}
-            </Stack>
+            <StatusPill label={`SLA: ${suggestedMatch.slaRemaining}`} tone="warn" />
+          </Stack>
+
+          <Stack direction="row" alignItems="baseline" spacing={1.5} sx={{ mb: 1.5 }}>
+            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 32, fontWeight: 800, lineHeight: 1 }}>
+              {suggestedMatch.confidence}
+            </Typography>
+            <Box
+              sx={{
+                px: 1.25,
+                py: 0.5,
+                borderRadius: 1,
+                bgcolor: "primary.main",
+                color: "primary.contrastText",
+                fontSize: 16,
+                fontWeight: 800,
+              }}
+            >
+              {suggestedMatch.type}
+            </Box>
+          </Stack>
+          <Stack direction="row" spacing={0.5} sx={{ mb: 2 }}>
+            {matchTypes.map((type) => (
+              <Box
+                key={type}
+                sx={{
+                  px: 1,
+                  py: 0.35,
+                  borderRadius: 10,
+                  fontSize: 10,
+                  fontWeight: 800,
+                  border: "1px solid",
+                  borderColor: type === suggestedMatch.type ? "primary.main" : "divider",
+                  color: type === suggestedMatch.type ? "primary.main" : "text.secondary",
+                }}
+              >
+                {type}
+              </Box>
+            ))}
           </Stack>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.25, mb: 2 }}>
-            <Metric label="Confidence" value={suggestedMatch.confidence} />
             <Metric label="Amount impact" value={suggestedMatch.amountImpact} emphasis />
-            <Metric label="Materiality" value={suggestedMatch.materiality} />
+            <Box sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+              <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>Materiality</Typography>
+              <Box sx={{ mt: 0.5 }}>
+                <StatusPill label={suggestedMatch.materiality} tone={materialityTone[suggestedMatch.materiality]} />
+              </Box>
+            </Box>
             <Metric label="Risk" value={suggestedMatch.risk} />
+            <Metric label="Queue remaining" value={String(suggestedMatch.queueSize)} />
           </Box>
+
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.75 }}>Confidence breakdown</Typography>
+          <Stack spacing={0.75} sx={{ mb: 2 }}>
+            {suggestedMatch.confidenceBreakdown.map((item) => (
+              <Stack key={item.label} spacing={0.3}>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography sx={{ fontSize: 11 }}>{item.label}</Typography>
+                  <Typography sx={{ fontSize: 11, fontWeight: 700 }}>{item.weight}%</Typography>
+                </Stack>
+                <LinearProgress variant="determinate" value={item.weight} sx={{ height: 6, borderRadius: 99 }} />
+              </Stack>
+            ))}
+          </Stack>
 
           <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>
             {suggestedMatch.rule} · {suggestedMatch.ruleVersion}
@@ -153,6 +211,29 @@ export function ReviewPage() {
               <Typography key={item} sx={{ fontSize: 12 }}>
                 • {item}
               </Typography>
+            ))}
+          </Stack>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5 }}>Similar match analytics</Typography>
+          <Stack direction="row" spacing={1} sx={{ mb: 1.25 }}>
+            {suggestedMatch.similarAnalytics.map((item) => (
+              <Box key={item.label} sx={{ flex: 1, p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+                <Typography sx={{ fontSize: 10, color: "text.secondary" }}>{item.label}</Typography>
+                <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 800 }}>{item.value}</Typography>
+              </Box>
+            ))}
+          </Stack>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5 }}>Approval rate (7 day)</Typography>
+          <Stack direction="row" alignItems="flex-end" spacing={0.4} sx={{ height: 36, mb: 1.5 }}>
+            {suggestedMatch.approvalRateTrend.map((value, idx) => (
+              <Box
+                key={`apr-${idx}`}
+                sx={{
+                  width: 14,
+                  height: `${value - 70}%`,
+                  bgcolor: idx === suggestedMatch.approvalRateTrend.length - 1 ? "success.main" : "divider",
+                  borderRadius: 0.5,
+                }}
+              />
             ))}
           </Stack>
           <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5 }}>Match history</Typography>
@@ -177,7 +258,6 @@ export function ReviewPage() {
               {item}
             </Typography>
           ))}
-          <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 2 }}>{suggestedMatch.historical}</Typography>
           <Stack direction="row" spacing={1} flexWrap="wrap">
             <Button
               variant="contained"
@@ -195,11 +275,11 @@ export function ReviewPage() {
             <Button variant="outlined" onClick={() => navigate("/reconciliation/approvals")}>
               Escalate
             </Button>
+            <Button variant="contained" color="warning" onClick={() => navigate("/exceptions/cases")}>
+              Convert to exception case
+            </Button>
             <Button variant="text" onClick={() => navigate("/reconciliation/manual-match")}>
               Manual match
-            </Button>
-            <Button size="small" onClick={() => setDrawerRow(left)}>
-              Audit trail
             </Button>
           </Stack>
         </Box>
@@ -209,26 +289,30 @@ export function ReviewPage() {
       <ActivityTimeline />
 
       <Drawer anchor="right" open={Boolean(drawerRow)} onClose={() => setDrawerRow(null)}>
-        <Box sx={{ width: { xs: 320, sm: 400 }, p: 2.5 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            {drawerRow?.invoice}
+        <Box sx={{ width: { xs: 320, sm: 420 }, p: 2.5 }}>
+          <Typography variant="h6" sx={{ mb: 0.5 }}>
+            Transaction details
           </Typography>
-          <Detail label="Reference" value={drawerRow?.reference} />
+          <Typography sx={{ fontSize: 13, color: "text.secondary", mb: 2 }}>{drawerRow?.invoice}</Typography>
           <Detail label="Invoice" value={drawerRow?.invoice} />
+          <Detail label="Reference" value={drawerRow?.reference} />
           <Detail label="Currency" value={drawerRow?.currency} />
           <Detail label="Amount" value={drawerRow ? drawerRow.amount.toLocaleString() : ""} />
+          <Detail label="Entity" value={drawerRow?.entity} />
           <Detail label="Counterparty" value={drawerRow?.counterparty} />
           <Detail label="Business unit" value={drawerRow?.businessUnit} />
-          <Detail label="Entity" value={drawerRow?.entity} />
-          <Detail label="Date" value={drawerRow?.date} />
+          <Detail label="Description" value={drawerRow?.description} />
+          <Detail label="SLA" value={drawerRow?.slaRemaining} />
           <Detail label="Attachments" value={drawerRow?.attachments.join(", ") || "None"} />
-          <Typography sx={{ fontSize: 12, fontWeight: 700, mt: 2, mb: 0.75 }}>Audit trail</Typography>
-          <Typography sx={{ fontSize: 12, color: "text.secondary" }}>Rule {suggestedMatch.ruleVersion}</Typography>
+          <Typography sx={{ fontSize: 12, fontWeight: 700, mt: 2, mb: 0.75 }}>Historical activity</Typography>
           {suggestedMatch.history.map((item) => (
             <Typography key={item} sx={{ fontSize: 12, mt: 0.5 }}>
               {item}
             </Typography>
           ))}
+          <Button sx={{ mt: 2 }} variant="outlined" onClick={() => navigate("/exceptions/cases")}>
+            Convert to exception case
+          </Button>
         </Box>
       </Drawer>
       <Snackbar open={Boolean(toast)} autoHideDuration={2200} onClose={() => setToast("")} message={toast} />
@@ -249,9 +333,9 @@ function Metric({ label, value, emphasis }: { label: string; value: string; emph
 
 function Detail({ label, value }: { label: string; value?: string }) {
   return (
-    <Stack direction="row" justifyContent="space-between" sx={{ py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
+    <Stack direction="row" justifyContent="space-between" gap={2} sx={{ py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
       <Typography sx={{ fontSize: 12, color: "text.secondary" }}>{label}</Typography>
-      <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{value}</Typography>
+      <Typography sx={{ fontSize: 12, fontWeight: 700, textAlign: "right" }}>{value}</Typography>
     </Stack>
   );
 }
@@ -264,7 +348,6 @@ function TxnList({
   ranked,
   onSelect,
   onToggle,
-  onOpen,
 }: {
   title: string;
   rows: Array<{
@@ -275,21 +358,16 @@ function TxnList({
     entity: string;
     status?: string;
     score?: number;
-    reference?: string;
-    currency?: string;
-    counterparty?: string;
-    businessUnit?: string;
-    attachments?: string[];
+    slaRemaining?: string;
   }>;
   selectedId?: string;
   selectedIds?: string[];
   ranked?: boolean;
   onSelect?: (id: string) => void;
   onToggle?: (id: string) => void;
-  onOpen?: (row: SideARow) => void;
 }) {
   return (
-    <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto" }}>
+    <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto", maxHeight: 760 }}>
       <Typography variant="h6" sx={{ p: 1.5, pb: 1 }}>
         {title}
       </Typography>
@@ -332,6 +410,7 @@ function TxnList({
                   <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
                     {row.entity} · {row.date}
                     {row.status ? ` · ${row.status}` : ""}
+                    {row.slaRemaining ? ` · SLA ${row.slaRemaining}` : ""}
                   </Typography>
                 </Box>
               </Stack>
@@ -347,18 +426,6 @@ function TxnList({
                 </Stack>
                 <LinearProgress variant="determinate" value={row.score} sx={{ height: 6, borderRadius: 99 }} />
               </Stack>
-            )}
-            {onOpen && (
-              <Button
-                size="small"
-                sx={{ mt: 0.5, px: 0 }}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onOpen(row as SideARow);
-                }}
-              >
-                Details
-              </Button>
             )}
           </Box>
         );

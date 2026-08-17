@@ -20,6 +20,8 @@ export const runTrends = {
   exceptions: [24, 22, 21, 23, 20, 19, 18],
 };
 
+export const trendDays = ["11 Aug", "12 Aug", "13 Aug", "14 Aug", "15 Aug", "16 Aug", "17 Aug"];
+
 export const runs = [
   {
     id: "IC-2026-08-17",
@@ -31,10 +33,20 @@ export const runs = [
     matchRate: "97.4%",
     exposure: "$210M",
     exposureValue: 210,
+    materiality: "High",
     start: "08:12",
     duration: "11m",
     ruleVersion: "rules-v3.4",
     modelVersion: "ranker-v4.8",
+    dataSource: "SAP ECC APAC + Oracle GL US01",
+    transactionsProcessed: "2.41M",
+    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5", "DATE_WIN_3"],
+    runtimeBreakdown: [
+      { step: "Ingest", time: "2.1m" },
+      { step: "Rules", time: "6.4m" },
+      { step: "AI rank", time: "2.5m" },
+    ],
+    exceptionSummary: "18.2k open · $210M exposure",
   },
   {
     id: "IC-2026-08-16",
@@ -46,10 +58,20 @@ export const runs = [
     matchRate: "98.9%",
     exposure: "$400M",
     exposureValue: 400,
+    materiality: "High",
     start: "07:04",
     duration: "9m",
     ruleVersion: "rules-v3.4",
     modelVersion: "ranker-v4.8",
+    dataSource: "SAP EMEA + Oracle GL US01",
+    transactionsProcessed: "1.12M",
+    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5"],
+    runtimeBreakdown: [
+      { step: "Ingest", time: "1.8m" },
+      { step: "Rules", time: "5.1m" },
+      { step: "AI rank", time: "2.1m" },
+    ],
+    exceptionSummary: "6.4k open · $400M exposure",
   },
   {
     id: "BNK-2026-08-16",
@@ -61,10 +83,20 @@ export const runs = [
     matchRate: "—",
     exposure: "$88M",
     exposureValue: 88,
+    materiality: "Medium",
     start: "08:31",
     duration: "3m",
     ruleVersion: "rules-v3.3",
     modelVersion: "ranker-v4.7",
+    dataSource: "JPM bank file + NAMER GL",
+    transactionsProcessed: "410k / 890k",
+    rulesExecuted: ["STMT_REF", "AMT_EXACT"],
+    runtimeBreakdown: [
+      { step: "Ingest", time: "1.2m" },
+      { step: "Rules", time: "1.4m" },
+      { step: "AI rank", time: "in progress" },
+    ],
+    exceptionSummary: "Pending until run completes",
   },
   {
     id: "IC-2026-08-14",
@@ -76,10 +108,20 @@ export const runs = [
     matchRate: "—",
     exposure: "$12M",
     exposureValue: 12,
+    materiality: "Low",
     start: "05:10",
     duration: "2m",
     ruleVersion: "rules-v3.4",
     modelVersion: "ranker-v4.8",
+    dataSource: "SAP ECC APAC",
+    transactionsProcessed: "88k / 2.4M",
+    rulesExecuted: ["INV_REF_EXACT"],
+    runtimeBreakdown: [
+      { step: "Ingest", time: "1.1m" },
+      { step: "Rules", time: "failed" },
+      { step: "AI rank", time: "—" },
+    ],
+    exceptionSummary: "Source file checksum mismatch",
   },
   {
     id: "IC-2026-08-15",
@@ -91,10 +133,20 @@ export const runs = [
     matchRate: "99.1%",
     exposure: "$18M",
     exposureValue: 18,
+    materiality: "Low",
     start: "06:50",
     duration: "12m",
     ruleVersion: "rules-v3.3",
     modelVersion: "ranker-v4.7",
+    dataSource: "SAP ECC APAC + Oracle GL US01",
+    transactionsProcessed: "1.98M",
+    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5", "DATE_WIN_3"],
+    runtimeBreakdown: [
+      { step: "Ingest", time: "2.4m" },
+      { step: "Rules", time: "7.0m" },
+      { step: "AI rank", time: "2.6m" },
+    ],
+    exceptionSummary: "1.1k open · $18M exposure",
   },
 ];
 
@@ -109,6 +161,8 @@ export const sideA = [
     entity: "APAC E09",
     counterparty: "US01 HQ",
     businessUnit: "Intercompany AR",
+    description: "Intercompany AR invoice after ERP SG- prefix patch",
+    slaRemaining: "12h remaining",
     status: "Suggested",
     attachments: ["SG-4412.pdf"],
   },
@@ -122,6 +176,8 @@ export const sideA = [
     entity: "APAC E09",
     counterparty: "US01 HQ",
     businessUnit: "Intercompany AR",
+    description: "Related invoice in same APAC batch",
+    slaRemaining: "12h remaining",
     status: "Suggested",
     attachments: ["SG-4418.pdf"],
   },
@@ -135,6 +191,8 @@ export const sideA = [
     entity: "APAC E09",
     counterparty: "US01 HQ",
     businessUnit: "Intercompany AR",
+    description: "Likely 1:M split against GL-8902 / GL-8903",
+    slaRemaining: "6h remaining",
     status: "Unmatched",
     attachments: ["SG-4501.pdf"],
   },
@@ -148,9 +206,26 @@ export const sideA = [
     entity: "APAC E09",
     counterparty: "US01 HQ",
     businessUnit: "Intercompany AR",
+    description: "Low-value residual",
+    slaRemaining: "18h remaining",
     status: "Unmatched",
     attachments: [],
   },
+  ...Array.from({ length: 12 }, (_, index) => ({
+    id: `INV-${4600 + index}`,
+    invoice: `SG-${4600 + index}`,
+    reference: `PO-${9100 + index}`,
+    amount: 15000 + index * 1250,
+    currency: "USD",
+    date: "14 Aug",
+    entity: "APAC E09",
+    counterparty: "US01 HQ",
+    businessUnit: "Intercompany AR",
+    description: "Queued suggested match from overnight ranker",
+    slaRemaining: "20h remaining",
+    status: "Suggested",
+    attachments: [`SG-${4600 + index}.pdf`],
+  })),
 ];
 
 export const sideB = [
@@ -181,12 +256,34 @@ export const suggestedMatch = {
     "Rule history: accepted 1,842 times this quarter",
   ],
   historical: "14 similar APAC invoices auto-matched this week at 99.1% precision",
+  slaRemaining: "12h remaining",
+  queueSize: 148,
+  confidenceBreakdown: [
+    { label: "Amount", weight: 35 },
+    { label: "Reference", weight: 30 },
+    { label: "Date", weight: 15 },
+    { label: "History", weight: 10 },
+    { label: "Rule", weight: 10 },
+  ],
+  similarAnalytics: [
+    { label: "Approved", value: 11 },
+    { label: "Rejected", value: 2 },
+    { label: "Escalated", value: 1 },
+  ],
+  approvalRateTrend: [94, 95, 96, 95, 97, 98, 99],
+};
+
+export const advisorMetrics = {
+  exposureReduction: "$128,400",
+  matchImprovement: "+1.2 pts",
+  autoMatchGain: "+$210M",
 };
 
 export const aiRecoCard = {
   title: "Apply SG- prefix strip rule",
   confidence: "98.4%",
   impact: "+$210M auto-match",
+  executionTime: "18 sec",
   detail: "Vendor X prepended SG- after an ERP patch. One-click execute will re-run APAC intercompany candidates.",
 };
 
