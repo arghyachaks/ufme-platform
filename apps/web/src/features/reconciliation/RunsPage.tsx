@@ -8,8 +8,12 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   Drawer,
+  IconButton,
   LinearProgress,
+  ListItemText,
+  Menu,
   MenuItem,
   Select,
   Snackbar,
@@ -21,6 +25,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
@@ -54,6 +59,7 @@ export function RunsPage() {
   const [detailRun, setDetailRun] = useState<Run | null>(null);
   const [auditRun, setAuditRun] = useState<Run | null>(null);
   const [toast, setToast] = useState("");
+  const [actionMenu, setActionMenu] = useState<{ anchor: HTMLElement; run: Run } | null>(null);
 
   const filtered = useMemo(() => {
     const rows = runs.filter(
@@ -149,7 +155,9 @@ export function RunsPage() {
               <TableCell>Rule / Model</TableCell>
               <TableCell>Start</TableCell>
               <TableCell>Duration</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell align="right" sx={{ whiteSpace: "nowrap", width: 148 }}>
+                Actions
+              </TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -188,22 +196,28 @@ export function RunsPage() {
                 </TableCell>
                 <TableCell>{run.start}</TableCell>
                 <TableCell>{run.duration}</TableCell>
-                <TableCell>
-                  <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ maxWidth: 420 }}>
-                    <Button size="small" onClick={() => navigate(`/reconciliation/review?run=${run.id}`)}>
+                <TableCell align="right" sx={{ whiteSpace: "nowrap" }}>
+                  <Stack direction="row" spacing={0.75} justifyContent="flex-end" alignItems="center">
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => navigate(`/reconciliation/review?run=${run.id}`)}
+                    >
                       Open
                     </Button>
-                    <Button size="small">Rerun</Button>
-                    <Button size="small" onClick={() => setToast(`Cloned ${run.id}`)}>
-                      Clone
-                    </Button>
-                    <Button size="small" onClick={() => navigate("/exceptions/cases")}>
-                      Exception case
-                    </Button>
-                    <Button size="small" onClick={() => setAuditRun(run)}>
-                      Audit trail
-                    </Button>
-                    <Button size="small">Download</Button>
+                    <IconButton
+                      size="small"
+                      aria-label={`More actions for ${run.id}`}
+                      onClick={(event) => setActionMenu({ anchor: event.currentTarget, run })}
+                      sx={{
+                        border: "1px solid",
+                        borderColor: "var(--glass-border)",
+                        bgcolor: "var(--glass-bg)",
+                        backdropFilter: "blur(12px)",
+                      }}
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
                   </Stack>
                 </TableCell>
               </TableRow>
@@ -317,6 +331,58 @@ export function RunsPage() {
           <Button onClick={() => setAuditRun(null)}>Close</Button>
         </DialogActions>
       </Dialog>
+
+      <Menu
+        anchorEl={actionMenu?.anchor}
+        open={Boolean(actionMenu)}
+        onClose={() => setActionMenu(null)}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        slotProps={{ paper: { sx: { minWidth: 220, mt: 0.5 } } }}
+      >
+        <MenuItem
+          onClick={() => {
+            setToast(`Reran ${actionMenu?.run.id}`);
+            setActionMenu(null);
+          }}
+        >
+          <ListItemText primary="Rerun" secondary="Re-execute with the same rules" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setToast(`Cloned ${actionMenu?.run.id}`);
+            setActionMenu(null);
+          }}
+        >
+          <ListItemText primary="Clone" secondary="Copy configuration to a new run" />
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            setActionMenu(null);
+            navigate("/exceptions/cases");
+          }}
+        >
+          <ListItemText primary="Create exception case" secondary="Escalate unmatched exposure" />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            if (actionMenu) setAuditRun(actionMenu.run);
+            setActionMenu(null);
+          }}
+        >
+          <ListItemText primary="View audit trail" secondary="Rule, model, and activity log" />
+        </MenuItem>
+        <Divider />
+        <MenuItem
+          onClick={() => {
+            setToast(`Download queued for ${actionMenu?.run.id}`);
+            setActionMenu(null);
+          }}
+        >
+          <ListItemText primary="Download pack" secondary="Evidence export for controllers" />
+        </MenuItem>
+      </Menu>
 
       <Snackbar open={Boolean(toast)} autoHideDuration={2500} onClose={() => setToast("")} message={toast} />
     </>
