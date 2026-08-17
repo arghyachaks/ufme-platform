@@ -258,7 +258,7 @@ export function ReviewPage() {
               {item}
             </Typography>
           ))}
-          <Stack direction="row" spacing={1} flexWrap="wrap">
+          <Stack direction="row" useFlexGap flexWrap="wrap" spacing={1.25} sx={{ mt: 0.5 }}>
             <Button
               variant="contained"
               color="success"
