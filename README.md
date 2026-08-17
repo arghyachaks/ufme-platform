@@ -6,12 +6,12 @@ This repository is the product monorepo: React frontend, FastAPI services, share
 
 ## What it does
 
-UFME matches financial events across ERP, files, and APIs, then routes residual risk into review, approval, and period close.
+UFME matches financial events across ERP, files, and APIs, then routes residual risk through review, manual match, approval, and period close.
 
 - Intercompany, bank, AP/AR, journal, inventory, and payroll reconciliation (MVP starts with intercompany)
-- Exact, tolerance, and fuzzy matching plus candidate generation
+- Exact, tolerance, and fuzzy matching plus ranked candidates
 - Exception cases, SLAs, SOX/audit evidence, and controller sign-off
-- AI copilot, explainability, and a continuous learning loop
+- AI Match Advisor with explainability and a continuous learning loop
 
 ## Repository layout
 
@@ -28,24 +28,13 @@ ufme-platform
 
 | Path | Purpose |
 |------|---------|
-| `apps/web` | Controller dashboard (React + TypeScript + Material UI + Redux Toolkit) |
+| `apps/web` | Controller UI (React + TypeScript + Material UI + Redux Toolkit) |
 | `services/api` | Matching API (Python 3.12 + FastAPI) |
 | `libraries/` | Shared `ufme_common` (Python) and `@ufme/types` (TypeScript) |
-| `UFME_Development_Blueprint.md` | End-to-end product blueprint |
-| `UFME_Dashboard_Review_Feedback.md` | Dashboard UX review used for the current UI |
 
-## Dashboard (current)
+Product design specs stay local (Markdown other than this README is not published).
 
-The web app is a daily working screen for analysts and controllers, not only an executive demo.
-
-- **My Work Queue** — approvals, critical exceptions, SLA breaches, assigned cases
-- **Workflow funnel** — Ingested → Candidate → Suggested → Pending Review → Approved → Posted → Closed
-- **Risk KPIs** — exposure, exceptions, exposure coverage; AI quality shows confidence, precision/recall, and false-positive rate
-- **Exceptions** — sorted by financial impact, with entity, owner, and due date
-- **Exposure heatmap** — drill into an entity risk view (trend, aging, root causes)
-- **Close, SLA, and controls** — period close completion, breach mix, SOX/policy/overrides
-- **Copilot dock** — recommended actions plus conversation
-- **Light / dark mode**
+## Web app (current)
 
 Run it:
 
@@ -55,7 +44,29 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:5173/](http://localhost:5173/).
+Open [http://localhost:5173/](http://localhost:5173/). Active work is on **`develop`**.
+
+### Reconciliation operating workflow
+
+The core loop is **Runs → Review → Manual Match → Approvals → Signoff**.
+
+| Screen | What it covers |
+|--------|----------------|
+| **Runs** | Job list sorted by exposure, 7-day trends, materiality, rule/model versions, run summary drawer, bulk rerun/export/archive, compare, audit trail |
+| **Review** | Suggested matches with amount impact, confidence breakdown, 1:1 / 1:M / M:1 / M:M, candidate scores, queue-scale batch actions, transaction drawer, SLA, convert to exception case |
+| **Manual Match** | Build matches from unmatched sides, live totals, 0.5% tolerance policy, AI suggest + why, document preview, create exception |
+| **Approvals** | Queue with hierarchy (Analyst → Director), materiality, SLA timers, confidence factors, batch approve/reject/request info |
+| **Signoff** | Close readiness score, failed-control drill-down, checklist, exception summary, comments, digital signature evidence |
+
+The right-hand **AI Match Advisor** changes by screen: combinations on Manual Match, approve/reject on Approvals, readiness hold/go on Signoff.
+
+### Dashboard
+
+Daily working screen for analysts and controllers.
+
+- Work queue, workflow funnel, exposure/exception KPIs
+- Entity risk drill-down, close/SLA/controls
+- Light / dark mode
 
 ## Backend API
 
@@ -100,4 +111,3 @@ git checkout develop
 
 Free for non-commercial use (personal, education, research, and evaluation).
 **Commercial use requires a paid license.** See [LICENSE](LICENSE).
-
