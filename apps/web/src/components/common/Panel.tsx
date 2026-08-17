@@ -18,10 +18,11 @@ export function Panel({
         border: "1px solid",
         borderColor: "divider",
         borderRadius: 1,
-        p: 2.25,
+        p: 2.75,
+        transition: "box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.75 }}>
+      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.25 }}>
         <Typography variant="h6">{title}</Typography>
         {action}
       </Stack>

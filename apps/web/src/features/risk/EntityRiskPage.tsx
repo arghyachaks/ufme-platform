@@ -25,7 +25,7 @@ export function EntityRiskPage() {
           </Button>
         }
       />
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
         <Panel title="Exposure">
           <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 28, fontWeight: 700 }}>
             {entity.exposure}

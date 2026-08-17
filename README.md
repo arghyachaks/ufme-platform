@@ -98,4 +98,6 @@ git checkout develop
 
 ## License
 
-Private. All rights reserved unless otherwise stated.
+Free for non-commercial use (personal, education, research, and evaluation).
+**Commercial use requires a paid license.** See [LICENSE](LICENSE).
+

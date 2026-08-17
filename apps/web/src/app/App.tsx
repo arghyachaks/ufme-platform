@@ -3,6 +3,12 @@ import { AppLayout } from "../layouts/AppLayout";
 import { DashboardPage } from "../features/dashboard/DashboardPage";
 import { EntityRiskPage } from "../features/risk/EntityRiskPage";
 import { WorkspacePage } from "../features/workspace/WorkspacePage";
+import { ReconLayout } from "../features/reconciliation/ReconLayout";
+import { RunsPage } from "../features/reconciliation/RunsPage";
+import { ReviewPage } from "../features/reconciliation/ReviewPage";
+import { ManualMatchPage } from "../features/reconciliation/ManualMatchPage";
+import { ApprovalsPage } from "../features/reconciliation/ApprovalsPage";
+import { SignoffPage } from "../features/reconciliation/SignoffPage";
 
 export default function App() {
   return (
@@ -12,11 +18,14 @@ export default function App() {
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/risk/:entityId" element={<EntityRiskPage />} />
-          <Route path="/reconciliation/runs" element={<WorkspacePage />} />
-          <Route path="/reconciliation/review" element={<WorkspacePage />} />
-          <Route path="/reconciliation/manual-match" element={<WorkspacePage />} />
-          <Route path="/reconciliation/approvals" element={<WorkspacePage />} />
-          <Route path="/reconciliation/signoff" element={<WorkspacePage />} />
+          <Route path="/reconciliation" element={<ReconLayout />}>
+            <Route index element={<Navigate to="runs" replace />} />
+            <Route path="runs" element={<RunsPage />} />
+            <Route path="review" element={<ReviewPage />} />
+            <Route path="manual-match" element={<ManualMatchPage />} />
+            <Route path="approvals" element={<ApprovalsPage />} />
+            <Route path="signoff" element={<SignoffPage />} />
+          </Route>
           <Route path="/exceptions" element={<WorkspacePage />} />
           <Route path="/exceptions/cases" element={<WorkspacePage />} />
           <Route path="/exceptions/investigations" element={<WorkspacePage />} />

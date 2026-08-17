@@ -29,12 +29,41 @@ export function createAppTheme(mode: PaletteMode) {
       button: { textTransform: "none", fontWeight: 600 },
     },
     shape: { borderRadius: 8 },
+    transitions: {
+      duration: {
+        shortest: 280,
+        shorter: 400,
+        short: 500,
+        standard: 600,
+        complex: 800,
+        enteringScreen: 700,
+        leavingScreen: 550,
+      },
+      easing: {
+        easeInOut: "cubic-bezier(0.4, 0, 0.2, 1)",
+        easeOut: "cubic-bezier(0.22, 1, 0.36, 1)",
+        easeIn: "cubic-bezier(0.4, 0, 1, 1)",
+        sharp: "cubic-bezier(0.4, 0, 0.6, 1)",
+      },
+    },
     components: {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
             backgroundColor: isDark ? "#0b1220" : "#f8fafc",
           },
+        },
+      },
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            transition: "background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1)",
+          },
+        },
+      },
+      MuiCollapse: {
+        defaultProps: {
+          timeout: 550,
         },
       },
       MuiTableCell: {

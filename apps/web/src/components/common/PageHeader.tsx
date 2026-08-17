@@ -9,7 +9,7 @@ type PageHeaderProps = {
 
 export function PageHeader({ title, description, actions }: PageHeaderProps) {
   return (
-    <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2} mb={3}>
+    <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" gap={2.5} mb={3.5}>
       <Box>
         <Typography variant="h4">{title}</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.75, maxWidth: 720 }}>

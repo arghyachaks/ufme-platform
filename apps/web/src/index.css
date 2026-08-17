@@ -67,7 +67,7 @@ body {
 @keyframes fadeInSlideUp {
   from {
     opacity: 0;
-    transform: translateY(12px);
+    transform: translateY(16px);
   }
   to {
     opacity: 1;
@@ -133,10 +133,10 @@ body {
 .ufme-main {
   grid-area: main;
   overflow: auto;
-  padding: 20px;
+  padding: 28px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
   background: var(--bg-base);
 }
 .ufme-copilot {
@@ -184,16 +184,32 @@ body {
   width: 40px;
   height: 100%;
   background: linear-gradient(90deg, transparent, var(--brand-blue), transparent);
-  animation: pipelineFlow 2.5s infinite ease-in-out;
+  animation: pipelineFlow 4.5s infinite ease-in-out;
 }
 
 .ticker-track {
   display: flex;
   gap: 40px;
-  animation: tickerScroll 35s linear infinite;
+  animation: tickerScroll 50s linear infinite;
   white-space: nowrap;
 }
 
-.card-enter {
-  animation: fadeInSlideUp 0.4s ease-out both;
+.card-enter,
+.page-enter {
+  animation: fadeInSlideUp 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+button,
+a,
+.MuiButton-root,
+.MuiIconButton-root,
+.MuiListItemButton-root,
+.MuiLinearProgress-bar {
+  transition:
+    background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }

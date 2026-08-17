@@ -37,3 +37,8 @@ coverage/
 *.log
 tmp/
 temp/
+
+# Local-only docs (do not publish except README.md)
+*.md
+!README.md
+

@@ -26,8 +26,8 @@ export function DashboardPage() {
   const maxTrend = Math.max(...trend);
 
   return (
-    <>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 2 }}>
+    <Stack spacing={3}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 3 }}>
         <Panel title="Period Close Center" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Q3-2026</Typography>}>
           <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 28, fontWeight: 700 }}>
             {closeCompletion}%
@@ -57,7 +57,7 @@ export function DashboardPage() {
           </Stack>
         </Panel>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 2 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 3 }}>
           {kpiGroups.map((group) => (
             <Panel key={group.title} title={group.title}>
               <Stack spacing={1.25}>
@@ -79,7 +79,7 @@ export function DashboardPage() {
       </Box>
 
       <Panel title="My Work Queue" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>What should I do next?</Typography>}>
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 1.25 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2 }}>
           {workQueue.map((item) => (
             <Button
               key={item.label}
@@ -137,7 +137,7 @@ export function DashboardPage() {
         </Box>
       </Panel>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.35fr 1fr" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.35fr 1fr" }, gap: 3 }}>
         <Panel
           title="High Risk Exceptions"
           action={
@@ -212,7 +212,7 @@ export function DashboardPage() {
         </Panel>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
         <Panel title="Top Exception Causes">
           <Stack spacing={1.25}>
             {rootCauses.map((cause) => (
@@ -253,7 +253,7 @@ export function DashboardPage() {
         </Panel>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 3 }}>
         <Panel title="SLA Dashboard">
           <Stack direction="row" spacing={1}>
             {sla.map((item) => (
@@ -276,7 +276,7 @@ export function DashboardPage() {
         </Panel>
       </Box>
 
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.4fr 1fr" }, gap: 2 }}>
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.4fr 1fr" }, gap: 3 }}>
         <Panel title="Agent Collaboration" action={<StatusPill label="ORCHESTRATED" tone="ok" />}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             {agentFlow.map((name, index) => (
@@ -288,7 +288,7 @@ export function DashboardPage() {
               </Stack>
             ))}
           </Stack>
-          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1.25 }}>
+          <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
             {agents.map((agent) => (
               <Box key={agent.name} sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "var(--bg-muted)" }}>
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: "primary.main", mb: 0.75 }}>{agent.name}</Typography>
@@ -311,7 +311,7 @@ export function DashboardPage() {
           </Stack>
         </Panel>
       </Box>
-    </>
+    </Stack>
   );
 }
 

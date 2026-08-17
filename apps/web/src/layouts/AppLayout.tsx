@@ -200,7 +200,7 @@ export function AppLayout() {
                 expanded={expanded}
                 onClick={() => setOpenSections((current) => ({ ...current, [item.label]: !expanded }))}
               />
-              <Collapse in={expanded} unmountOnExit>
+              <Collapse in={expanded} timeout={550} unmountOnExit>
                 <Box sx={{ bgcolor: "var(--bg-muted)", borderTop: 1, borderBottom: 1, borderColor: "divider" }}>
                   {item.children.map((child) => (
                     <NavLink key={child.to} to={child.to} style={{ textDecoration: "none" }}>
@@ -244,7 +244,9 @@ export function AppLayout() {
       </Box>
 
       <Box className="ufme-main" component="main">
-        <Outlet />
+        <Box key={pathname} className="page-enter" sx={{ display: "flex", flexDirection: "column", gap: 3, minHeight: "100%" }}>
+          <Outlet />
+        </Box>
       </Box>
       <CopilotDock />
       <ActivityTicker />
@@ -278,6 +280,7 @@ function NavRow({ label, icon, active, to, badge, expanded, onClick }: NavRowPro
         color: active ? "primary.main" : "text.secondary",
         bgcolor: active ? "var(--indigo-soft)" : "transparent",
         borderRight: active ? "3px solid #4f46e5" : "3px solid transparent",
+        transition: "background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
         "&:hover": { color: "primary.main", bgcolor: "var(--indigo-soft)" },
       }}
     >
@@ -301,7 +304,7 @@ function NavRow({ label, icon, active, to, badge, expanded, onClick }: NavRowPro
           {badge}
         </Box>
       ) : to ? null : (
-        <ExpandMore sx={{ fontSize: 14, transform: expanded ? "rotate(180deg)" : "none" }} />
+        <ExpandMore sx={{ fontSize: 14, transform: expanded ? "rotate(180deg)" : "none", transition: "transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)" }} />
       )}
     </Stack>
   );
