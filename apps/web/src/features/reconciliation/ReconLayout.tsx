@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { reconContext } from "./data";
+import { aiRecoCard, reconContext } from "./data";
 
 const steps = [
   { label: "Runs", to: "/reconciliation/runs" },
@@ -71,20 +71,37 @@ export function ReconLayout() {
 }
 
 export function ReconRecoBar() {
+  const navigate = useNavigate();
   return (
     <Box
+      className="card-enter"
       sx={{
-        p: 1.25,
+        p: 2.25,
         borderRadius: 1,
-        bgcolor: "var(--indigo-soft)",
+        bgcolor: "background.paper",
         border: "1px solid",
-        borderColor: "divider",
+        borderColor: "primary.main",
+        boxShadow: "0 0 0 3px var(--indigo-soft)",
       }}
     >
-      <Typography sx={{ fontSize: 11, fontWeight: 700, color: "primary.main", mb: 0.5 }}>
-        Recommended next action
-      </Typography>
-      <Typography sx={{ fontSize: 12 }}>Apply SG- prefix strip · Confidence 98.4% · Impact +$210M auto-match</Typography>
+      <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={2} alignItems={{ md: "center" }}>
+        <Box>
+          <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "primary.main" }}>
+            AI Recommendation Card
+          </Typography>
+          <Typography sx={{ fontSize: 16, fontWeight: 700, mt: 0.5 }}>{aiRecoCard.title}</Typography>
+          <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.5 }}>{aiRecoCard.detail}</Typography>
+          <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
+            <Typography sx={{ fontSize: 12 }}>
+              Confidence <Box component="strong" sx={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{aiRecoCard.confidence}</Box>
+            </Typography>
+            <Typography sx={{ fontSize: 12, color: "success.main", fontWeight: 700 }}>{aiRecoCard.impact}</Typography>
+          </Stack>
+        </Box>
+        <Button variant="contained" onClick={() => navigate("/rules/simulation")}>
+          One-click execute
+        </Button>
+      </Stack>
     </Box>
   );
 }

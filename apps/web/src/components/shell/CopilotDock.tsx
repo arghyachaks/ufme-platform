@@ -1,8 +1,12 @@
 import { Box, Button, InputBase, Stack, Typography } from "@mui/material";
-import { Link as RouterLink } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { copilotActions, copilotThread } from "../../features/dashboard/mockData";
+import { suggestedMatch } from "../../features/reconciliation/data";
 
 export function CopilotDock() {
+  const { pathname } = useLocation();
+  const advisor = pathname.includes("/reconciliation/review");
+
   return (
     <Box
       className="ufme-copilot"
@@ -22,7 +26,9 @@ export function CopilotDock() {
         alignItems="center"
         sx={{ pb: 1.5, borderBottom: "1px solid", borderColor: "divider" }}
       >
-        <Typography sx={{ fontSize: 14, fontWeight: 700, color: "primary.main" }}>Copilot Assistant</Typography>
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: "primary.main" }}>
+          {advisor ? "AI Match Advisor" : "Copilot Assistant"}
+        </Typography>
         <Box
           sx={{
             fontSize: 10,
@@ -40,24 +46,28 @@ export function CopilotDock() {
       </Stack>
 
       <Box sx={{ py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.75 }}>Recommended Actions</Typography>
-        <Typography sx={{ fontSize: 11, color: "success.main", fontWeight: 700, mb: 1 }}>
-          Estimated benefit: +$210M reduction
-        </Typography>
-        <Stack spacing={0.75}>
-          {copilotActions.map((action) => (
-            <Button
-              key={action.label}
-              component={RouterLink}
-              to={action.to}
-              size="small"
-              variant="outlined"
-              sx={{ justifyContent: "flex-start", fontSize: 11 }}
-            >
-              {action.label}
-            </Button>
-          ))}
-        </Stack>
+        {advisor ? <MatchAdvisor /> : (
+          <>
+            <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.75 }}>Recommended Actions</Typography>
+            <Typography sx={{ fontSize: 11, color: "success.main", fontWeight: 700, mb: 1 }}>
+              Estimated benefit: +$210M reduction
+            </Typography>
+            <Stack spacing={0.75}>
+              {copilotActions.map((action) => (
+                <Button
+                  key={action.label}
+                  component={RouterLink}
+                  to={action.to}
+                  size="small"
+                  variant="outlined"
+                  sx={{ justifyContent: "flex-start", fontSize: 11 }}
+                >
+                  {action.label}
+                </Button>
+              ))}
+            </Stack>
+          </>
+        )}
       </Box>
 
       <Stack spacing={1.5} sx={{ flex: 1, overflow: "auto", py: 1.75 }}>
@@ -83,7 +93,7 @@ export function CopilotDock() {
       <Box sx={{ pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
         <InputBase
           fullWidth
-          placeholder="Ask Copilot or command agents (e.g. 'Explain EX-8902')..."
+          placeholder={advisor ? "Ask why this match ranked first..." : "Ask Copilot or command agents (e.g. 'Explain EX-8902')..."}
           sx={{
             fontSize: 12,
             px: 1.5,
@@ -96,5 +106,30 @@ export function CopilotDock() {
         />
       </Box>
     </Box>
+  );
+}
+
+function MatchAdvisor() {
+  const navigate = useNavigate();
+  return (
+    <Stack spacing={1}>
+      <Typography sx={{ fontSize: 11, fontWeight: 700 }}>Recommended decision</Typography>
+      <Typography sx={{ fontSize: 18, fontWeight: 800 }}>{suggestedMatch.decision}</Typography>
+      <Typography sx={{ fontSize: 12 }}>
+        Confidence <Box component="strong">{suggestedMatch.confidence}</Box>
+      </Typography>
+      <Typography sx={{ fontSize: 12, color: "success.main", fontWeight: 700 }}>
+        Exposure reduction {suggestedMatch.exposureReduction}
+      </Typography>
+      <Typography sx={{ fontSize: 11, fontWeight: 700, pt: 0.5 }}>Similar cases</Typography>
+      {suggestedMatch.similarCases.map((item) => (
+        <Typography key={item} sx={{ fontSize: 11, color: "text.secondary" }}>
+          {item}
+        </Typography>
+      ))}
+      <Button variant="contained" size="small" onClick={() => navigate("/reconciliation/review")}>
+        One-click apply
+      </Button>
+    </Stack>
   );
 }
