@@ -288,16 +288,24 @@ export const aiRecoCard = {
 };
 
 export const unmatchedA = [
-  { id: "INV-4501", invoice: "SG-4501", amount: 91050, date: "13 Aug", entity: "APAC E09" },
-  { id: "INV-4510", invoice: "SG-4510", amount: 22000, date: "13 Aug", entity: "APAC E09" },
-  { id: "INV-4522", invoice: "SG-4522", amount: 17800, date: "14 Aug", entity: "APAC E09" },
+  { id: "INV-4501", invoice: "SG-4501", amount: 91050, date: "13 Aug", entity: "APAC E09", attachments: ["SG-4501.pdf", "PO-9011.pdf"], exceptionRisk: "High" },
+  { id: "INV-4510", invoice: "SG-4510", amount: 22000, date: "13 Aug", entity: "APAC E09", attachments: ["SG-4510.pdf"], exceptionRisk: "Low" },
+  { id: "INV-4522", invoice: "SG-4522", amount: 17800, date: "14 Aug", entity: "APAC E09", attachments: ["SG-4522.pdf", "Journal J-882.pdf"], exceptionRisk: "Medium" },
 ];
 
 export const unmatchedB = [
-  { id: "GL-8902", invoice: "4501-A", amount: 45525, date: "14 Aug", entity: "US01 HQ" },
-  { id: "GL-8903", invoice: "4501-B", amount: 45525, date: "14 Aug", entity: "US01 HQ" },
-  { id: "GL-8910", invoice: "4510", amount: 22000, date: "14 Aug", entity: "US01 HQ" },
+  { id: "GL-8902", invoice: "4501-A", amount: 45525, date: "14 Aug", entity: "US01 HQ", attachments: ["GL extract 14 Aug.csv"], exceptionRisk: "High" },
+  { id: "GL-8903", invoice: "4501-B", amount: 45525, date: "14 Aug", entity: "US01 HQ", attachments: ["GL extract 14 Aug.csv"], exceptionRisk: "High" },
+  { id: "GL-8910", invoice: "4510", amount: 22000, date: "14 Aug", entity: "US01 HQ", attachments: ["GL extract 14 Aug.csv"], exceptionRisk: "Low" },
 ];
+
+export const manualSuggestWhy = [
+  "Amount similarity 100% after 1:M split of $91,050",
+  "Reference similarity 94% after SG- prefix strip",
+  "Historical pattern: 14 APAC split invoices approved this week",
+];
+
+export const matchTolerancePolicy = 0.005;
 
 export const approvalKpis = [
   { label: "Pending Approval", value: "15" },
@@ -306,39 +314,73 @@ export const approvalKpis = [
   { label: "Exposure Awaiting", value: "$64.2M" },
 ];
 
+export const approvalHierarchy = ["Analyst", "Manager", "Controller", "Director"];
+
 export const approvals = [
   {
     id: "MT-9004",
     submittedBy: "Analyst_APAC",
     entity: "APAC E09",
     exposure: "$6.1M",
+    materiality: "Medium",
     confidence: "92.1%",
     date: "16 Aug",
+    stage: "Controller",
+    sla: "4h remaining",
+    slaOverdue: false,
+    exceptionOpen: true,
     rationale: "1:M split invoice after ERP prefix change. Variance within 0.05% FX policy.",
     documents: ["INV SG-4501.pdf", "GL extract 14 Aug.csv"],
     trail: ["16 Aug 09:12 submitted", "16 Aug 09:14 AI policy check passed", "16 Aug 09:20 queued for controller"],
+    confidenceFactors: [
+      { label: "Amount", weight: 40 },
+      { label: "Reference", weight: 30 },
+      { label: "History", weight: 20 },
+      { label: "Policy", weight: 10 },
+    ],
   },
   {
     id: "MT-8902",
     submittedBy: "Agent_FX_04",
     entity: "EMEA LE04",
     exposure: "$48.2M",
+    materiality: "High",
     confidence: "81.0%",
     date: "16 Aug",
+    stage: "Manager",
+    sla: "2 days overdue",
+    slaOverdue: true,
+    exceptionOpen: true,
     rationale: "FX swap residual above standard tolerance; override requested with hedge evidence.",
     documents: ["Hedge ticket H-441.xlsx"],
     trail: ["16 Aug 07:40 AI suggested", "16 Aug 08:02 analyst escalated", "16 Aug 08:15 SLA warning"],
+    confidenceFactors: [
+      { label: "Amount", weight: 20 },
+      { label: "FX residual", weight: 35 },
+      { label: "Hedge evidence", weight: 25 },
+      { label: "History", weight: 20 },
+    ],
   },
   {
     id: "MT-8830",
     submittedBy: "Analyst_APAC",
     entity: "APAC E09",
     exposure: "$64k",
+    materiality: "Low",
     confidence: "97.1%",
     date: "15 Aug",
+    stage: "Director",
+    sla: "18h remaining",
+    slaOverdue: false,
+    exceptionOpen: false,
     rationale: "Amount off by $20 due to rounding. Within AMT_TOL_0.5.",
     documents: ["Match packet MT-8830.pdf"],
     trail: ["15 Aug 18:02 submitted"],
+    confidenceFactors: [
+      { label: "Amount", weight: 50 },
+      { label: "Reference", weight: 30 },
+      { label: "Rounding policy", weight: 20 },
+    ],
   },
 ];
 
@@ -348,6 +390,31 @@ export const closeReadiness = [
   { label: "Exceptions Remaining", value: "148" },
   { label: "Controls Passed", value: "11 / 12" },
 ];
+
+export const failedControls = [
+  { id: "CTL-IC-09", name: "Intercompany aging > 45 days", owner: "FinController_Global", impact: "$18.4M" },
+];
+
+export const signoffChecklist = [
+  { label: "Reconciliation complete", done: true },
+  { label: "Approvals complete", done: false },
+  { label: "Controls passed", done: false },
+  { label: "Exceptions reviewed", done: true },
+  { label: "Exposure accepted", done: false },
+];
+
+export const signoffExceptionSummary = [
+  { label: "Open critical exceptions", value: 4 },
+  { label: "Open high risk exceptions", value: 18 },
+  { label: "Open aging exceptions", value: 27 },
+];
+
+export const signoffEvidence = {
+  signedBy: "FD_Global",
+  signedDate: "15 Aug 2026 18:04 UTC",
+  approvalHash: "sha256:7c9ae21f4b88",
+  auditRecordId: "AUD-SOX-2026-0815-044",
+};
 
 export const signoffEntities = [
   { entity: "APAC E09", status: "Pending controller", exposure: "$210M", exceptions: 62, owner: "FinController_Global", date: "—" },

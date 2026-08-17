@@ -44,9 +44,7 @@ export function CopilotDock() {
       </Stack>
 
       <Box sx={{ py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
-        {recon ? (
-          <MatchAdvisor />
-        ) : (
+        {recon ? <ContextualAdvisor pathname={pathname} /> : (
           <>
             <Typography sx={{ fontSize: 11, fontWeight: 700, mb: 0.75 }}>Recommended Actions</Typography>
             <Typography sx={{ fontSize: 11, color: "success.main", fontWeight: 700, mb: 1 }}>
@@ -93,7 +91,17 @@ export function CopilotDock() {
       <Box sx={{ pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
         <InputBase
           fullWidth
-          placeholder={recon ? "Ask why this match ranked first..." : "Ask Copilot or command agents (e.g. 'Explain EX-8902')..."}
+          placeholder={
+            pathname.includes("manual-match")
+              ? "Ask for another combination..."
+              : pathname.includes("approvals")
+                ? "Ask whether to approve this match..."
+                : pathname.includes("signoff")
+                  ? "Ask if APAC is ready to sign..."
+                  : recon
+                    ? "Ask why this match ranked first..."
+                    : "Ask Copilot or command agents (e.g. 'Explain EX-8902')..."
+          }
           sx={{
             fontSize: 12,
             px: 1.5,
@@ -107,6 +115,47 @@ export function CopilotDock() {
       </Box>
     </Box>
   );
+}
+
+function ContextualAdvisor({ pathname }: { pathname: string }) {
+  const navigate = useNavigate();
+  if (pathname.includes("manual-match")) {
+    return (
+      <Stack spacing={1}>
+        <Typography sx={{ fontSize: 11, fontWeight: 700 }}>Suggested combination</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 800 }}>1:M · SG-4501 → 4501-A + 4501-B</Typography>
+        <Typography sx={{ fontSize: 12 }}>Amount similarity 100% after split. Variance 0.00% vs 0.5% policy.</Typography>
+        <Button variant="contained" size="small" onClick={() => navigate("/reconciliation/manual-match")}>
+          Apply combination
+        </Button>
+      </Stack>
+    );
+  }
+  if (pathname.includes("approvals")) {
+    return (
+      <Stack spacing={1}>
+        <Typography sx={{ fontSize: 11, fontWeight: 700 }}>Recommended decision</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Approve MT-9004 · Reject MT-8902</Typography>
+        <Typography sx={{ fontSize: 12 }}>MT-9004 is within policy. MT-8902 is High materiality and 2 days overdue.</Typography>
+        <Button variant="contained" size="small" onClick={() => navigate("/reconciliation/approvals")}>
+          Apply recommendation
+        </Button>
+      </Stack>
+    );
+  }
+  if (pathname.includes("signoff")) {
+    return (
+      <Stack spacing={1}>
+        <Typography sx={{ fontSize: 11, fontWeight: 700 }}>Readiness decision</Typography>
+        <Typography sx={{ fontSize: 16, fontWeight: 800 }}>Hold APAC E09</Typography>
+        <Typography sx={{ fontSize: 12 }}>92% ready. 1 control failed and 4 critical exceptions remain.</Typography>
+        <Button variant="contained" size="small" onClick={() => navigate("/exceptions")}>
+          Review blockers
+        </Button>
+      </Stack>
+    );
+  }
+  return <MatchAdvisor />;
 }
 
 function MatchAdvisor() {
