@@ -9,8 +9,8 @@ export function createAppTheme(mode: PaletteMode) {
       primary: { main: "#4f46e5", contrastText: "#ffffff" },
       secondary: { main: "#0284c7" },
       background: {
-        default: isDark ? "#0b1220" : "#f8fafc",
-        paper: isDark ? "#111827" : "#ffffff",
+        default: "transparent",
+        paper: isDark ? "rgba(17, 24, 39, 0.48)" : "rgba(255, 255, 255, 0.48)",
       },
       text: {
         primary: isDark ? "#e5eef7" : "#0f172a",
@@ -28,7 +28,7 @@ export function createAppTheme(mode: PaletteMode) {
       subtitle2: { fontWeight: 700 },
       button: { textTransform: "none", fontWeight: 600 },
     },
-    shape: { borderRadius: 8 },
+    shape: { borderRadius: 14 },
     transitions: {
       duration: {
         shortest: 280,
@@ -50,7 +50,38 @@ export function createAppTheme(mode: PaletteMode) {
       MuiCssBaseline: {
         styleOverrides: {
           body: {
-            backgroundColor: isDark ? "#0b1220" : "#f8fafc",
+            backgroundColor: "transparent",
+          },
+        },
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            backgroundImage: "none",
+            backgroundColor: isDark ? "rgba(17, 24, 39, 0.52)" : "rgba(255, 255, 255, 0.52)",
+            backdropFilter: "blur(22px) saturate(160%)",
+            WebkitBackdropFilter: "blur(22px) saturate(160%)",
+            border: isDark ? "1px solid rgba(148, 163, 184, 0.18)" : "1px solid rgba(255, 255, 255, 0.62)",
+            boxShadow: isDark ? "0 12px 40px rgba(0, 0, 0, 0.28)" : "0 10px 40px rgba(15, 23, 42, 0.07)",
+          },
+        },
+      },
+      MuiDialog: {
+        styleOverrides: {
+          paper: {
+            backgroundImage: "none",
+            backdropFilter: "blur(28px) saturate(170%)",
+            WebkitBackdropFilter: "blur(28px) saturate(170%)",
+          },
+        },
+      },
+      MuiDrawer: {
+        styleOverrides: {
+          paper: {
+            backgroundImage: "none",
+            backgroundColor: isDark ? "rgba(17, 24, 39, 0.72)" : "rgba(255, 255, 255, 0.72)",
+            backdropFilter: "blur(28px) saturate(170%)",
+            WebkitBackdropFilter: "blur(28px) saturate(170%)",
           },
         },
       },

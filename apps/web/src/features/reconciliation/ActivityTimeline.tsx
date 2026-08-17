@@ -3,7 +3,7 @@ import { reconActivity } from "./data";
 
 export function ActivityTimeline() {
   return (
-    <Box sx={{ p: 1.5, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "background.paper" }}>
+    <Box className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>
         Activity timeline
       </Typography>

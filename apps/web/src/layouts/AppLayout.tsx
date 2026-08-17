@@ -54,9 +54,7 @@ export function AppLayout() {
       <Box
         className="ufme-header"
         sx={{
-          bgcolor: "background.paper",
-          borderBottom: "1px solid",
-          borderColor: "divider",
+          bgcolor: "transparent",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -97,10 +95,11 @@ export function AppLayout() {
             py: 0.75,
             bgcolor: "var(--bg-muted)",
             border: "1px solid",
-            borderColor: "divider",
-            borderRadius: "6px",
+            borderColor: "var(--glass-border)",
+            borderRadius: "10px",
+            backdropFilter: "blur(16px)",
             "&:focus-within": {
-              bgcolor: "background.paper",
+              bgcolor: "var(--glass-bg-strong)",
               borderColor: "secondary.main",
               boxShadow: "0 0 0 3px rgba(2,132,199,0.1)",
             },
@@ -165,9 +164,7 @@ export function AppLayout() {
       <Box
         className="ufme-nav"
         sx={{
-          bgcolor: "background.paper",
-          borderRight: "1px solid",
-          borderColor: "divider",
+          bgcolor: "transparent",
           py: 2,
           overflowY: "auto",
         }}

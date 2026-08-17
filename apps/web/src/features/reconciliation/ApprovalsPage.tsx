@@ -57,7 +57,7 @@ export function ApprovalsPage() {
       />
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2 }}>
         {approvalKpis.map((kpi) => (
-          <Box key={kpi.label} sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+          <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
             <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
           </Box>
@@ -80,7 +80,7 @@ export function ApprovalsPage() {
       </Stack>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.5fr 1fr" }, gap: 2.5 }}>
-        <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Table size="small">
             <TableHead>
               <TableRow>
@@ -151,7 +151,7 @@ export function ApprovalsPage() {
           </Table>
         </Box>
 
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Typography variant="h6">{selected.id}</Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>
             {selected.entity} · {selected.exposure}

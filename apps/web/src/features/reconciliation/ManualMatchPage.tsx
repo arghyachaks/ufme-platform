@@ -81,7 +81,7 @@ export function ManualMatchPage() {
           onPreview={(row) => setPreview({ title: row.invoice, files: row.attachments })}
         />
 
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
             <Typography variant="h6">Match builder</Typography>
             <Box
@@ -230,7 +230,7 @@ function TxnPicker({
   onPreview: (row: Txn) => void;
 }) {
   return (
-    <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+    <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1.5, pb: 1 }}>
         <Typography variant="h6">{title}</Typography>
         <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{selected.length} · {runningTotal.toLocaleString()}</Typography>

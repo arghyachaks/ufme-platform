@@ -23,13 +23,12 @@ export function KpiCard({
     <Box
       className="card-enter"
       sx={{
-        bgcolor: "#fff",
-        border: "1px solid #e2e8f0",
-        borderRadius: 1,
+        bgcolor: "transparent",
+        border: "1px solid var(--glass-border)",
+        borderRadius: 2,
         p: 1.75,
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
           transform: "translateY(-2px)",

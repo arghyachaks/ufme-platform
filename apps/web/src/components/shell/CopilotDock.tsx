@@ -11,7 +11,7 @@ export function CopilotDock() {
     <Box
       className="ufme-copilot"
       sx={{
-        bgcolor: "background.paper",
+        bgcolor: "transparent",
         borderLeft: "1px solid",
         borderColor: "divider",
         display: "flex",

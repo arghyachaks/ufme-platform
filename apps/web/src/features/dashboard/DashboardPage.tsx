@@ -115,17 +115,15 @@ export function DashboardPage() {
           {workflowFunnel.map((node) => (
             <Box
               key={node.label}
+              className="glass"
               sx={{
                 position: "relative",
                 zIndex: 2,
-                bgcolor: "background.paper",
-                border: "2px solid",
-                borderColor: "divider",
-                borderRadius: 1,
                 px: 1,
                 py: 0.9,
                 textAlign: "center",
                 minWidth: 78,
+                borderRadius: 2,
               }}
             >
               <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, fontWeight: 700 }}>{node.value}</Typography>

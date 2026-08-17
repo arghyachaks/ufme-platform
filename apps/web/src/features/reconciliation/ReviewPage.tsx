@@ -95,7 +95,7 @@ export function ReviewPage() {
         justifyContent="space-between"
         alignItems={{ md: "center" }}
         gap={1.5}
-        sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: selectedCount ? "primary.main" : "divider", borderRadius: 1 }}
+        sx={{ p: 1.5, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: selectedCount ? "primary.main" : "divider", borderRadius: 1 }}
       >
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
           <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedCount} selected</Typography>
@@ -133,7 +133,7 @@ export function ReviewPage() {
           }}
         />
 
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
             <Typography variant="h6">Suggested match</Typography>
             <StatusPill label={`SLA: ${suggestedMatch.slaRemaining}`} tone="warn" />
@@ -367,7 +367,7 @@ function TxnList({
   onToggle?: (id: string) => void;
 }) {
   return (
-    <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto", maxHeight: 760 }}>
+    <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto", maxHeight: 760 }}>
       <Typography variant="h6" sx={{ p: 1.5, pb: 1 }}>
         {title}
       </Typography>

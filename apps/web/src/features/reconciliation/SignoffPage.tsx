@@ -59,7 +59,7 @@ export function SignoffPage() {
       <Box
         sx={{
           p: 2,
-          bgcolor: "background.paper",
+          bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)",
           border: "1px solid",
           borderColor: "primary.main",
           borderRadius: 1,
@@ -72,7 +72,7 @@ export function SignoffPage() {
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2 }}>
         {closeReadiness.map((kpi) => (
-          <Box key={kpi.label} sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+          <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
             <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
             {kpi.label === "Controls Passed" && (
@@ -85,7 +85,7 @@ export function SignoffPage() {
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.2fr 1fr 1fr" }, gap: 2.5 }}>
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
             Signoff checklist
           </Typography>
@@ -98,7 +98,7 @@ export function SignoffPage() {
             ))}
           </Stack>
         </Box>
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
             Exception summary
           </Typography>
@@ -113,7 +113,7 @@ export function SignoffPage() {
             ))}
           </Stack>
         </Box>
-        <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
             Digital signature evidence
           </Typography>
@@ -124,7 +124,7 @@ export function SignoffPage() {
         </Box>
       </Box>
 
-      <Box sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+      <Box sx={{ p: 1.5, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
         <Typography variant="h6" sx={{ mb: 1 }}>
           Signoff workflow
         </Typography>
@@ -150,7 +150,7 @@ export function SignoffPage() {
         </Stack>
       </Box>
 
-      <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+      <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -183,7 +183,7 @@ export function SignoffPage() {
         </Table>
       </Box>
 
-      <Box sx={{ p: 2, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+      <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
         <Typography variant="h6" sx={{ mb: 1 }}>
           Signoff comments
         </Typography>

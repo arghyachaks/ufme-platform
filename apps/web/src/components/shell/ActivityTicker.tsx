@@ -6,7 +6,7 @@ export function ActivityTicker() {
     <Box
       className="ufme-footer"
       sx={{
-        bgcolor: "#1e293b",
+        bgcolor: "transparent",
         color: "#fff",
         display: "flex",
         alignItems: "center",

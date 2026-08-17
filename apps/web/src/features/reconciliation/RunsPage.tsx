@@ -84,7 +84,7 @@ export function RunsPage() {
       <ReconRecoBar />
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(7, 1fr)" }, gap: 2 }}>
         {runKpis.map((kpi) => (
-          <Box key={kpi.label} sx={{ p: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+          <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
             <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
           </Box>
@@ -126,7 +126,7 @@ export function RunsPage() {
         </Button>
       </Stack>
 
-      <Box sx={{ bgcolor: "background.paper", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto" }}>
+      <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto" }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -360,7 +360,7 @@ function TrendCard({
       }}
       sx={{
         p: 2,
-        bgcolor: "background.paper",
+        bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)",
         border: "1px solid",
         borderColor: "divider",
         borderRadius: 1,
