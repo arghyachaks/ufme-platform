@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UFME - Universal Financial Matching Engine (Light Mode)</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #F8FAFC;
+            --bg-surface: #FFFFFF;
+            --bg-nav: #FFFFFF;
+            --border-subtle: #E2E8F0;
+            --border-strong: #CBD5E1;
+            
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
+            --text-muted: #94A3B8;
+            
+            --brand-primary: #1E293B;
+            --brand-blue: #0284C7;
+            --brand-blue-light: #E0F2FE;
+            --brand-indigo: #4F46E5;
+            --brand-indigo-light: #EEF2FF;
+            --brand-emerald: #059669;
+            --brand-emerald-light: #ECFDF5;
+            --brand-amber: #D97706;
+            --brand-amber-light: #FFFBEB;
+            --brand-crimson: #DC2626;
+            --brand-crimson-light: #FEF2F2;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+            --shadow-glow-indigo: 0 0 16px rgba(79, 70, 229, 0.25);
+            --shadow-glow-blue: 0 0 16px rgba(2, 132, 199, 0.25);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: grid;
+            grid-template-rows: 56px calc(100vh - 88px) 32px;
+            grid-template-columns: 260px 1fr 340px;
+            grid-template-areas: 
+                "header header header"
+                "nav main copilot"
+                "footer footer footer";
+        }
+
+        .mono { font-family: 'IBM Plex Sans', monospace; }
+
+        /* Animation Keyframes */
+        @keyframes fadeInSlideUp {
+            from {
+                opacity: 0;
+                transform: translateY(12px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4); }
+            70% { box-shadow: 0 0 0 8px rgba(79, 70, 229, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(79, 70, 229, 0); }
+        }
+
+        @keyframes pipelineFlow {
+            0% { left: 0%; opacity: 0; }
+            30% { opacity: 1; }
+            70% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        @keyframes tickerScroll {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* Custom Scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+        /* HEADER */
+        header {
+            grid-area: header;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 700;
+            font-size: 18px;
+            letter-spacing: -0.02em;
+            color: var(--brand-primary);
+        }
+
+        .logo-icon {
+            width: 28px;
+            height: 28px;
+            background: linear-gradient(135deg, var(--brand-indigo), var(--brand-blue));
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #FFF;
+            font-size: 14px;
+            font-weight: 800;
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container:hover .logo-icon {
+            transform: rotate(90deg);
+        }
+
+        .header-search {
+            background: #F1F5F9;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 6px 14px;
+            width: 380px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .header-search:hover, .header-search:focus-within {
+            background: #FFFFFF;
+            border-color: var(--brand-blue);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            font-size: 13px;
+        }
+
+        .pill-status {
+            background: var(--brand-emerald-light);
+            border: 1px solid rgba(5, 150, 105, 0.3);
+            color: var(--brand-emerald);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            background: var(--brand-emerald);
+            border-radius: 50%;
+            animation: pulseGlow 2s infinite;
+        }
+
+        /* NAVIGATION (WITH NESTED HIERARCHY) */
+        nav {
+            grid-area: nav;
+            background: var(--bg-nav);
+            border-right: 1px solid var(--border-subtle);
+            padding: 16px 0;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .nav-group-title {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            padding: 12px 20px 4px 20px;
+        }
+
+        .nav-item {
+            padding: 8px 20px;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+
+        .nav-item:hover {
+            color: var(--brand-indigo);
+            background: var(--brand-indigo-light);
+        }
+
+        .nav-item.active {
+            color: var(--brand-indigo);
+            background: var(--brand-indigo-light);
+            font-weight: 600;
+            border-right: 3px solid var(--brand-indigo);
+        }
+
+        /* Sub-menu styling */
+        .nav-sub-menu {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            background: #F8FAFC;
+            padding: 2px 0;
+            border-y: 1px solid var(--border-subtle);
+        }
+
+        .nav-sub-item {
+            padding: 6px 20px 6px 38px;
+            font-size: 12px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .nav-sub-item:hover {
+            color: var(--brand-blue);
+            background: var(--brand-blue-light);
+            padding-left: 42px;
+        }
+
+        .nav-sub-item.active {
+            color: var(--brand-blue);
+            font-weight: 600;
+            background: var(--brand-blue-light);
+        }
+
+        .nav-sub-item.active::before {
+            content: '';
+            position: absolute;
+            left: 28px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            background: var(--brand-blue);
+            border-radius: 50%;
+        }
+
+        .badge-count {
+            background: #E2E8F0;
+            color: var(--text-primary);
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+        
+        .badge-count.warn {
+            background: var(--brand-amber-light);
+            color: var(--brand-amber);
+            border: 1px solid rgba(217, 119, 6, 0.3);
+        }
+
+        /* MAIN WORKSPACE */
+        main {
+            grid-area: main;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 18px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fadeInSlideUp 0.4s ease-out forwards;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            border-color: var(--border-strong);
+        }
+
+        /* KPI RIBBON */
+        .kpi-ribbon {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 14px;
+        }
+
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: 8px;
+            padding: 14px;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .kpi-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 3px;
+            background: var(--brand-indigo);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .kpi-card:hover::before {
+            opacity: 1;
+        }
+
+        .kpi-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+        }
+
+        .kpi-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 6px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+
+        .kpi-change {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 5px;
+            border-radius: 4px;
+        }
+
+        .kpi-change.up { background: var(--brand-emerald-light); color: var(--brand-emerald); }
+        .kpi-change.down { background: var(--brand-crimson-light); color: var(--brand-crimson); }
+
+        .kpi-footer {
+            font-size: 11px;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* HERO SECTION - COMMAND CENTER & PIPELINE */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 7fr 5fr;
+            gap: 16px;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .section-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .agent-cards-container {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .agent-card {
+            background: #F8FAFC;
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .agent-card:hover {
+            background: #FFFFFF;
+            border-color: var(--brand-indigo);
+            box-shadow: var(--shadow-glow-indigo);
+        }
+
+        .agent-card-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--brand-indigo);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .agent-metric {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 4px;
+        }
+
+        /* PIPELINE VISUALIZER */
+        .pipeline-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            padding: 24px 10px;
+        }
+
+        .pipeline-track {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            right: 20px;
+            height: 4px;
+            background: #E2E8F0;
+            transform: translateY(-50%);
+            border-radius: 2px;
+            z-index: 1;
+        }
+
+        .pipeline-particle {
+            position: absolute;
+            top: 0;
+            width: 40px;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--brand-blue), transparent);
+            animation: pipelineFlow 2.5s infinite ease-in-out;
+        }
+
+        .pipeline-node {
+            position: relative;
+            z-index: 2;
+            background: var(--bg-surface);
+            border: 2px solid var(--border-strong);
+            border-radius: 8px;
+            padding: 8px 12px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+            transition: all 0.3s ease;
+        }
+
+        .pipeline-node:hover {
+            border-color: var(--brand-blue);
+            transform: scale(1.05);
+            box-shadow: var(--shadow-glow-blue);
+        }
+
+        .pipeline-node-val {
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        .pipeline-node-lbl {
+            font-size: 10px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        /* DATA TABLES & HEATMAPS */
+        .grid-split-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            background: #F8FAFC;
+            color: var(--text-secondary);
+            font-weight: 600;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        tr:hover td {
+            background: #F8FAFC;
+        }
+
+        .status-badge {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .status-badge.crit { background: var(--brand-crimson-light); color: var(--brand-crimson); border: 1px solid rgba(220, 38, 38, 0.3); }
+        .status-badge.warn { background: var(--brand-amber-light); color: var(--brand-amber); border: 1px solid rgba(217, 119, 6, 0.3); }
+        .status-badge.ok { background: var(--brand-emerald-light); color: var(--brand-emerald); border: 1px solid rgba(5, 150, 105, 0.3); }
+
+        /* HEATMAP COMPONENT */
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 6px;
+            height: 160px;
+        }
+
+        .hm-tile {
+            border-radius: 6px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+
+        .hm-tile:hover {
+            transform: scale(0.99);
+        }
+
+        .hm-tile-1 { background: var(--brand-crimson-light); border: 1px solid rgba(220,38,38,0.3); color: var(--brand-crimson); grid-row: 1 / 3; }
+        .hm-tile-2 { background: var(--brand-amber-light); border: 1px solid rgba(217,119,6,0.3); color: var(--brand-amber); }
+        .hm-tile-3 { background: var(--brand-emerald-light); border: 1px solid rgba(5,150,105,0.3); color: var(--brand-emerald); }
+
+        /* RECOMMENDATIONS FEED */
+        .rec-item {
+            background: var(--brand-indigo-light);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            border-left: 4px solid var(--brand-indigo);
+            border-radius: 6px;
+            padding: 14px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .rec-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(2px);
+        }
+
+        .rec-btn {
+            background: var(--brand-indigo);
+            color: #FFFFFF;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(79, 70, 229, 0.2);
+        }
+
+        .rec-btn:hover {
+            background: #4338CA;
+            box-shadow: 0 4px 8px rgba(79, 70, 229, 0.3);
+        }
+
+        /* RIGHT AI COPILOT DOCK */
+        aside {
+            grid-area: copilot;
+            background: var(--bg-surface);
+            border-left: 1px solid var(--border-subtle);
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .copilot-header {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--brand-indigo);
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .chat-bubble {
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.5;
+            max-width: 90%;
+            animation: fadeInSlideUp 0.3s ease-out;
+        }
+
+        .chat-user {
+            background: #F1F5F9;
+            color: var(--text-primary);
+            align-self: flex-end;
+            border-bottom-right-radius: 2px;
+        }
+
+        .chat-ai {
+            background: var(--brand-indigo-light);
+            border: 1px solid rgba(79, 70, 229, 0.2);
+            color: #1E1B4B;
+            align-self: flex-start;
+            border-bottom-left-radius: 2px;
+        }
+
+        .copilot-input-box {
+            margin-top: auto;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 12px;
+        }
+
+        .copilot-input-box input {
+            width: 100%;
+            background: #F8FAFC;
+            border: 1px solid var(--border-strong);
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .copilot-input-box input:focus {
+            outline: none;
+            border-color: var(--brand-indigo);
+            background: #FFFFFF;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* FOOTER ACTIVITY STREAM */
+        footer {
+            grid-area: footer;
+            background: var(--brand-primary);
+            color: #FFFFFF;
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            white-space: nowrap;
+            padding: 0 16px;
+            font-size: 11px;
+        }
+
+        .footer-ticker {
+            animation: tickerScroll 35s linear infinite;
+            display: flex;
+            gap: 40px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- TOP GLOBAL HEADER -->
+    <header>
+        <div class="logo-container">
+            <div class="logo-icon">U</div>
+            UFME <span style="font-size: 11px; font-weight: 500; color: var(--text-muted); margin-left: 4px;">v4.2 Enterprise</span>
+        </div>
+
+        <div class="header-search">
+            <span>🔍 Search entities, rules, transactions, cases...</span>
+            <span class="mono" style="font-size: 11px; background: #E2E8F0; padding: 2px 6px; border-radius: 4px;">⌘K</span>
+        </div>
+
+        <div class="header-actions">
+            <div class="pill-status">
+                <div class="status-dot"></div>
+                Autonomous Matching Engine: Active
+            </div>
+            <div class="mono" style="color: var(--text-secondary);">Period: <strong style="color: var(--text-primary);">Q3-2026</strong></div>
+            <div style="cursor: pointer;">🔔 <span class="badge-count warn">8</span></div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 28px; height: 28px; background: var(--brand-indigo); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">FC</div>
+                <span style="font-weight: 600;">FinController_Global</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- LEFT INTELLIGENT NAVIGATION (WITH SPECIFIED HIERARCHY) -->
+    <nav>
+        <div class="nav-item active">
+            <span>📊 Dashboard</span>
+        </div>
+
+        <!-- RECONCILIATION -->
+        <div class="nav-item">
+            <span>🔗 Reconciliation</span>
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="nav-sub-menu">
+            <div class="nav-sub-item">Runs</div>
+            <div class="nav-sub-item">Review</div>
+            <div class="nav-sub-item">Manual Match</div>
+            <div class="nav-sub-item">Approvals</div>
+            <div class="nav-sub-item">Signoff</div>
+        </div>
+
+        <!-- EXCEPTIONS -->
+        <div class="nav-item">
+            <span>⚠️ Exceptions</span>
+            <span class="badge-count warn">412</span>
+        </div>
+        <div class="nav-sub-menu">
+            <div class="nav-sub-item">Dashboard</div>
+            <div class="nav-sub-item">Cases</div>
+            <div class="nav-sub-item">Investigations</div>
+        </div>
+
+        <!-- RULES & POLICIES -->
+        <div class="nav-item">
+            <span>📜 Rules & Policies</span>
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="nav-sub-menu">
+            <div class="nav-sub-item">Rules</div>
+            <div class="nav-sub-item">Policies</div>
+            <div class="nav-sub-item">Simulation</div>
+            <div class="nav-sub-item">Workflow</div>
+        </div>
+
+        <!-- AI -->
+        <div class="nav-item" style="color: var(--brand-indigo);">
+            <span>🧠 AI Control Hub</span>
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="nav-sub-menu">
+            <div class="nav-sub-item">Copilot</div>
+            <div class="nav-sub-item">Explainability</div>
+            <div class="nav-sub-item">Models</div>
+            <div class="nav-sub-item">Learning</div>
+        </div>
+
+        <!-- DATA -->
+        <div class="nav-item">
+            <span>🗄️ Data Engine</span>
+            <span style="font-size: 10px;">▼</span>
+        </div>
+        <div class="nav-sub-menu">
+            <div class="nav-sub-item">Sources</div>
+            <div class="nav-sub-item">Quality</div>
+            <div class="nav-sub-item">Lineage</div>
+            <div class="nav-sub-item">Features</div>
+        </div>
+
+        <!-- AUDIT -->
+        <div class="nav-item">
+            <span>🛡️ Audit & SOX</span>
+        </div>
+
+        <!-- ADMINISTRATION -->
+        <div class="nav-item">
+            <span>⚙️ Administration</span>
+        </div>
+
+        <!-- PLATFORM OPERATIONS -->
+        <div class="nav-item">
+            <span>🖥️ Platform Operations</span>
+        </div>
+    </nav>
+
+    <!-- MAIN WORKSPACE -->
+    <main>
+        
+        <!-- KPI RIBBON -->
+        <div class="kpi-ribbon">
+            <div class="kpi-card">
+                <div class="kpi-label">Auto Match Rate</div>
+                <div class="kpi-value mono">98.42% <span class="kpi-change up">↑ 0.4%</span></div>
+                <div class="kpi-footer"><span>Target: 98.0%</span> <span class="mono" style="color: var(--brand-indigo);">AI: 84.1%</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Volume (24H)</div>
+                <div class="kpi-value mono">14.2M</div>
+                <div class="kpi-footer"><span>Total: $84.2B USD</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Financial Exposure</div>
+                <div class="kpi-value mono" style="color: var(--brand-crimson);">$1.24B <span class="kpi-change down">↓ $400M</span></div>
+                <div class="kpi-footer"><span>Unmatched Risk</span> <span class="status-badge warn">MED RISK</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Open Exceptions</div>
+                <div class="kpi-value mono">842 <span class="kpi-change up">↓ 14%</span></div>
+                <div class="kpi-footer"><span style="color: var(--brand-crimson);">14 Critical</span> <span>312 Aging</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">Avg Resolution Time</div>
+                <div class="kpi-value mono" style="color: var(--brand-indigo);">4.2m</div>
+                <div class="kpi-footer"><span>Manual Baseline: 45m</span></div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-label">AI Agent Confidence</div>
+                <div class="kpi-value mono" style="color: var(--brand-emerald);">99.1%</div>
+                <div class="kpi-footer"><span>Zero SOX Breaches</span></div>
+            </div>
+        </div>
+
+        <!-- HERO SECTION: AGENTS & PIPELINE -->
+        <div class="hero-grid">
+            <div class="card">
+                <div class="section-header">
+                    <h3>🧠 Autonomous AI Reconciliation Agents</h3>
+                    <span class="status-badge ok">ALL AGENTS ONLINE</span>
+                </div>
+                <div class="agent-cards-container">
+                    <div class="agent-card">
+                        <div class="agent-card-title">Intercompany Agent <span>🟢</span></div>
+                        <div class="agent-metric"><span>Current Workload:</span> <strong class="mono">2.4M items</strong></div>
+                        <div class="agent-metric"><span>Match Precision:</span> <strong class="mono text-emerald">99.8%</strong></div>
+                        <div class="agent-metric"><span>Status:</span> <strong style="color: var(--brand-indigo);">Active Matching</strong></div>
+                    </div>
+                    <div class="agent-card">
+                        <div class="agent-card-title">FX Variance Agent <span>🟢</span></div>
+                        <div class="agent-metric"><span>Current Workload:</span> <strong class="mono">412 items</strong></div>
+                        <div class="agent-metric"><span>Match Precision:</span> <strong class="mono text-emerald">97.4%</strong></div>
+                        <div class="agent-metric"><span>Status:</span> <strong style="color: var(--brand-indigo);">Resolving Queue</strong></div>
+                    </div>
+                    <div class="agent-card">
+                        <div class="agent-card-title">Duplicate Detection <span>🟡</span></div>
+                        <div class="agent-metric"><span>Current Workload:</span> <strong class="mono">0 items</strong></div>
+                        <div class="agent-metric"><span>Match Precision:</span> <strong class="mono text-emerald">100%</strong></div>
+                        <div class="agent-metric"><span>Status:</span> <strong>Awaiting Batch</strong></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <h3>🔗 Real-time Pipeline Flow</h3>
+                    <span class="mono" style="font-size: 11px; color: var(--brand-blue);">Throughput: 14,200/sec</span>
+                </div>
+                <div class="pipeline-container">
+                    <div class="pipeline-track"><div class="pipeline-particle"></div></div>
+                    <div class="pipeline-node">
+                        <div class="pipeline-node-val mono">14.2M</div>
+                        <div class="pipeline-node-lbl">Ingested</div>
+                    </div>
+                    <div class="pipeline-node">
+                        <div class="pipeline-node-val mono" style="color: var(--brand-blue);">12.1M</div>
+                        <div class="pipeline-node-lbl">Rule Match</div>
+                    </div>
+                    <div class="pipeline-node">
+                        <div class="pipeline-node-val mono" style="color: var(--brand-indigo);">2.1M</div>
+                        <div class="pipeline-node-lbl">AI Match</div>
+                    </div>
+                    <div class="pipeline-node">
+                        <div class="pipeline-node-val mono" style="color: var(--brand-amber);">842</div>
+                        <div class="pipeline-node-lbl">Exception</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- EXPOSURE & HIGH-RISK QUEUE -->
+        <div class="grid-split-2">
+            <div class="card">
+                <div class="section-header">
+                    <h3>Financial Exposure Heatmap (Entity Risk)</h3>
+                    <span style="font-size: 11px; color: var(--text-muted);">Real-time aggregated exposure</span>
+                </div>
+                <div class="heatmap-grid">
+                    <div class="hm-tile hm-tile-1">
+                        <div>
+                            <span class="mono" style="font-size: 18px; font-weight: 700;">$400M Exposure</span>
+                            <div style="font-size: 12px; font-weight: 600;">EMEA - Legal Entity 04</div>
+                        </div>
+                        <div style="font-size: 10px; opacity: 0.8;">Primary Root Cause: Unmatched FX Swaps</div>
+                    </div>
+                    <div class="hm-tile hm-tile-2">
+                        <span class="mono" style="font-size: 14px; font-weight: 700;">$210M</span>
+                        <div style="font-size: 11px; font-weight: 600;">APAC - Entity 09</div>
+                    </div>
+                    <div class="hm-tile hm-tile-3">
+                        <span class="mono" style="font-size: 14px; font-weight: 700;">$42M</span>
+                        <div style="font-size: 11px; font-weight: 600;">NAMER - Main Entity</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section-header">
+                    <h3>High Risk Exceptions Queue</h3>
+                    <a href="#" style="font-size: 11px; color: var(--brand-blue); text-decoration: none; font-weight: 600;">View All (842) →</a>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Case ID</th>
+                            <th>Severity</th>
+                            <th>Category</th>
+                            <th>Aging</th>
+                            <th>Assigned Agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="mono" style="font-weight: 600;">EX-8902</td>
+                            <td><span class="status-badge crit">CRITICAL</span></td>
+                            <td>FX Variance</td>
+                            <td class="mono">48h</td>
+                            <td><strong style="color: var(--brand-indigo);">Agent_FX_04</strong></td>
+                        </tr>
+                        <tr>
+                            <td class="mono" style="font-weight: 600;">EX-8911</td>
+                            <td><span class="status-badge crit">CRITICAL</span></td>
+                            <td>Duplicate Posting</td>
+                            <td class="mono">36h</td>
+                            <td>Ops Team A</td>
+                        </tr>
+                        <tr>
+                            <td class="mono" style="font-weight: 600;">EX-9004</td>
+                            <td><span class="status-badge warn">WARNING</span></td>
+                            <td>Format Mismatch</td>
+                            <td class="mono">12h</td>
+                            <td><strong style="color: var(--brand-indigo);">Agent_IC_01</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- AI RECOMMENDATIONS -->
+        <div class="card">
+            <div class="section-header">
+                <h3>💡 Agentic AI Recommendations Feed</h3>
+                <span style="font-size: 11px; color: var(--brand-indigo); font-weight: 600;">2 New Actionable Recommendations</span>
+            </div>
+            
+            <div class="rec-item">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--brand-indigo);">Recommendation #4092 • Confidence: 98.4%</span>
+                    <span class="mono" style="font-size: 11px; font-weight: 700; color: var(--brand-emerald);">Business Impact: +$12M Auto-Match</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+                    APAC entity auto-match rate dropped 12% today due to Vendor X changing their PO formatting. Copilot has generated and validated a dynamic Regex normalization rule.
+                </p>
+                <button class="rec-btn">One-Click Simulate & Apply Rule</button>
+            </div>
+
+            <div class="rec-item" style="border-left-color: var(--brand-amber); background: var(--brand-amber-light);">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                    <span style="font-size: 12px; font-weight: 700; color: var(--brand-amber);">Recommendation #4088 • Confidence: 92.1%</span>
+                    <span class="mono" style="font-size: 11px; font-weight: 700; color: var(--brand-amber);">Queue Impact: -842 Aging Items</span>
+                </div>
+                <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 10px;">
+                    Expanding FX tolerance threshold by +0.05% for GBP/EUR transactions will safely resolve 842 items currently in the manual review queue without violating SOX controls.
+                </p>
+                <button class="rec-btn" style="background: var(--brand-amber);">Review Policy Change</button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- RIGHT AI COPILOT DOCK -->
+    <aside>
+        <div class="copilot-header">
+            <span>🧠 Copilot Assistant</span>
+            <span class="status-badge ok">GPT-4 Financial Tuned</span>
+        </div>
+
+        <div class="chat-container">
+            <div class="chat-bubble chat-user">
+                Why did Singapore's (Legal Entity 09) auto-match rate decrease today?
+            </div>
+
+            <div class="chat-bubble chat-ai">
+                Analyzing Singapore reconciliation pipeline... 📊<br><br>
+                The 12% drop is caused by 4,200 unmatched intercompany invoices from Sub-Entity B. They deployed an ERP patch yesterday that prepends "SG-" to invoice references.<br><br>
+                <strong>Suggested Action:</strong> I have prepared a transformation rule to strip the prefix automatically. Would you like me to run a simulation?
+            </div>
+
+            <div class="chat-bubble chat-user">
+                Yes, run simulation and show exposure reduction.
+            </div>
+
+            <div class="chat-bubble chat-ai">
+                Running simulation... ⚡<br><br>
+                Simulation complete: 4,188 of 4,200 items matched instantly. Exposure reduced by <strong>$210M USD</strong>. Zero control violations detected.
+            </div>
+        </div>
+
+        <div class="copilot-input-box">
+            <input type="text" placeholder="Ask Copilot or command agents (e.g. 'Explain EX-8902')...">
+        </div>
+    </aside>
+
+    <!-- FOOTER LIVE ACTIVITY STREAM TICKER -->
+    <footer>
+        <div class="footer-ticker">
+            <span>⚡ [13:18:02] Agent_IC matched 14,200 intercompany records (Conf: 99.9%)</span>
+            <span>🛡️ [13:17:45] SOX Control Check passed for Q3 Period Closing</span>
+            <span>⚠️ [13:15:10] Exception EX-8902 escalated to Global Controller (FX Variance > $10M)</span>
+            <span>🤖 [13:12:00] Neural Matching Model v4.8 deployed autonomously across EMEA Nodes</span>
+        </div>
+    </footer>
+
+</body>
+</html>
