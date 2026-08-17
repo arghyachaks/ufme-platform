@@ -1,17 +1,24 @@
 import { createSlice } from "@reduxjs/toolkit";
 
+type ColorMode = "light" | "dark";
+
 type UiState = {
-  title: string;
+  colorMode: ColorMode;
 };
 
 const initialState: UiState = {
-  title: "Universal Financial Matching Engine",
+  colorMode: "light",
 };
 
 const uiSlice = createSlice({
   name: "ui",
   initialState,
-  reducers: {},
+  reducers: {
+    toggleColorMode(state) {
+      state.colorMode = state.colorMode === "light" ? "dark" : "light";
+    },
+  },
 });
 
+export const { toggleColorMode } = uiSlice.actions;
 export const uiReducer = uiSlice.reducer;
