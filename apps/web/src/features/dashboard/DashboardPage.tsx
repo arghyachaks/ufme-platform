@@ -2,26 +2,18 @@ import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Box, Button, LinearProgress, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
 import { Panel, StatusPill } from "../../components/common/Panel";
-import {
-  agentFlow,
-  agents,
-  closeCompletion,
-  closeDays,
-  controlsAtRisk,
-  exposureTiles,
-  forecast,
-  highRiskExceptions,
-  kpiGroups,
-  learning,
-  rootCauses,
-  sla,
-  trendSeries,
-  workQueue,
-  workflowFunnel,
-} from "./mockData";
+import { workspaceApi, type DashboardData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
 export function DashboardPage() {
-  const [range, setRange] = useState<keyof typeof trendSeries>("7D");
+  const { data } = useQuery(workspaceApi.dashboard);
+  return data ? <DashboardPageView d={data} /> : <PageSkeleton />;
+}
+
+function DashboardPageView({ d }: { d: DashboardData }) {
+  const { agentFlow, agents, closeCompletion, closeDays, controlsAtRisk, exposureTiles, forecast, highRiskExceptions, kpiGroups, learning, rootCauses, sla, trendSeries, workQueue, workflowFunnel } = d;
+  const [range, setRange] = useState<keyof DashboardData["trendSeries"]>("7D");
   const trend = trendSeries[range];
   const maxTrend = Math.max(...trend);
 
@@ -229,7 +221,7 @@ export function DashboardPage() {
           title="Match Rate Trend & Forecast"
           action={
             <Stack direction="row" spacing={0.5}>
-              {(Object.keys(trendSeries) as Array<keyof typeof trendSeries>).map((key) => (
+              {(Object.keys(trendSeries) as Array<keyof DashboardData["trendSeries"]>).map((key) => (
                 <Button key={key} size="small" variant={range === key ? "contained" : "text"} onClick={() => setRange(key)} sx={{ minWidth: 0, px: 1, fontSize: 11 }}>
                   {key}
                 </Button>

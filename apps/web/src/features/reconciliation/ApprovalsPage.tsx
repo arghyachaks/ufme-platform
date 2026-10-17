@@ -18,7 +18,9 @@ import {
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
-import { approvalHierarchy, approvalKpis, approvals } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
 const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
   High: "crit",
@@ -27,6 +29,12 @@ const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
 };
 
 export function ApprovalsPage() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ApprovalsPageView d={data} /> : <PageSkeleton />;
+}
+
+function ApprovalsPageView({ d }: { d: ReconData }) {
+  const { approvalHierarchy, approvalKpis, approvals } = d;
   const [selectedId, setSelectedId] = useState(approvals[0]?.id);
   const [checked, setChecked] = useState<string[]>([]);
   const [toast, setToast] = useState("");

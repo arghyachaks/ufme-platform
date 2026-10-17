@@ -36,3 +36,13 @@ export const api = {
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
   graph: { get: () => delay({ nodes: db.graphNodes, edges: db.graphEdges }) },
 };
+
+// Existing Dashboard and Reconciliation screens (one payload each; split per endpoint when wiring the backend).
+import * as reconMock from "./mock/recon";
+import * as dashboardMock from "./mock/dashboard";
+export type ReconData = typeof reconMock;
+export type DashboardData = typeof dashboardMock;
+export const workspaceApi = {
+  recon: () => delay({ ...reconMock } as ReconData, 150),
+  dashboard: () => delay({ ...dashboardMock } as DashboardData, 150),
+};

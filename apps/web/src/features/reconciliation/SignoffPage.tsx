@@ -19,15 +19,9 @@ import {
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
-import {
-  closeReadiness,
-  failedControls,
-  signoffChecklist,
-  signoffEntities,
-  signoffEvidence,
-  signoffExceptionSummary,
-  signoffFlow,
-} from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
 const statusTone: Record<string, "ok" | "warn" | "crit"> = {
   "Signed off": "ok",
@@ -36,6 +30,12 @@ const statusTone: Record<string, "ok" | "warn" | "crit"> = {
 };
 
 export function SignoffPage() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <SignoffPageView d={data} /> : <PageSkeleton />;
+}
+
+function SignoffPageView({ d }: { d: ReconData }) {
+  const { closeReadiness, failedControls, signoffChecklist, signoffEntities, signoffEvidence, signoffExceptionSummary, signoffFlow } = d;
   const navigate = useNavigate();
   const [comment, setComment] = useState("");
   const [controlOpen, setControlOpen] = useState(false);

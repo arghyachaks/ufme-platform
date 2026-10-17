@@ -2,11 +2,19 @@ import { Link as RouterLink, useParams } from "react-router-dom";
 import { Box, Button, LinearProgress, Stack, Typography } from "@mui/material";
 import { Panel } from "../../components/common/Panel";
 import { PageHeader } from "../../components/common/PageHeader";
-import { entityRisk } from "../dashboard/mockData";
+import { workspaceApi, type DashboardData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
 export function EntityRiskPage() {
+  const { data } = useQuery(workspaceApi.dashboard);
+  return data ? <EntityRiskPageView d={data} /> : <PageSkeleton />;
+}
+
+function EntityRiskPageView({ d }: { d: DashboardData }) {
+  const { entityRisk } = d;
   const { entityId = "" } = useParams();
-  const entity = entityRisk[entityId as keyof typeof entityRisk];
+  const entity = entityRisk[entityId as keyof DashboardData["entityRisk"]];
 
   if (!entity) {
     return (

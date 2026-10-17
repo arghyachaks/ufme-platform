@@ -160,3 +160,13 @@ export function KeyValue({ label, value }: { label: string; value: ReactNode }) 
     </Stack>
   );
 }
+
+export function PageSkeleton() {
+  return (
+    <Stack spacing={2}>
+      <Skeleton variant="rounded" height={56} />
+      <Skeleton variant="rounded" height={96} />
+      <Skeleton variant="rounded" height={360} />
+    </Stack>
+  );
+}

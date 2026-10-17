@@ -4,9 +4,11 @@ import { Alert, Box, Button, Checkbox, Drawer, Stack, Typography } from "@mui/ma
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
-import { matchTolerancePolicy, manualSuggestWhy, unmatchedA, unmatchedB } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
-type Txn = (typeof unmatchedA)[number];
+type Txn = (ReconData["unmatchedA"])[number];
 
 function matchTypeLabel(aCount: number, bCount: number) {
   if (!aCount || !bCount) return "Select both sides";
@@ -17,6 +19,12 @@ function matchTypeLabel(aCount: number, bCount: number) {
 }
 
 export function ManualMatchPage() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ManualMatchPageView d={data} /> : <PageSkeleton />;
+}
+
+function ManualMatchPageView({ d }: { d: ReconData }) {
+  const { matchTolerancePolicy, manualSuggestWhy, unmatchedA, unmatchedB } = d;
   const navigate = useNavigate();
   const [selectedA, setSelectedA] = useState<string[]>([]);
   const [selectedB, setSelectedB] = useState<string[]>([]);

@@ -30,9 +30,11 @@ import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { ReconRecoBar } from "./ReconLayout";
-import { reconActivity, runKpis, runTrends, runs, trendDays } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
-type Run = (typeof runs)[number];
+type Run = (ReconData["runs"])[number];
 
 const statusTone: Record<string, "ok" | "warn" | "crit"> = {
   Completed: "ok",
@@ -50,6 +52,12 @@ const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
 };
 
 export function RunsPage() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <RunsPageView d={data} /> : <PageSkeleton />;
+}
+
+function RunsPageView({ d }: { d: ReconData }) {
+  const { reconActivity, runKpis, runTrends, runs, trendDays } = d;
   const navigate = useNavigate();
   const [status, setStatus] = useState("All");
   const [entity, setEntity] = useState("All");

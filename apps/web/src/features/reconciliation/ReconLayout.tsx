@@ -1,6 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
-import { aiRecoCard, reconContext } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
 
 const steps = [
   { label: "Runs", to: "/reconciliation/runs" },
@@ -11,6 +12,12 @@ const steps = [
 ];
 
 export function ReconLayout() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ReconLayoutView d={data} /> : null;
+}
+
+function ReconLayoutView({ d }: { d: ReconData }) {
+  const { reconContext } = d;
   const { pathname } = useLocation();
   const navigate = useNavigate();
 
@@ -71,6 +78,12 @@ export function ReconLayout() {
 }
 
 export function ReconRecoBar() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ReconRecoBarView d={data} /> : null;
+}
+
+function ReconRecoBarView({ d }: { d: ReconData }) {
+  const { aiRecoCard } = d;
   const navigate = useNavigate();
   return (
     <Box

@@ -1,7 +1,14 @@
 import { Box, Stack, Typography } from "@mui/material";
-import { reconActivity } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
 
 export function ActivityTimeline() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ActivityTimelineView d={data} /> : null;
+}
+
+function ActivityTimelineView({ d }: { d: ReconData }) {
+  const { reconActivity } = d;
   return (
     <Box className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>

@@ -74,7 +74,7 @@ Every navigation item now has a working screen backed by a typed mock API:
 
 ### Frontend data layer
 
-Pages never import mock data directly. They call `api.*` in `apps/web/src/api/services.ts` through the `useQuery` hook; types live in `src/api/types.ts` and mock records in `src/api/mock/db.ts`. To connect the backend, replace each service body with a `fetch` to the matching FastAPI endpoint — no page changes needed. (The Dashboard and Reconciliation screens still read their original `data.ts` / `mockData.ts` files.)
+Pages never import mock data directly. They call `api.*` in `apps/web/src/api/services.ts` through the `useQuery` hook; types live in `src/api/types.ts` and mock records in `src/api/mock/db.ts`. To connect the backend, replace each service body with a `fetch` to the matching FastAPI endpoint — no page changes needed. The Dashboard, Entity Risk, and Reconciliation screens load through `workspaceApi` (mock payloads in `src/api/mock/dashboard.ts` and `recon.ts`).
 
 ### Dashboard
 

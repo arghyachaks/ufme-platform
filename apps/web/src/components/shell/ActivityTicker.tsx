@@ -1,7 +1,14 @@
 import { Box } from "@mui/material";
-import { tickerItems } from "../../features/dashboard/mockData";
+import { workspaceApi, type DashboardData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
 
 export function ActivityTicker() {
+  const { data } = useQuery(workspaceApi.dashboard);
+  return data ? <ActivityTickerView d={data} /> : null;
+}
+
+function ActivityTickerView({ d }: { d: DashboardData }) {
+  const { tickerItems } = d;
   return (
     <Box
       className="ufme-footer"

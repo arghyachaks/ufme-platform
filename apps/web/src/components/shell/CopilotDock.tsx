@@ -1,9 +1,15 @@
 import { Box, Button, InputBase, Stack, Typography } from "@mui/material";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
-import { copilotActions, copilotThread } from "../../features/dashboard/mockData";
-import { advisorMetrics, suggestedMatch } from "../../features/reconciliation/data";
+import { workspaceApi, type DashboardData, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
 
 export function CopilotDock() {
+  const { data } = useQuery(workspaceApi.dashboard);
+  return data ? <CopilotDockView d={data} /> : null;
+}
+
+function CopilotDockView({ d }: { d: DashboardData }) {
+  const { copilotActions, copilotThread } = d;
   const { pathname } = useLocation();
   const recon = pathname.startsWith("/reconciliation");
 
@@ -159,6 +165,12 @@ function ContextualAdvisor({ pathname }: { pathname: string }) {
 }
 
 function MatchAdvisor() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <MatchAdvisorView d={data} /> : null;
+}
+
+function MatchAdvisorView({ d }: { d: ReconData }) {
+  const { suggestedMatch, advisorMetrics } = d;
   const navigate = useNavigate();
   return (
     <Stack spacing={1}>

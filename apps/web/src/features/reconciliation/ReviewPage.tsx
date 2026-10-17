@@ -14,11 +14,13 @@ import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { ReconRecoBar } from "./ReconLayout";
-import { sideA, sideB, suggestedMatch } from "./data";
+import { workspaceApi, type ReconData } from "../../api/services";
+import { useQuery } from "../../api/useQuery";
+import { PageSkeleton } from "../../components/common/Blocks";
 
 const matchTypes = ["1:1", "1:M", "M:1", "M:M"] as const;
 
-type SideARow = (typeof sideA)[number];
+type SideARow = (ReconData["sideA"])[number];
 
 const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
   High: "crit",
@@ -27,6 +29,12 @@ const materialityTone: Record<string, "ok" | "warn" | "crit"> = {
 };
 
 export function ReviewPage() {
+  const { data } = useQuery(workspaceApi.recon);
+  return data ? <ReviewPageView d={data} /> : <PageSkeleton />;
+}
+
+function ReviewPageView({ d }: { d: ReconData }) {
+  const { sideA, sideB, suggestedMatch } = d;
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const [index, setIndex] = useState(0);
