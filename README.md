@@ -60,6 +60,22 @@ The core loop is **Runs → Review → Manual Match → Approvals → Signoff**.
 
 The right-hand **AI Match Advisor** changes by screen: combinations on Manual Match, approve/reject on Approvals, readiness hold/go on Signoff.
 
+### All modules (demo-ready, mock data)
+
+Every navigation item now has a working screen backed by a typed mock API:
+
+| Area | Screens |
+|------|---------|
+| Exceptions | Dashboard (aging, root causes, load, bulk actions), Investigations (AI hypotheses, nearest candidates, evidence), Cases (Kanban board / list, case drawer with comments) |
+| Rules & Policies | Rules (priority list, condition builder), Policies (versions, thresholds), Simulation (baseline vs scenario), Workflow (stages, SLAs, guardrails) |
+| AI Control Hub | Copilot (chat with cited records), Explainability (feature contributions, counterfactual), Models (champion/challenger, drift), Learning (feedback loop) |
+| Data Engine | Sources (connector health), Quality (DQ dimensions, issues), Lineage (source-to-decision trace), Features (feature store) |
+| Governance | Audit & SOX (trail + control testing), Administration (users, roles, entities, security), Operations (service health, jobs), Knowledge Graph |
+
+### Frontend data layer
+
+Pages never import mock data directly. They call `api.*` in `apps/web/src/api/services.ts` through the `useQuery` hook; types live in `src/api/types.ts` and mock records in `src/api/mock/db.ts`. To connect the backend, replace each service body with a `fetch` to the matching FastAPI endpoint — no page changes needed. (The Dashboard and Reconciliation screens still read their original `data.ts` / `mockData.ts` files.)
+
 ### Dashboard
 
 Daily working screen for analysts and controllers.
