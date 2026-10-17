@@ -57,7 +57,7 @@ export function KnowledgeGraphPage() {
                   {e.from === sel ? "→" : "←"} <b>{e.from === sel ? e.to : e.from}</b> · {e.label}
                 </Typography>
               ))}
-              {node.kind === "Entity" ? <Button size="small" sx={{ mt: 1.5 }} onClick={() => navigate(`/risk/${node.id}`)}>Entity risk →</Button> : null}
+              {node.kind === "Entity" ? <Button size="small" sx={{ mt: 1.5 }} onClick={() => navigate("/exceptions")}>Entity exceptions →</Button> : null}
               {node.kind === "Case" ? <Button size="small" sx={{ mt: 1.5 }} onClick={() => navigate("/exceptions/cases")}>Open case →</Button> : null}
             </Panel>
           ) : null}
