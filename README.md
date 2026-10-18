@@ -86,17 +86,31 @@ Daily working screen for analysts and controllers.
 
 ## Backend API
 
-```bash
-cd services/api
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn app.main:app --reload
+Python 3.12 + FastAPI, PostgreSQL 16, Redis, Celery. Stage 0 (foundation) is in place: settings, structured logging with request IDs, RFC 7807 errors, cursor pagination, SQLAlchemy 2 + Alembic migrations, tamper-evident audit log, Celery worker, Docker, tests, and CI.
+
+**Quick start (Windows, from the repo root):**
+
+```powershell
+.\scripts\dev.ps1 setup     # create services\api\.venv and install dependencies
+.\scripts\dev.ps1 test      # run tests (SQLite, no Docker needed)
+.\scripts\dev.ps1 deps      # start Postgres + Redis in Docker
+.\scripts\dev.ps1 migrate   # apply migrations
+.\scripts\dev.ps1 api       # http://127.0.0.1:8000/docs
 ```
 
-API docs: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+Or run the whole stack (Postgres, Redis, API, worker) with `.\scripts\dev.ps1 stack`. Run `.\scripts\dev.ps1 format` then `lint` before committing.
 
-The Vite dev server proxies `/api` to that backend.
+| Path | Purpose |
+|------|---------|
+| `app/core` | Settings, logging, request-ID middleware, problem+json errors |
+| `app/db` | Declarative base, session, Alembic migrations |
+| `app/models` | Tenant, legal entity, user/role, audit event |
+| `app/services` | Business logic (audit trail so far) |
+| `app/api` | Routers and pagination helpers |
+| `app/engines` | Matching pipeline stages (Stage 3+) |
+| `app/workers` | Celery app and tasks |
+
+Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (database check). Frontend types can be regenerated from the running API with `npm run gen:api-types` in `apps/web`. The Vite dev server proxies `/api` to the backend.
 
 ## Technology stack
 
