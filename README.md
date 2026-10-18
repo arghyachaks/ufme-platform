@@ -130,6 +130,8 @@ Or run the whole stack (Postgres, Redis, API, worker) with `.\scripts\dev.ps1 st
 
 **Stage 2 (ingestion):** `POST /api/v1/data/sources/{id}/upload` (CSV/TSV) and `.../sync` (ERP/bank/API pull; synthetic extract until native connectors land) run the pipeline in the Celery worker: column mapping (SAP/Oracle header aliases) → data-quality checks → normalization → FX to USD → `ledger_txn`, with failing rows quarantined and DQ issues raised per batch. 100K rows load in ~10 s on Postgres (`python -m app.seed.benchmark --rows 100000`). Generate test files with `python -m app.engines.connectors.synthetic --rows 10000 --out ic.csv`.
 
+**Stage 3a (matching benchmark):** `app/engines/benchmark` generates ground-truth intercompany ledgers across 21 scenarios (FX, timing, fees, splits, bundles, netting, reference noise/OCR, duplicates, reversals, orphans, decoys), scores any matcher per scenario (pair, group, exposure-weighted, auto-rate at precision, decoy/orphan false-match rates), and guards against regressions. Golden sets are frozen by fingerprint (`benchmarks/datasets.json`); the Docker gate fails if the 100K benchmark drops below `benchmarks/floor_medium_baseline.json`. Run `python -m app.engines.benchmark --dataset medium`.
+
 Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (database check). Frontend types can be regenerated from the running API with `npm run gen:api-types` in `apps/web`. The Vite dev server proxies `/api` to the backend.
 
 ## Technology stack

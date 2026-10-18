@@ -1,0 +1,228 @@
+{
+  "dataset": "medium",
+  "matcher": "baseline",
+  "lines": 100000,
+  "pair": {
+    "precision": 0.91867,
+    "recall": 0.62779,
+    "f1": 0.74588,
+    "tp": 34405,
+    "fp": 3046,
+    "fn": 20398
+  },
+  "group": {
+    "precision": 0.91835,
+    "recall": 0.81052,
+    "f1": 0.86107,
+    "tp": 34393,
+    "fp": 3058,
+    "fn": 8040
+  },
+  "exposure": {
+    "precision": 0.94222,
+    "recall": 0.79616,
+    "f1": 0.86305
+  },
+  "auto": {
+    "precision": 0.9885,
+    "rate": 0.48899,
+    "lines": 47122
+  },
+  "decoy_false_match_rate": 0.25521,
+  "orphan_false_match_rate": 0.18452,
+  "by_scenario": {
+    "bank_fee": {
+      "precision": 0.94175,
+      "recall": 0.74748,
+      "f1": 0.83344,
+      "tp": 1261,
+      "fp": 78,
+      "fn": 426
+    },
+    "bundle_m1": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 573,
+      "fn": 5244
+    },
+    "clean": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 18749,
+      "fp": 0,
+      "fn": 0
+    },
+    "decoy_same_amount": {
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 137,
+      "fn": 0,
+      "total": 1265,
+      "wrongly_matched": 265
+    },
+    "decoy_same_ref": {
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 49,
+      "fn": 0,
+      "total": 886,
+      "wrongly_matched": 105
+    },
+    "duplicate_extra": {
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 189,
+      "fn": 0,
+      "total": 874,
+      "wrongly_matched": 402
+    },
+    "duplicate_posting": {
+      "precision": 0.7405,
+      "recall": 0.64645,
+      "f1": 0.69029,
+      "tp": 565,
+      "fp": 198,
+      "fn": 309
+    },
+    "fx_rounding": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 1725,
+      "fp": 0,
+      "fn": 0
+    },
+    "fx_source_mismatch": {
+      "precision": 0.96082,
+      "recall": 0.80053,
+      "f1": 0.87338,
+      "tp": 2428,
+      "fp": 99,
+      "fn": 605
+    },
+    "netting_mm": {
+      "precision": 0.03226,
+      "recall": 0.00217,
+      "f1": 0.00407,
+      "tp": 12,
+      "fp": 360,
+      "fn": 5511
+    },
+    "orphan": {
+      "precision": 0.0,
+      "recall": 1.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 181,
+      "fn": 0,
+      "total": 1718,
+      "wrongly_matched": 317
+    },
+    "period_cutoff": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 1305,
+      "fp": 0,
+      "fn": 0
+    },
+    "ref_in_description": {
+      "precision": 0.90602,
+      "recall": 0.86437,
+      "f1": 0.88471,
+      "tp": 376,
+      "fp": 39,
+      "fn": 59
+    },
+    "ref_missing": {
+      "precision": 0.90714,
+      "recall": 0.87687,
+      "f1": 0.89175,
+      "tp": 762,
+      "fp": 78,
+      "fn": 107
+    },
+    "ref_ocr": {
+      "precision": 0.93907,
+      "recall": 0.89726,
+      "f1": 0.91769,
+      "tp": 786,
+      "fp": 51,
+      "fn": 90
+    },
+    "ref_prefix": {
+      "precision": 0.92986,
+      "recall": 0.90728,
+      "f1": 0.91844,
+      "tp": 822,
+      "fp": 62,
+      "fn": 84
+    },
+    "ref_truncated": {
+      "precision": 0.93237,
+      "recall": 0.89977,
+      "f1": 0.91578,
+      "tp": 386,
+      "fp": 28,
+      "fn": 43
+    },
+    "ref_typo": {
+      "precision": 0.93169,
+      "recall": 0.90217,
+      "f1": 0.91669,
+      "tp": 1623,
+      "fp": 119,
+      "fn": 176
+    },
+    "reversal_pair": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 67,
+      "fn": 476
+    },
+    "reversal_repost": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 476,
+      "fp": 0,
+      "fn": 0
+    },
+    "split_1m": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 620,
+      "fn": 6377
+    },
+    "timing_lag": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 3129,
+      "fp": 0,
+      "fn": 0
+    },
+    "withholding_tax": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "tp": 0,
+      "fp": 118,
+      "fn": 891
+    }
+  },
+  "seconds": 6.199
+}

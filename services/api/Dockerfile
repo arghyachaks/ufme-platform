@@ -19,6 +19,7 @@ COPY requirements-dev.txt .
 RUN pip install -r requirements-dev.txt
 COPY pytest.ini ./
 COPY tests ./tests
+COPY benchmarks ./benchmarks
 RUN chown -R ufme /app
 USER ufme
-CMD ["sh", "-c", "ruff check . && ruff format --check . && mypy app && pytest -p no:cacheprovider --cov=app --cov-report=term --cov-fail-under=80"]
+CMD ["sh", "-c", "ruff check . && ruff format --check . && mypy app && pytest -p no:cacheprovider --cov=app --cov-report=term --cov-fail-under=80 && python -m app.engines.benchmark --dataset medium --matcher baseline --check benchmarks/floor_medium_baseline.json"]
