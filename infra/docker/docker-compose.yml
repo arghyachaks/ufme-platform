@@ -1,19 +1,27 @@
-# Local stack: docker compose -f infra/docker/docker-compose.yml up --build
+# Local stack. From the repo root:
+#   docker compose -f infra/docker/docker-compose.yml up --build -d        (run everything)
+#   docker compose -f infra/docker/docker-compose.yml --profile test run --rm api-test   (backend checks)
 name: ufme
+
+x-app-env: &app-env
+  DATABASE_URL: postgresql+psycopg://ufme:ufme@postgres:5432/ufme
+  REDIS_URL: redis://redis:6379/0
+  ENVIRONMENT: local
+  LOG_JSON: "true"
+  CORS_ORIGINS: '["http://localhost:5173"]'
 
 services:
   postgres:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ufme
-      POSTGRES_PASSWORD: ufme
-      POSTGRES_DB: ufme
+    environment: { POSTGRES_USER: ufme, POSTGRES_PASSWORD: ufme, POSTGRES_DB: ufme }
     ports: ["5432:5432"]
-    volumes: [pgdata:/var/lib/postgresql/data]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/10-test-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ufme -d ufme"]
       interval: 5s
-      retries: 10
+      retries: 12
 
   redis:
     image: redis:7-alpine
@@ -21,26 +29,51 @@ services:
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
-      retries: 10
+      retries: 12
 
   api:
-    build: ../../services/api
-    environment: &app-env
-      DATABASE_URL: postgresql+psycopg://ufme:ufme@postgres:5432/ufme
-      REDIS_URL: redis://redis:6379/0
-      ENVIRONMENT: local
-      LOG_JSON: "true"
+    build: { context: ../../services/api, target: runtime }
+    environment: *app-env
     ports: ["8000:8000"]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
 
   worker:
-    build: ../../services/api
+    build: { context: ../../services/api, target: runtime }
     command: celery -A app.workers.celery_app worker --loglevel=INFO --concurrency=2
     environment: *app-env
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 | grep -q pong"]
+      interval: 15s
+      timeout: 10s
+      retries: 6
     depends_on:
       api: { condition: service_healthy }
+
+  web:
+    build: { context: ../.., dockerfile: apps/web/Dockerfile }
+    environment:
+      API_PROXY_TARGET: http://api:8000
+    ports: ["5173:5173"]
+    depends_on:
+      api: { condition: service_healthy }
+
+  # ---- checks (profile: test) ----
+  api-test:
+    profiles: [test]
+    build: { context: ../../services/api, target: test }
+    environment:
+      DATABASE_URL: postgresql+psycopg://ufme:ufme@postgres:5432/ufme_test
+      MIGRATION_TEST_DATABASE_URL: postgresql+psycopg://ufme:ufme@postgres:5432/ufme_test
+      ENVIRONMENT: test
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  web-test:
+    profiles: [test]
+    build: { context: ../.., dockerfile: apps/web/Dockerfile }
+    command: ["npm", "run", "build"]
 
 volumes:
   pgdata:

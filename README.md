@@ -84,6 +84,22 @@ Daily working screen for analysts and controllers.
 - Entity risk drill-down, close/SLA/controls
 - Light / dark mode
 
+## Local Docker workflow (required before every push)
+
+All development is validated in local Docker before anything reaches GitHub.
+
+```powershell
+docker compose -f infra/docker/docker-compose.yml up --build -d   # run everything
+```
+
+| Service | URL |
+|---------|-----|
+| Web app | http://localhost:5173 |
+| API docs | http://localhost:8000/docs |
+| Postgres / Redis | localhost:5432 / localhost:6379 |
+
+**Gate:** `scripts\docker-check.bat` (or `bash scripts/docker-check.sh`) builds all images, starts the stack, runs ruff, mypy and pytest against Postgres, builds the frontend, and smoke-tests the API, web proxy and worker. A git **pre-push hook** (`.githooks/pre-push`, enabled with `git config core.hooksPath .githooks`) runs the same gate and blocks the push if it fails. Log: `tmp/docker-check.log`.
+
 ## Backend API
 
 Python 3.12 + FastAPI, PostgreSQL 16, Redis, Celery. Stage 0 (foundation) is in place: settings, structured logging with request IDs, RFC 7807 errors, cursor pagination, SQLAlchemy 2 + Alembic migrations, tamper-evident audit log, Celery worker, Docker, tests, and CI.

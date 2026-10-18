@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Blocks pushes unless the local Docker gate passes. (Emergency bypass: git push --no-verify)
+ROOT="$(git rev-parse --show-toplevel)"
+echo "pre-push: running local Docker checks (log: tmp/docker-check.log)..."
+if bash "$ROOT/scripts/docker-check.sh" > /dev/null; then
+  echo "pre-push: Docker checks passed."
+else
+  echo "pre-push: Docker checks FAILED - push blocked. See tmp/docker-check.log"; tail -n 25 "$ROOT/tmp/docker-check.log"
+  exit 1
+fi
