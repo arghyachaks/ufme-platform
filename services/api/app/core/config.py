@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     default_page_size: int = 50
     max_page_size: int = 500
+    seed_demo: bool = False
+    default_tenant: str = "demo"  # until auth (Stage 5) resolves the tenant from the user
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

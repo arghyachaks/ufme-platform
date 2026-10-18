@@ -15,7 +15,8 @@ extend-exclude = ["app/db/migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
-ignore = ["B008", "RUF012"]  # FastAPI Depends() defaults; pydantic list defaults
+# B008/RUF012: FastAPI Depends() and pydantic list defaults. E501: line length is enforced by ruff format.
+ignore = ["B008", "RUF012", "E501"]
 
 [tool.mypy]
 python_version = "3.12"

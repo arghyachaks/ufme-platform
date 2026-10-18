@@ -33,4 +33,4 @@ echo ---- npm >> "%LOG%"
 cd ..\..\apps\web
 echo ==== DONE >> "%LOG%"
 endlocal
-exit
+exit /b

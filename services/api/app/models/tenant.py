@@ -26,6 +26,7 @@ class LegalEntity(UUIDPk, Timestamps, Base):
     name: Mapped[str] = mapped_column(String(200))
     country: Mapped[str] = mapped_column(String(64))
     currency: Mapped[str] = mapped_column(String(3))
+    recon_owner: Mapped[str | None] = mapped_column(String(120))
     is_active: Mapped[bool] = mapped_column(default=True)
 
     tenant: Mapped[Tenant] = relationship(back_populates="entities")

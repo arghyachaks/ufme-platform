@@ -9,6 +9,7 @@ x-app-env: &app-env
   ENVIRONMENT: local
   LOG_JSON: "true"
   CORS_ORIGINS: '["http://localhost:5173"]'
+  SEED_DEMO: "true"
 
 services:
   postgres:

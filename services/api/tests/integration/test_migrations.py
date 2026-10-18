@@ -34,8 +34,16 @@ def test_upgrade_matches_models_then_downgrades(tmp_path) -> None:  # type: igno
     with engine.connect() as conn:
         diff = compare_metadata(MigrationContext.configure(conn, opts={"compare_type": False}), Base.metadata)
     assert diff == [], f"Models and migrations differ: {diff}"
-    assert {"tenant", "legal_entity", "app_user", "role", "user_role", "audit_event"} <= set(
-        inspect(engine).get_table_names()
-    )
+    assert {
+        "tenant",
+        "legal_entity",
+        "app_user",
+        "role",
+        "user_role",
+        "audit_event",
+        "exception_item",
+        "recon_case",
+        "snapshot",
+    } <= set(inspect(engine).get_table_names())
     command.downgrade(cfg, "base")
     assert set(inspect(engine).get_table_names()) <= {"alembic_version"}

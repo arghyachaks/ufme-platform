@@ -126,6 +126,8 @@ Or run the whole stack (Postgres, Redis, API, worker) with `.\scripts\dev.ps1 st
 | `app/engines` | Matching pipeline stages (Stage 3+) |
 | `app/workers` | Celery app and tasks |
 
+**Stage 1 (read APIs):** every screen reads from the API. On startup in Docker the API migrates and seeds a demo tenant from `app/seed/demo/*.json` (exported from the frontend mocks with `node --experimental-strip-types scripts/export-mocks.mts`). Contract tests assert each endpoint returns exactly what the mocks returned. Set `VITE_USE_MOCKS=true` to run the UI without the backend.
+
 Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (database check). Frontend types can be regenerated from the running API with `npm run gen:api-types` in `apps/web`. The Vite dev server proxies `/api` to the backend.
 
 ## Technology stack

@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy import select
@@ -21,6 +22,7 @@ def record(
     control: str | None = None,
     before: dict[str, Any] | None = None,
     after: dict[str, Any] | None = None,
+    occurred_at: datetime | None = None,
 ) -> AuditEvent:
     """Append an audit event chained to the tenant's previous event. Call inside the business transaction."""
     prev = db.scalar(
@@ -31,7 +33,7 @@ def record(
     )
     event = AuditEvent(
         tenant_id=tenant_id,
-        occurred_at=utcnow(),
+        occurred_at=occurred_at or utcnow(),
         actor=actor,
         action=action,
         object_type=object_type,
