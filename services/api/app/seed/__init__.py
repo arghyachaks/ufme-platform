@@ -2,7 +2,7 @@
 
 import json
 import logging
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from typing import Any
@@ -10,6 +10,7 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.engines.augmented_data.fx import DEMO_BASE_RATES, synthetic_rate
 from app.models import (
     AppUser,
     AuditEvent,
@@ -18,6 +19,7 @@ from app.models import (
     DataSource,
     DqIssue,
     ExceptionItem,
+    FxRate,
     LegalEntity,
     MatchRule,
     Policy,
@@ -80,6 +82,21 @@ def seed_demo(db: Session, now: datetime | None = None) -> Tenant:
             existing[key].payload = payload
         else:
             db.add(Snapshot(tenant_id=tid, key=key, payload=payload))
+
+    if not db.scalar(select(func.count()).select_from(FxRate).where(FxRate.tenant_id == tid)):
+        start = date(2026, 7, 1)
+        for offset in range((date(2026, 12, 31) - start).days + 1):
+            day = start + timedelta(days=offset)
+            for ccy in DEMO_BASE_RATES:
+                db.add(
+                    FxRate(
+                        tenant_id=tid,
+                        rate_date=day,
+                        currency=ccy,
+                        rate_to_usd=synthetic_rate(ccy, day),
+                        source="synthetic-demo",
+                    )
+                )
 
     if not created and db.scalar(
         select(func.count()).select_from(ExceptionItem).where(ExceptionItem.tenant_id == tid)

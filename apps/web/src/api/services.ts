@@ -5,7 +5,7 @@
 import * as db from "./mock/db";
 import * as reconMock from "./mock/recon";
 import * as dashboardMock from "./mock/dashboard";
-import type { ChatMessage } from "./types";
+import type { BatchDetail, ChatMessage, IngestionBatch } from "./types";
 
 export type ReconData = typeof reconMock;
 export type DashboardData = typeof dashboardMock;
@@ -22,7 +22,11 @@ export class ApiError extends Error {
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
-    headers: { Accept: "application/json", ...(init?.body ? { "Content-Type": "application/json" } : {}), ...init?.headers },
+    headers: {
+      Accept: "application/json",
+      ...(init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
+      ...init?.headers,
+    },
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
@@ -33,6 +37,17 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
 const post = <T,>(path: string, body?: unknown) => http<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
 
 const delay = <T,>(value: T, ms = 250) => new Promise<T>((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
+
+const mockBatches: IngestionBatch[] = [];
+const mockBatch = (sourceId: string, fileName: string): IngestionBatch => {
+  const batch: IngestionBatch = {
+    id: `BAT-${String(mockBatches.length + 1).padStart(5, "0")}`, sourceId, source: sourceId, fileName,
+    status: "Completed", rowsTotal: 2000, rowsLoaded: 1962, rowsQuarantined: 38, startedAt: "just now",
+    durationMs: 900, error: null,
+  };
+  mockBatches.unshift(batch);
+  return batch;
+};
 
 const mockApi = {
   exceptions: { list: () => delay(db.exceptions) },
@@ -57,6 +72,13 @@ const mockApi = {
     lineage: (txnId: string) => delay(db.lineage[txnId] ?? []),
     lineageIds: () => delay(Object.keys(db.lineage)),
     features: () => delay(db.featureStore),
+    batches: (_source?: string) => delay(mockBatches),
+    batch: (code: string): Promise<BatchDetail> =>
+      delay({ ...(mockBatches.find((b) => b.id === code) ?? mockBatches[0]), quarantined: [], issues: [] }),
+    sync: (code: string): Promise<IngestionBatch> => delay(mockBatch(code, "Synthetic pull"), 600),
+    upload: (code: string, file: File): Promise<IngestionBatch> => delay(mockBatch(code, file.name), 600),
+    resolveIssue: (code: string, _action: "resolve" | "ignore") =>
+      delay(db.qualityIssues.find((i) => i.id === code) ?? db.qualityIssues[0]),
   },
   audit: { events: () => delay(db.auditEvents), controls: () => delay(db.controlTests) },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
@@ -94,6 +116,16 @@ const httpApi: Api = {
       }),
     lineageIds: () => http("/data/lineage"),
     features: () => http("/data/features"),
+    batches: (source?: string) => http(`/data/batches${source ? `?source=${encodeURIComponent(source)}` : ""}`),
+    batch: (code: string) => http(`/data/batches/${encodeURIComponent(code)}`),
+    sync: (code: string) => post(`/data/sources/${encodeURIComponent(code)}/sync`),
+    upload: (code: string, file: File) => {
+      const form = new FormData();
+      form.append("file", file);
+      return http<IngestionBatch>(`/data/sources/${encodeURIComponent(code)}/upload`, { method: "POST", body: form });
+    },
+    resolveIssue: (code: string, action: "resolve" | "ignore") =>
+      post(`/data/quality/${encodeURIComponent(code)}/${action}`),
   },
   audit: { events: () => http("/audit/events"), controls: () => http("/audit/controls") },
   admin: { all: () => http("/admin") },

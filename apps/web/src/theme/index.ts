@@ -9,7 +9,8 @@ export function createAppTheme(mode: PaletteMode) {
       primary: { main: "#4f46e5", contrastText: "#ffffff" },
       secondary: { main: "#0284c7" },
       background: {
-        default: "transparent",
+        // A real colour: MUI derives toast/tooltip colours from it. The body stays transparent (CssBaseline below).
+        default: isDark ? "#070b14" : "#eef2f7",
         paper: isDark ? "rgba(17, 24, 39, 0.48)" : "rgba(255, 255, 255, 0.48)",
       },
       text: {

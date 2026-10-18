@@ -133,6 +133,8 @@ class DqIssue(TenantScoped, Base):
     total: Mapped[int] = mapped_column(Integer)
     severity: Mapped[str] = mapped_column(String(16))
     auto_fixed: Mapped[bool] = mapped_column(default=False)
+    status: Mapped[str] = mapped_column(String(16), default="Open")  # Open | Resolved | Ignored
+    batch_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("ingestion_batch.id", ondelete="SET NULL"))
 
 
 class ControlTest(TenantScoped, Base):

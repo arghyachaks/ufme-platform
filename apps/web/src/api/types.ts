@@ -164,3 +164,22 @@ export type GraphNode = { id: string; label: string; kind: "Entity" | "Counterpa
 export type GraphEdge = { from: string; to: string; label: string };
 
 export type ChatMessage = { role: "user" | "assistant"; text: string; refs?: string[] };
+
+export type IngestionBatch = {
+  id: string;
+  sourceId: string;
+  source: string;
+  fileName: string;
+  status: "Queued" | "Processing" | "Completed" | "Failed";
+  rowsTotal: number;
+  rowsLoaded: number;
+  rowsQuarantined: number;
+  startedAt: string | null;
+  durationMs: number | null;
+  error: string | null;
+};
+
+export type BatchDetail = IngestionBatch & {
+  quarantined: { line: number; errors: string[]; raw: Record<string, string | null> }[];
+  issues: QualityIssue[];
+};

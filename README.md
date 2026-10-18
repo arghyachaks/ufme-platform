@@ -128,6 +128,8 @@ Or run the whole stack (Postgres, Redis, API, worker) with `.\scripts\dev.ps1 st
 
 **Stage 1 (read APIs):** every screen reads from the API. On startup in Docker the API migrates and seeds a demo tenant from `app/seed/demo/*.json` (exported from the frontend mocks with `node --experimental-strip-types scripts/export-mocks.mts`). Contract tests assert each endpoint returns exactly what the mocks returned. Set `VITE_USE_MOCKS=true` to run the UI without the backend.
 
+**Stage 2 (ingestion):** `POST /api/v1/data/sources/{id}/upload` (CSV/TSV) and `.../sync` (ERP/bank/API pull; synthetic extract until native connectors land) run the pipeline in the Celery worker: column mapping (SAP/Oracle header aliases) → data-quality checks → normalization → FX to USD → `ledger_txn`, with failing rows quarantined and DQ issues raised per batch. 100K rows load in ~10 s on Postgres (`python -m app.seed.benchmark --rows 100000`). Generate test files with `python -m app.engines.connectors.synthetic --rows 10000 --out ic.csv`.
+
 Health: `GET /api/v1/health` (liveness), `GET /api/v1/health/ready` (database check). Frontend types can be regenerated from the running API with `npm run gen:api-types` in `apps/web`. The Vite dev server proxies `/api` to the backend.
 
 ## Technology stack

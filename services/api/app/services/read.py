@@ -145,7 +145,12 @@ def sources(db: Session, tenant: Tenant, now: datetime | None = None) -> list[s.
 
 
 def quality_issues(db: Session, tenant: Tenant) -> list[s.QualityIssueOut]:
-    rows = db.scalars(select(DqIssue).where(DqIssue.tenant_id == tenant.id).order_by(DqIssue.code.desc()))
+    """Open issues: ingestion batches first (newest first), then baseline issues."""
+    rows = db.scalars(
+        select(DqIssue)
+        .where(DqIssue.tenant_id == tenant.id, DqIssue.status == "Open")
+        .order_by(DqIssue.batch_id.is_(None), DqIssue.code.desc())
+    )
     return [
         s.QualityIssueOut(
             id=q.code,

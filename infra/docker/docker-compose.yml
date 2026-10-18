@@ -10,6 +10,7 @@ x-app-env: &app-env
   LOG_JSON: "true"
   CORS_ORIGINS: '["http://localhost:5173"]'
   SEED_DEMO: "true"
+  UPLOAD_DIR: /data/uploads
 
 services:
   postgres:
@@ -36,6 +37,7 @@ services:
     build: { context: ../../services/api, target: runtime }
     environment: *app-env
     ports: ["8000:8000"]
+    volumes: [uploads:/data/uploads]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }
@@ -44,6 +46,7 @@ services:
     build: { context: ../../services/api, target: runtime }
     command: celery -A app.workers.celery_app worker --loglevel=INFO --concurrency=2
     environment: *app-env
+    volumes: [uploads:/data/uploads]
     healthcheck:
       test: ["CMD-SHELL", "celery -A app.workers.celery_app inspect ping -d celery@$$HOSTNAME --timeout 5 | grep -q pong"]
       interval: 15s
@@ -56,7 +59,10 @@ services:
     build: { context: ../.., dockerfile: apps/web/Dockerfile }
     environment:
       API_PROXY_TARGET: http://api:8000
+      VITE_POLL: "true"  # file watching over Windows bind mounts needs polling
     ports: ["5173:5173"]
+    volumes:
+      - ../../apps/web/src:/repo/apps/web/src  # live reload of frontend edits
     depends_on:
       api: { condition: service_healthy }
 
@@ -78,3 +84,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:

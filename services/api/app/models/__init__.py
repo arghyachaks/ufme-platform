@@ -13,6 +13,7 @@ from app.models.domain import (
     Snapshot,
 )
 from app.models.identity import AppUser, Role, UserRole
+from app.models.ingestion import FxRate, IngestionBatch, LedgerTxn, QuarantinedRow
 from app.models.tenant import LegalEntity, Tenant
 
 __all__ = [
@@ -23,9 +24,13 @@ __all__ = [
     "DataSource",
     "DqIssue",
     "ExceptionItem",
+    "FxRate",
+    "IngestionBatch",
+    "LedgerTxn",
     "LegalEntity",
     "MatchRule",
     "Policy",
+    "QuarantinedRow",
     "ReconCase",
     "Role",
     "Snapshot",

@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     default_page_size: int = 50
     max_page_size: int = 500
     seed_demo: bool = False
+    upload_dir: str = "/tmp/ufme-uploads"  # shared volume between api and worker in Docker
+    ingest_inline: bool = False  # process uploads in the request (tests / no worker) instead of Celery
+    max_upload_mb: int = 200
     default_tenant: str = "demo"  # until auth (Stage 5) resolves the tenant from the user
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

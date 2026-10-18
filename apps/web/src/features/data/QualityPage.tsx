@@ -6,7 +6,7 @@ import { Panel, StatusPill } from "../../components/common/Panel";
 import { DataTable, Meter, Page, StatGrid, mono, severityTone, useToast } from "../../components/common/Blocks";
 
 export function QualityPage() {
-  const { data, loading } = useQuery(api.data.quality);
+  const { data, loading, reload } = useQuery(api.data.quality);
   const { toast, toastNode } = useToast();
   const avg = data ? data.dimensions.reduce((s, d) => s + d.score, 0) / data.dimensions.length : 0;
   return (
@@ -37,7 +37,10 @@ export function QualityPage() {
               { key: "s", header: "Severity", render: (i) => <StatusPill label={i.severity} tone={severityTone[i.severity]} /> },
               { key: "a", header: "Action", render: (i) => i.autoFixed
                 ? <Typography sx={{ fontSize: 12, color: "success.main", fontWeight: 600 }}>Auto-fixed</Typography>
-                : <Button size="small" variant="outlined" onClick={() => toast(`Fix workflow opened for ${i.id}`)}>Resolve</Button> },
+                : <Stack direction="row" spacing={0.5}>
+                    <Button size="small" variant="outlined" onClick={async () => { await api.data.resolveIssue(i.id, "resolve"); toast(`${i.id} resolved`); reload(); }}>Resolve</Button>
+                    <Button size="small" onClick={async () => { await api.data.resolveIssue(i.id, "ignore"); toast(`${i.id} ignored`); reload(); }}>Ignore</Button>
+                  </Stack> },
             ]} />
           </Box>
         </>

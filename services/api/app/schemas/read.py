@@ -160,3 +160,56 @@ class ChatMessageOut(CamelModel):
     role: str
     text: str
     refs: list[str] | None = None
+
+
+class BatchOut(CamelModel):
+    id: str
+    source_id: str
+    source: str
+    file_name: str
+    status: str
+    rows_total: int
+    rows_loaded: int
+    rows_quarantined: int
+    started_at: str | None
+    duration_ms: int | None
+    error: str | None
+
+
+class QuarantineOut(CamelModel):
+    line: int
+    errors: list[str]
+    raw: dict[str, str | None]
+
+
+class BatchDetailOut(BatchOut):
+    quarantined: list[QuarantineOut]
+    issues: list[QualityIssueOut]
+
+
+class TxnOut(CamelModel):
+    id: str
+    entity: str
+    counterparty: str
+    account: str | None
+    amount: int | float
+    currency: str
+    amount_usd: int | float | None
+    value_date: str
+    reference: str | None
+    description: str | None
+    batch: str
+    warnings: list[str]
+
+
+class TxnPage(CamelModel):
+    items: list[TxnOut]
+    next_cursor: str | None
+    total: int
+
+
+class FxRateOut(CamelModel):
+    date: str
+    currency: str
+    rate_to_usd: float
+    source: str
