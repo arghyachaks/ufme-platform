@@ -16,7 +16,9 @@ class AuditEvent(Base):
     __tablename__ = "audit_event"
     __table_args__ = (Index("ix_audit_event_tenant_object", "tenant_id", "object_type", "object_id"),)
 
-    seq: Mapped[int] = mapped_column(BigInteger().with_variant(Integer, "sqlite"), Identity(), primary_key=True)
+    seq: Mapped[int] = mapped_column(
+        BigInteger().with_variant(Integer, "sqlite"), Identity(), primary_key=True
+    )
     tenant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("tenant.id"), index=True)
     occurred_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, index=True)
     actor: Mapped[str] = mapped_column(String(320))

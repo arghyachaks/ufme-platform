@@ -16,7 +16,9 @@ def test_tenant_entity_user_role_graph(db: Session) -> None:
     tenant = _tenant(db)
     db.add(LegalEntity(tenant_id=tenant.id, code="US01", name="Demo Inc", country="US", currency="USD"))
     role = Role(tenant_id=tenant.id, name="Controller", permissions=["approve:<=1M", "signoff"])
-    user = AppUser(tenant_id=tenant.id, email="d.ortiz@example.com", display_name="Daniel Ortiz", status="Active")
+    user = AppUser(
+        tenant_id=tenant.id, email="d.ortiz@example.com", display_name="Daniel Ortiz", status="Active"
+    )
     user.roles.append(UserRole(role=role, entity_codes=["US01", "UK02"]))
     db.add_all([role, user])
     db.flush()
@@ -30,10 +32,25 @@ def test_tenant_entity_user_role_graph(db: Session) -> None:
 
 def test_audit_events_form_a_verifiable_chain(db: Session) -> None:
     tenant = _tenant(db)
-    first = audit.record(db, tenant_id=tenant.id, actor="system", action="tenant.created",
-                         object_type="tenant", object_id=str(tenant.id), after={"slug": "demo"})
-    second = audit.record(db, tenant_id=tenant.id, actor="priya@example.com", action="match.accepted",
-                          object_type="match", object_id="MT-20931", entity_code="US01", control="IC-03")
+    first = audit.record(
+        db,
+        tenant_id=tenant.id,
+        actor="system",
+        action="tenant.created",
+        object_type="tenant",
+        object_id=str(tenant.id),
+        after={"slug": "demo"},
+    )
+    second = audit.record(
+        db,
+        tenant_id=tenant.id,
+        actor="priya@example.com",
+        action="match.accepted",
+        object_type="match",
+        object_id="MT-20931",
+        entity_code="US01",
+        control="IC-03",
+    )
     assert first.prev_hash is None
     assert second.prev_hash == first.hash
     assert audit.verify_chain(db, tenant.id)

@@ -7,22 +7,26 @@ import pytest
 os.environ.setdefault("DATABASE_URL", "sqlite+pysqlite:///:memory:")
 os.environ.setdefault("ENVIRONMENT", "test")
 
-from fastapi.testclient import TestClient  # noqa: E402
-from sqlalchemy import create_engine  # noqa: E402
-from sqlalchemy.orm import Session, sessionmaker  # noqa: E402
-from sqlalchemy.pool import StaticPool  # noqa: E402
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
-import app.models  # noqa: E402,F401
-from app.db.base import Base  # noqa: E402
-from app.db.session import get_db  # noqa: E402
-from app.main import app  # noqa: E402
+import app.models
+from app.db.base import Base
+from app.db.session import get_db
+from app.main import app
 
 DB_URL = os.environ["DATABASE_URL"]
 
 
 @pytest.fixture(scope="session")
 def engine():  # type: ignore[no-untyped-def]
-    kwargs = {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool} if DB_URL.startswith("sqlite") else {}
+    kwargs = (
+        {"connect_args": {"check_same_thread": False}, "poolclass": StaticPool}
+        if DB_URL.startswith("sqlite")
+        else {}
+    )
     eng = create_engine(DB_URL, **kwargs)
     Base.metadata.create_all(eng)
     yield eng

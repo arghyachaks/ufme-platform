@@ -44,3 +44,4 @@ temp/
 
 
 start-dev.bat
+.coverage

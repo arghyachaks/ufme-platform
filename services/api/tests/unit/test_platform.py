@@ -35,7 +35,9 @@ app.include_router(probe, prefix="/api/v1")
 def test_request_id_is_generated_and_echoed(client: TestClient) -> None:
     generated = client.get("/api/v1/health").headers["X-Request-ID"]
     assert len(generated) == 32
-    assert client.get("/api/v1/health", headers={"X-Request-ID": "abc-123"}).headers["X-Request-ID"] == "abc-123"
+    assert (
+        client.get("/api/v1/health", headers={"X-Request-ID": "abc-123"}).headers["X-Request-ID"] == "abc-123"
+    )
 
 
 def test_app_errors_are_problem_json(client: TestClient) -> None:

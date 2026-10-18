@@ -40,7 +40,9 @@ class ForbiddenError(AppError):
     title = "Forbidden"
 
 
-def problem(request: Request, status: int, title: str, detail: str | None = None, **extra: Any) -> JSONResponse:
+def problem(
+    request: Request, status: int, title: str, detail: str | None = None, **extra: Any
+) -> JSONResponse:
     body: dict[str, Any] = {
         "type": "about:blank",
         "title": title,

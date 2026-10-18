@@ -25,5 +25,9 @@ def ready(db: Session = Depends(get_db)) -> dict[str, object] | JSONResponse:
     except Exception as exc:
         checks["database"] = f"error: {exc.__class__.__name__}"
     ok = all(v == "ok" for v in checks.values())
-    body = {"status": "ok" if ok else "degraded", "environment": settings.environment, "checks": checks}
+    body: dict[str, object] = {
+        "status": "ok" if ok else "degraded",
+        "environment": settings.environment,
+        "checks": checks,
+    }
     return body if ok else JSONResponse(body, status_code=503)

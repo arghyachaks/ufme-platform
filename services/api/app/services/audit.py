@@ -24,7 +24,10 @@ def record(
 ) -> AuditEvent:
     """Append an audit event chained to the tenant's previous event. Call inside the business transaction."""
     prev = db.scalar(
-        select(AuditEvent.hash).where(AuditEvent.tenant_id == tenant_id).order_by(AuditEvent.seq.desc()).limit(1)
+        select(AuditEvent.hash)
+        .where(AuditEvent.tenant_id == tenant_id)
+        .order_by(AuditEvent.seq.desc())
+        .limit(1)
     )
     event = AuditEvent(
         tenant_id=tenant_id,
@@ -48,7 +51,9 @@ def record(
 
 def verify_chain(db: Session, tenant_id: uuid.UUID | None) -> bool:
     prev: str | None = None
-    for event in db.scalars(select(AuditEvent).where(AuditEvent.tenant_id == tenant_id).order_by(AuditEvent.seq)):
+    for event in db.scalars(
+        select(AuditEvent).where(AuditEvent.tenant_id == tenant_id).order_by(AuditEvent.seq)
+    ):
         if event.prev_hash != prev or event.compute_hash() != event.hash:
             return False
         prev = event.hash
