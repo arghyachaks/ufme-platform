@@ -100,7 +100,7 @@ function RunsPageView({ d }: { d: ReconData }) {
         {runKpis.map((kpi) => (
           <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
-            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
           </Box>
         ))}
       </Box>
@@ -175,7 +175,7 @@ function RunsPageView({ d }: { d: ReconData }) {
                   <Checkbox size="small" checked={selected.includes(run.id)} onChange={() => toggle(run.id)} />
                 </TableCell>
                 <TableCell>
-                  <Button size="small" sx={{ px: 0, fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }} onClick={() => setDetailRun(run)}>
+                  <Button size="small" sx={{ px: 0, fontFamily: 'var(--font-mono)', fontWeight: 700 }} onClick={() => setDetailRun(run)}>
                     {run.id}
                   </Button>
                 </TableCell>
@@ -244,7 +244,7 @@ function RunsPageView({ d }: { d: ReconData }) {
           <Detail label="Data source" value={detailRun?.dataSource} />
           <Detail label="Transactions processed" value={detailRun?.transactionsProcessed} />
           <Detail label="Rules executed" value={detailRun?.rulesExecuted.join(", ")} />
-          <Detail label="AI model" value={detailRun?.modelVersion} />
+          <Detail label="Matching model" value={detailRun?.modelVersion} />
           <Detail label="Rule version" value={detailRun?.ruleVersion} />
           <Detail label="Exception summary" value={detailRun?.exceptionSummary} />
           <Typography sx={{ fontSize: 12, fontWeight: 700, mt: 2, mb: 1 }}>Runtime breakdown</Typography>
@@ -272,7 +272,7 @@ function RunsPageView({ d }: { d: ReconData }) {
                 runTrends[trendKey].map((value, index) => (
                   <TableRow key={trendDays[index]}>
                     <TableCell>{trendDays[index]}</TableCell>
-                    <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>{value}</TableCell>
+                    <TableCell sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{value}</TableCell>
                   </TableRow>
                 ))}
             </TableBody>
@@ -303,7 +303,7 @@ function RunsPageView({ d }: { d: ReconData }) {
                 ["Exposure", (run: Run) => run.exposure],
                 ["Materiality", (run: Run) => run.materiality],
                 ["Rule version", (run: Run) => run.ruleVersion],
-                ["AI model", (run: Run) => run.modelVersion],
+                ["Matching model", (run: Run) => run.modelVersion],
                 ["Duration", (run: Run) => run.duration],
               ].map(([label, getter]) => (
                 <TableRow key={String(label)}>
@@ -446,7 +446,7 @@ function TrendCard({
       <Typography sx={{ fontSize: 11, color: "primary.main", fontWeight: 700 }}>Open analytics</Typography>
       <Stack direction="row" justifyContent="space-between" alignItems="flex-end" sx={{ mt: 1 }}>
         <Box>
-          <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 22, fontWeight: 700 }}>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 22, fontWeight: 700 }}>
             {prefix}
             {latest}
             {unit}

@@ -27,7 +27,7 @@ export function CopilotPage() {
   };
 
   return (
-    <Page title="Copilot" description="Ask about matches, exceptions, and close status. Answers cite the records they're based on; actions always go through normal approval." loading={loading}>
+    <Page title="Assistant" description="Ask about matches, exceptions, and close status. Answers cite the records they're based on; actions always go through normal approval." loading={loading}>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 300px" }, gap: 2.5 }}>
         <Box sx={{ ...glass, display: "flex", flexDirection: "column", height: 560 }}>
           <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>

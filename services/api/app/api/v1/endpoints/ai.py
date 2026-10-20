@@ -1,10 +1,11 @@
 from typing import Any
 
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentTenant, DbSession
-from app.schemas.read import AskIn, ChatMessageOut
-from app.services import copilot, read
+from app.schemas.read import AskIn, AssistIn, ChatMessageOut
+from app.services import assist, copilot, read
 
 router = APIRouter(prefix="/ai")
 
@@ -32,3 +33,17 @@ def copilot_seed(db: DbSession, tenant: CurrentTenant) -> Any:
 @router.post("/copilot/ask", response_model=ChatMessageOut, response_model_exclude_none=True)
 def copilot_ask(body: AskIn, tenant: CurrentTenant) -> ChatMessageOut:
     return copilot.answer(body.prompt)
+
+
+@router.get("/assist/status")
+def assist_status() -> dict[str, Any]:
+    return assist.status()
+
+
+@router.post("/assist/stream")
+def assist_stream(body: AssistIn, db: DbSession, tenant: CurrentTenant) -> StreamingResponse:
+    return StreamingResponse(
+        assist.stream(db, tenant, body.prompt, body.history, body.page),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

@@ -38,7 +38,7 @@
   "approvals": [
     {
       "id": "MT-9004",
-      "submittedBy": "Analyst_APAC",
+      "submittedBy": "Mei Tan (APAC analyst)",
       "entity": "APAC E09",
       "exposure": "$6.1M",
       "materiality": "Medium",
@@ -55,7 +55,7 @@
       ],
       "trail": [
         "16 Aug 09:12 submitted",
-        "16 Aug 09:14 AI policy check passed",
+        "16 Aug 09:14 policy check passed",
         "16 Aug 09:20 queued for controller"
       ],
       "confidenceFactors": [
@@ -79,7 +79,7 @@
     },
     {
       "id": "MT-8902",
-      "submittedBy": "Agent_FX_04",
+      "submittedBy": "FX auto-match",
       "entity": "EMEA LE04",
       "exposure": "$48.2M",
       "materiality": "High",
@@ -94,7 +94,7 @@
         "Hedge ticket H-441.xlsx"
       ],
       "trail": [
-        "16 Aug 07:40 AI suggested",
+        "16 Aug 07:40 match suggested",
         "16 Aug 08:02 analyst escalated",
         "16 Aug 08:15 SLA warning"
       ],
@@ -119,7 +119,7 @@
     },
     {
       "id": "MT-8830",
-      "submittedBy": "Analyst_APAC",
+      "submittedBy": "Mei Tan (APAC analyst)",
       "entity": "APAC E09",
       "exposure": "$64k",
       "materiality": "Low",
@@ -129,7 +129,7 @@
       "sla": "18h remaining",
       "slaOverdue": false,
       "exceptionOpen": false,
-      "rationale": "Amount off by $20 due to rounding. Within AMT_TOL_0.5.",
+      "rationale": "Amount off by $20 due to rounding. Within Amount ±0.5%.",
       "documents": [
         "Match packet MT-8830.pdf"
       ],
@@ -174,7 +174,7 @@
     {
       "id": "CTL-IC-09",
       "name": "Intercompany aging > 45 days",
-      "owner": "FinController_Global",
+      "owner": "Priya Raman · Group Controller",
       "impact": "$18.4M"
     }
   ],
@@ -198,7 +198,7 @@
     {
       "time": "08:18",
       "actor": "Rule",
-      "text": "INV_REF_EXACT applied to 1.9M items"
+      "text": "Invoice ref exact applied to 1.9M items"
     },
     {
       "time": "08:12",
@@ -297,13 +297,13 @@
       "start": "08:12",
       "duration": "11m",
       "ruleVersion": "rules-v3.4",
-      "modelVersion": "ranker-v4.8",
+      "modelVersion": "Model 4.8",
       "dataSource": "SAP ECC APAC + Oracle GL US01",
       "transactionsProcessed": "2.41M",
       "rulesExecuted": [
-        "INV_REF_EXACT",
-        "AMT_TOL_0.5",
-        "DATE_WIN_3"
+        "Invoice ref exact",
+        "Amount ±0.5%",
+        "Date ±3 days"
       ],
       "runtimeBreakdown": [
         {
@@ -315,7 +315,7 @@
           "time": "6.4m"
         },
         {
-          "step": "AI rank",
+          "step": "Smart ranking",
           "time": "2.5m"
         }
       ],
@@ -335,12 +335,12 @@
       "start": "07:04",
       "duration": "9m",
       "ruleVersion": "rules-v3.4",
-      "modelVersion": "ranker-v4.8",
+      "modelVersion": "Model 4.8",
       "dataSource": "SAP EMEA + Oracle GL US01",
       "transactionsProcessed": "1.12M",
       "rulesExecuted": [
-        "INV_REF_EXACT",
-        "AMT_TOL_0.5"
+        "Invoice ref exact",
+        "Amount ±0.5%"
       ],
       "runtimeBreakdown": [
         {
@@ -352,7 +352,7 @@
           "time": "5.1m"
         },
         {
-          "step": "AI rank",
+          "step": "Smart ranking",
           "time": "2.1m"
         }
       ],
@@ -372,12 +372,12 @@
       "start": "08:31",
       "duration": "3m",
       "ruleVersion": "rules-v3.3",
-      "modelVersion": "ranker-v4.7",
+      "modelVersion": "Model 4.7",
       "dataSource": "JPM bank file + NAMER GL",
       "transactionsProcessed": "410k / 890k",
       "rulesExecuted": [
-        "STMT_REF",
-        "AMT_EXACT"
+        "Statement ref",
+        "Amount exact"
       ],
       "runtimeBreakdown": [
         {
@@ -389,7 +389,7 @@
           "time": "1.4m"
         },
         {
-          "step": "AI rank",
+          "step": "Smart ranking",
           "time": "in progress"
         }
       ],
@@ -409,11 +409,11 @@
       "start": "05:10",
       "duration": "2m",
       "ruleVersion": "rules-v3.4",
-      "modelVersion": "ranker-v4.8",
+      "modelVersion": "Model 4.8",
       "dataSource": "SAP ECC APAC",
       "transactionsProcessed": "88k / 2.4M",
       "rulesExecuted": [
-        "INV_REF_EXACT"
+        "Invoice ref exact"
       ],
       "runtimeBreakdown": [
         {
@@ -425,7 +425,7 @@
           "time": "failed"
         },
         {
-          "step": "AI rank",
+          "step": "Smart ranking",
           "time": "—"
         }
       ],
@@ -445,13 +445,13 @@
       "start": "06:50",
       "duration": "12m",
       "ruleVersion": "rules-v3.3",
-      "modelVersion": "ranker-v4.7",
+      "modelVersion": "Model 4.7",
       "dataSource": "SAP ECC APAC + Oracle GL US01",
       "transactionsProcessed": "1.98M",
       "rulesExecuted": [
-        "INV_REF_EXACT",
-        "AMT_TOL_0.5",
-        "DATE_WIN_3"
+        "Invoice ref exact",
+        "Amount ±0.5%",
+        "Date ±3 days"
       ],
       "runtimeBreakdown": [
         {
@@ -463,7 +463,7 @@
           "time": "7.0m"
         },
         {
-          "step": "AI rank",
+          "step": "Smart ranking",
           "time": "2.6m"
         }
       ],
@@ -808,7 +808,7 @@
       "status": "Pending controller",
       "exposure": "$210M",
       "exceptions": 62,
-      "owner": "FinController_Global",
+      "owner": "Priya Raman · Group Controller",
       "date": "—"
     },
     {
@@ -816,7 +816,7 @@
       "status": "Manager signed",
       "exposure": "$400M",
       "exceptions": 88,
-      "owner": "Mgr_EMEA",
+      "owner": "EMEA Finance Manager",
       "date": "16 Aug"
     },
     {
@@ -824,12 +824,12 @@
       "status": "Signed off",
       "exposure": "$42M",
       "exceptions": 6,
-      "owner": "FD_Global",
+      "owner": "Finance Director",
       "date": "15 Aug"
     }
   ],
   "signoffEvidence": {
-    "signedBy": "FD_Global",
+    "signedBy": "Finance Director",
     "signedDate": "15 Aug 2026 18:04 UTC",
     "approvalHash": "sha256:7c9ae21f4b88",
     "auditRecordId": "AUD-SOX-2026-0815-044"
@@ -860,7 +860,7 @@
     "amountImpact": "$128,400",
     "materiality": "Medium",
     "risk": "Low",
-    "rule": "INV_REF_EXACT + AMT_TOL_0.5",
+    "rule": "Invoice ref exact + Amount ±0.5%",
     "ruleVersion": "rules-v3.4",
     "decision": "Approve",
     "exposureReduction": "$128,400",
@@ -871,7 +871,7 @@
     ],
     "history": [
       "12 Aug auto-suggested",
-      "12 Aug similar case approved by Analyst_APAC",
+      "12 Aug similar case approved by Mei Tan (APAC analyst)",
       "Rule v3.4 accepted 1,842 times this quarter"
     ],
     "comments": [

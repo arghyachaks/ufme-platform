@@ -50,6 +50,7 @@ class Report:
     orphan_false_match_rate: float
     by_scenario: dict[str, dict[str, float]] = field(default_factory=dict)
     seconds: float = 0.0
+    blocking_recall: float | None = None  # share of true cross-entity pairs present in the candidate set
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -82,6 +83,16 @@ def _canonical(ds: Dataset, predictions: list[Prediction]) -> list[Prediction]:
                 ids.add(j)
         out.append(Prediction(frozenset(ids), p.confidence, p.decision, p.reasons))
     return out
+
+
+def blocking_recall(ds: Dataset, candidate_pairs: set[frozenset[str]]) -> float:
+    lines = {x.id: x for x in ds.lines}
+    true = set()
+    for g in ds.truth:
+        ids = g.line_ids
+        if len(ids) > 1 and {lines[i].side for i in ids} == {"A", "B"}:
+            true |= _cross_pairs(ids, lines)
+    return round(len(true & candidate_pairs) / len(true), 5) if true else 1.0
 
 
 def evaluate(ds: Dataset, predictions: list[Prediction], matcher: str = "?", seconds: float = 0.0) -> Report:

@@ -11,6 +11,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { navItems } from "../navigation/navConfig";
 import { ActivityTicker } from "../components/shell/ActivityTicker";
 import { CopilotDock } from "../components/shell/CopilotDock";
+import { Logo } from "../components/common/Logo";
 import { toggleColorMode } from "../store/uiSlice";
 import type { RootState } from "../store";
 
@@ -62,51 +63,29 @@ export function AppLayout() {
           zIndex: 10,
         }}
       >
-        <Stack direction="row" alignItems="center" spacing={1.25}>
-          <Box
-            sx={{
-              width: 28,
-              height: 28,
-              borderRadius: "6px",
-              background: "linear-gradient(135deg, #4f46e5, #0284c7)",
-              color: "#fff",
-              fontWeight: 800,
-              fontSize: 14,
-              display: "grid",
-              placeItems: "center",
-              boxShadow: "0 2px 8px rgba(79,70,229,0.3)",
-            }}
-          >
-            U
-          </Box>
-          <Typography sx={{ fontWeight: 700, fontSize: 18, letterSpacing: "-0.02em", color: "text.primary" }}>
-            UFME
-          </Typography>
-          <Typography sx={{ fontSize: 11, fontWeight: 500, color: "#94a3b8" }}>v4.2 Enterprise</Typography>
-        </Stack>
+        <Logo />
 
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            width: 380,
-            px: 1.75,
-            py: 0.75,
+            width: 420,
+            px: 1.25,
+            py: 0.6,
             bgcolor: "var(--bg-muted)",
             border: "1px solid",
             borderColor: "var(--glass-border)",
-            borderRadius: "10px",
-            backdropFilter: "blur(16px)",
+            borderRadius: "8px",
             "&:focus-within": {
               bgcolor: "var(--glass-bg-strong)",
-              borderColor: "secondary.main",
-              boxShadow: "0 0 0 3px rgba(2,132,199,0.1)",
+              borderColor: "primary.main",
+              boxShadow: "0 0 0 3px var(--indigo-soft)",
             },
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
-            <SearchIcon sx={{ fontSize: 16, color: "#94a3b8" }} />
+            <SearchIcon sx={{ fontSize: 16, color: "var(--text-muted)" }} />
             <InputBase
               placeholder="Search entities, rules, transactions, cases..."
               sx={{ fontSize: 13, width: "100%", color: "text.secondary" }}
@@ -114,12 +93,12 @@ export function AppLayout() {
           </Stack>
           <Box
             sx={{
-              fontFamily: '"IBM Plex Sans", sans-serif',
-              fontSize: 11,
-              bgcolor: "#e2e8f0",
-              px: 0.75,
+              fontFamily: "var(--font-mono)",
+              fontSize: 10.5,
+              border: "1px solid var(--border-strong)",
+              px: 0.6,
               borderRadius: "4px",
-              color: "#475569",
+              color: "var(--text-secondary)",
             }}
           >
             ⌘K
@@ -132,21 +111,22 @@ export function AppLayout() {
             alignItems="center"
             spacing={0.75}
             sx={{
-              bgcolor: "#ecfdf5",
-              border: "1px solid rgba(5,150,105,0.3)",
-              color: "#059669",
-              px: 1.25,
-              py: 0.5,
-              borderRadius: 10,
+              bgcolor: "var(--indigo-soft)",
+              border: "1px solid color-mix(in srgb, var(--brand-indigo) 30%, transparent)",
+              color: "var(--brand-indigo)",
+              px: 1.1,
+              py: 0.4,
+              borderRadius: "6px",
               fontSize: 11,
-              fontWeight: 600,
+              fontWeight: 500,
+              fontFamily: "var(--font-mono)",
             }}
           >
             <Box className="status-dot" />
-            Autonomous Matching Engine: Active
+            ENGINE · LIVE
           </Stack>
-          <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, color: "text.secondary" }}>
-            Period: <Box component="strong" sx={{ color: "text.primary" }}>Q3-2026</Box>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: 11.5, color: "text.secondary" }}>
+            PERIOD <Box component="span" sx={{ color: "text.primary" }}>Q3-2026</Box>
           </Typography>
           <IconButton size="small" onClick={() => dispatch(toggleColorMode())} aria-label="Toggle color mode">
             {colorMode === "dark" ? <LightModeOutlinedIcon fontSize="small" /> : <DarkModeOutlinedIcon fontSize="small" />}
@@ -155,8 +135,8 @@ export function AppLayout() {
             <NotificationsNoneOutlinedIcon sx={{ color: "text.secondary" }} />
           </Badge>
           <Stack direction="row" alignItems="center" spacing={1}>
-            <Avatar sx={{ width: 28, height: 28, bgcolor: "#4f46e5", fontSize: 12, fontWeight: 700 }}>FC</Avatar>
-            <Typography sx={{ fontWeight: 600, fontSize: 13 }}>FinController_Global</Typography>
+            <Avatar sx={{ width: 26, height: 26, bgcolor: "var(--bg-muted)", color: "text.primary", border: "1px solid var(--border-strong)", fontSize: 11, fontWeight: 600 }}>PR</Avatar>
+            <Typography sx={{ fontWeight: 500, fontSize: 12.5 }}>Priya Raman</Typography>
           </Stack>
         </Stack>
       </Box>
@@ -198,32 +178,32 @@ export function AppLayout() {
                 onClick={() => setOpenSections((current) => ({ ...current, [item.label]: !expanded }))}
               />
               <Collapse in={expanded} timeout={550} unmountOnExit>
-                <Box sx={{ bgcolor: "var(--bg-muted)", borderTop: 1, borderBottom: 1, borderColor: "divider" }}>
+                <Box sx={{ position: "relative", ml: 3.4, my: 0.25, borderLeft: "1px solid var(--border-strong)" }}>
                   {item.children.map((child) => (
                     <NavLink key={child.to} to={child.to} style={{ textDecoration: "none" }}>
                       {({ isActive }) => (
                         <Box
                           sx={{
                             position: "relative",
-                            px: 2.5,
-                            py: 0.75,
-                            pl: 4.75,
-                            fontSize: 12,
-                            color: isActive ? "secondary.main" : "text.secondary",
-                            fontWeight: isActive ? 600 : 500,
-                            bgcolor: isActive ? "var(--blue-soft)" : "transparent",
-                            "&:hover": { color: "secondary.main", bgcolor: "var(--blue-soft)", pl: 5.25 },
+                            mr: 1.25,
+                            px: 1.5,
+                            py: 0.6,
+                            fontSize: 12.5,
+                            borderRadius: "6px",
+                            color: isActive ? "text.primary" : "text.secondary",
+                            fontWeight: isActive ? 550 : 450,
+                            bgcolor: isActive ? "var(--bg-muted)" : "transparent",
+                            "&:hover": { color: "text.primary" },
                             "&::before": isActive
                               ? {
                                   content: '""',
                                   position: "absolute",
-                                  left: 28,
-                                  top: "50%",
-                                  transform: "translateY(-50%)",
-                                  width: 4,
-                                  height: 4,
-                                  bgcolor: "#0284c7",
-                                  borderRadius: "50%",
+                                  left: -1,
+                                  top: 6,
+                                  bottom: 6,
+                                  width: 2,
+                                  bgcolor: "var(--brand-indigo)",
+                                  borderRadius: 2,
                                 }
                               : undefined,
                           }}
@@ -269,16 +249,20 @@ function NavRow({ label, icon, active, to, badge, expanded, onClick }: NavRowPro
       justifyContent="space-between"
       onClick={onClick}
       sx={{
-        px: 2.5,
-        py: 1,
+        mx: 1.25,
+        my: 0.15,
+        px: 1.25,
+        py: 0.8,
         cursor: "pointer",
         fontSize: 13,
-        fontWeight: active ? 600 : 500,
-        color: active ? "primary.main" : "text.secondary",
-        bgcolor: active ? "var(--indigo-soft)" : "transparent",
-        borderRight: active ? "3px solid #4f46e5" : "3px solid transparent",
+        borderRadius: "7px",
+        fontWeight: active ? 550 : 450,
+        color: active ? "text.primary" : "text.secondary",
+        bgcolor: active ? "var(--bg-muted)" : "transparent",
+        boxShadow: active ? "inset 0 0 0 1px var(--border-subtle)" : "none",
+        "& svg": { color: active ? "var(--brand-indigo)" : "inherit" },
         transition: "background-color 0.5s cubic-bezier(0.22, 1, 0.36, 1), color 0.5s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.5s cubic-bezier(0.22, 1, 0.36, 1)",
-        "&:hover": { color: "primary.main", bgcolor: "var(--indigo-soft)" },
+        "&:hover": { color: "text.primary", bgcolor: "var(--bg-muted)" },
       }}
     >
       <Stack direction="row" alignItems="center" spacing={1.25}>
@@ -292,10 +276,10 @@ function NavRow({ label, icon, active, to, badge, expanded, onClick }: NavRowPro
             fontWeight: 700,
             px: 0.75,
             py: 0.2,
-            borderRadius: 10,
-            bgcolor: "#fffbeb",
-            color: "#d97706",
-            border: "1px solid rgba(217,119,6,0.3)",
+            borderRadius: "5px",
+            fontFamily: "var(--font-mono)",
+            bgcolor: "var(--amber-soft)",
+            color: "var(--brand-amber)",
           }}
         >
           {badge}

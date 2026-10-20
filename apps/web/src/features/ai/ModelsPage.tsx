@@ -24,7 +24,7 @@ export function ModelsPage() {
           ]} />
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr 1fr" }, gap: 2.5 }}>
             <Panel title="Precision · 7 weeks"><Sparkline values={data.trend.precision} /><Typography sx={{ fontSize: 11, color: "text.secondary" }}>{data.trend.weeks[0]} → {data.trend.weeks.at(-1)}</Typography></Panel>
-            <Panel title="Drift · 7 weeks"><Sparkline values={data.trend.drift} color="#d97706" /><Typography sx={{ fontSize: 11, color: "text.secondary" }}>Population stability index</Typography></Panel>
+            <Panel title="Drift · 7 weeks"><Sparkline values={data.trend.drift} color="var(--brand-amber)" /><Typography sx={{ fontSize: 11, color: "text.secondary" }}>Population stability index</Typography></Panel>
             <Panel title="Champion vs challenger">
               <Typography sx={{ fontSize: 12, mb: 1 }}>{shadow.name} {shadow.version} beats {prod.version} on precision and recall over 12 days of shadow traffic.</Typography>
               <Button size="small" variant="contained" onClick={() => toast(`Promotion of ${shadow.version} submitted for approval`)}>Request promotion</Button>

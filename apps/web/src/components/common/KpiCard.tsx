@@ -1,4 +1,5 @@
 import { Box, Stack, Typography } from "@mui/material";
+import { CountUp, spotlight } from "./Motion";
 
 type KpiCardProps = {
   label: string;
@@ -17,22 +18,22 @@ export function KpiCard({
   changeDir,
   footerLeft,
   footerRight,
-  valueColor = "#0f172a",
+  valueColor = "var(--text-primary)",
 }: KpiCardProps) {
   return (
     <Box
-      className="card-enter"
+      className="card-enter spotlight"
+      onMouseMove={spotlight}
       sx={{
-        bgcolor: "transparent",
         border: "1px solid var(--glass-border)",
-        borderRadius: 2,
-        p: 1.75,
+        borderRadius: "10px",
+        bgcolor: "var(--bg-surface)",
+        p: 2,
         position: "relative",
         overflow: "hidden",
         transition: "transform 0.2s ease, box-shadow 0.2s ease",
         "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: "0 4px 6px -1px rgba(0,0,0,0.07)",
+          borderColor: "var(--border-strong)",
           "&::before": { opacity: 1 },
         },
         "&::before": {
@@ -41,8 +42,8 @@ export function KpiCard({
           top: 0,
           left: 0,
           right: 0,
-          height: "3px",
-          bgcolor: "#4f46e5",
+          height: "1px",
+          background: "linear-gradient(90deg, transparent, var(--brand-indigo), transparent)",
           opacity: 0,
           transition: "opacity 0.2s ease",
         },
@@ -50,21 +51,22 @@ export function KpiCard({
     >
       <Typography
         sx={{
-          fontSize: 11,
-          fontWeight: 600,
-          letterSpacing: "0.05em",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10.5,
+          fontWeight: 500,
+          letterSpacing: "0.07em",
           textTransform: "uppercase",
-          color: "#94a3b8",
+          color: "var(--text-muted)",
         }}
       >
         {label}
       </Typography>
-      <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ my: 0.75 }}>
+      <Stack direction="row" alignItems="baseline" spacing={0.75} sx={{ my: 1 }}>
         <Typography
-          className="mono"
-          sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 24, fontWeight: 700, color: valueColor }}
+          className="display"
+          sx={{ fontSize: "clamp(20px, 1.7vw, 26px)", lineHeight: 1.1, color: valueColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", minWidth: 0 }}
         >
-          {value}
+          <CountUp value={value} />
         </Typography>
         {change ? (
           <Box
@@ -73,9 +75,10 @@ export function KpiCard({
               fontWeight: 600,
               px: 0.6,
               py: 0.15,
-              borderRadius: 0.5,
-              bgcolor: changeDir === "down" ? "#fef2f2" : "#ecfdf5",
-              color: changeDir === "down" ? "#dc2626" : "#059669",
+              borderRadius: "4px",
+              fontFamily: "var(--font-mono)",
+              bgcolor: changeDir === "down" ? "var(--crimson-soft)" : "var(--emerald-soft)",
+              color: changeDir === "down" ? "var(--brand-crimson)" : "var(--brand-emerald)",
             }}
           >
             {change}
@@ -83,11 +86,11 @@ export function KpiCard({
         ) : null}
       </Stack>
       <Stack direction="row" justifyContent="space-between">
-        <Typography sx={{ fontSize: 11, color: footerLeft.includes("Critical") ? "#dc2626" : "#475569" }}>
+        <Typography sx={{ fontSize: 11, color: footerLeft.includes("Critical") ? "var(--brand-crimson)" : "var(--text-secondary)" }}>
           {footerLeft}
         </Typography>
         {footerRight ? (
-          <Typography sx={{ fontSize: 11, fontWeight: 600, color: footerRight === "MED RISK" ? "#d97706" : "#4f46e5" }}>
+          <Typography sx={{ fontSize: 11, fontWeight: 600, color: footerRight === "MED RISK" ? "var(--brand-amber)" : "var(--brand-indigo)" }}>
             {footerRight}
           </Typography>
         ) : null}

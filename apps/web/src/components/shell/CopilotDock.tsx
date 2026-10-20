@@ -1,7 +1,8 @@
-import { Box, Button, InputBase, Stack, Typography } from "@mui/material";
+import { Box, Button, Stack, Typography } from "@mui/material";
 import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import { workspaceApi, type DashboardData, type ReconData } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
+import { AssistChat, AssistStatusChip } from "./AssistChat";
 
 export function CopilotDock() {
   const { data } = useQuery(workspaceApi.dashboard);
@@ -32,21 +33,8 @@ function CopilotDockView({ d }: { d: DashboardData }) {
         alignItems="center"
         sx={{ pb: 1.5, borderBottom: "1px solid", borderColor: "divider" }}
       >
-        <Typography sx={{ fontSize: 14, fontWeight: 700, color: "primary.main" }}>AI Match Advisor</Typography>
-        <Box
-          sx={{
-            fontSize: 10,
-            fontWeight: 700,
-            px: 1,
-            py: 0.35,
-            borderRadius: 10,
-            bgcolor: "var(--emerald-soft)",
-            color: "success.main",
-            border: "1px solid rgba(5,150,105,0.3)",
-          }}
-        >
-          GPT-4 Financial Tuned
-        </Box>
+        <Typography sx={{ fontSize: 14, fontWeight: 700, color: "primary.main" }}>ufme Assist</Typography>
+        <AssistStatusChip />
       </Stack>
 
       <Box sx={{ py: 1.5, borderBottom: "1px solid", borderColor: "divider" }}>
@@ -74,51 +62,22 @@ function CopilotDockView({ d }: { d: DashboardData }) {
         )}
       </Box>
 
-      <Stack spacing={1.5} sx={{ flex: 1, overflow: "auto", py: 1.75 }}>
-        {copilotThread.map((message, index) => (
-          <Box
-            key={index}
-            sx={{
-              p: 1.5,
-              borderRadius: 1,
-              fontSize: 12,
-              lineHeight: 1.5,
-              maxWidth: "92%",
-              alignSelf: message.role === "user" ? "flex-end" : "flex-start",
-              bgcolor: message.role === "user" ? "var(--bg-muted)" : "var(--indigo-soft)",
-              color: "text.primary",
-            }}
-          >
-            {message.text}
-          </Box>
-        ))}
-      </Stack>
-
-      <Box sx={{ pt: 1.5, borderTop: "1px solid", borderColor: "divider" }}>
-        <InputBase
-          fullWidth
-          placeholder={
-            pathname.includes("manual-match")
-              ? "Ask for another combination..."
-              : pathname.includes("approvals")
-                ? "Ask whether to approve this match..."
-                : pathname.includes("signoff")
-                  ? "Ask if APAC is ready to sign..."
-                  : recon
-                    ? "Ask why this match ranked first..."
-                    : "Ask Copilot or command agents (e.g. 'Explain EX-8902')..."
-          }
-          sx={{
-            fontSize: 12,
-            px: 1.5,
-            py: 1,
-            bgcolor: "var(--bg-muted)",
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 1,
-          }}
-        />
-      </Box>
+      <AssistChat
+        key={pathname.split("/")[1]}
+        page={pathname}
+        seed={copilotThread.map((m) => ({ role: m.role === "user" ? "user" : "assistant", text: m.text }))}
+        placeholder={
+          pathname.includes("manual-match")
+            ? "Ask for another combination..."
+            : pathname.includes("approvals")
+              ? "Ask whether to approve this match..."
+              : pathname.includes("signoff")
+                ? "Ask if APAC is ready to sign..."
+                : recon
+                  ? "Ask why this match ranked first..."
+                  : "Ask anything, e.g. \"Why is EX-8902 open?\""
+        }
+      />
     </Box>
   );
 }

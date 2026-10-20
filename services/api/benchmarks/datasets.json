@@ -2,25 +2,25 @@
   "small": {
     "size": 1000,
     "seed": 101,
-    "version": "2.0",
+    "version": "2.1",
     "lines": 1001,
-    "truth_groups": 470,
-    "sha256": "2a97457a4e6abde3b4c95801338dab8faa10fff02c8684f29dfb206aa9932c2c"
+    "truth_groups": 473,
+    "sha256": "f4e535bb5f6eb6814b75f98e852959ca94aea9b98c920f7c24595ef8bac84188"
   },
   "medium": {
     "size": 100000,
     "seed": 202,
-    "version": "2.0",
-    "lines": 100000,
-    "truth_groups": 47176,
-    "sha256": "c8f696d65e24d1eafebfb8bb459c0747cacfa86432331075f906f6e88c036181"
+    "version": "2.1",
+    "lines": 100001,
+    "truth_groups": 47160,
+    "sha256": "aeac1dac918ae63683689873a827faa0c32c10f71acf28bad6c7403175ae66e1"
   },
   "large": {
     "size": 1000000,
     "seed": 303,
-    "version": "2.0",
-    "lines": 1000003,
-    "truth_groups": 471975,
-    "sha256": "59f0aa28ffdd8e49b50f77255a14f4646e7bcd0e21030ec826b8ee0ed284eaea"
+    "version": "2.1",
+    "lines": 1000000,
+    "truth_groups": 471964,
+    "sha256": "23fa6bd03e69b27c753de965e0d8b5a968727f21a7e8631157776a3be5b33396"
   }
 }

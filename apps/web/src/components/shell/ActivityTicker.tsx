@@ -14,7 +14,8 @@ function ActivityTickerView({ d }: { d: DashboardData }) {
       className="ufme-footer"
       sx={{
         bgcolor: "transparent",
-        color: "#fff",
+        color: "var(--text-secondary)",
+        fontFamily: "var(--font-mono)",
         display: "flex",
         alignItems: "center",
         overflow: "hidden",

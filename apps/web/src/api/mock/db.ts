@@ -35,7 +35,7 @@ export const cases: CaseItem[] = [
     comments: [
       { author: "Priya Nair", at: "12 Aug 09:14", text: "Variance traced to FX revaluation posted on UK02 side only." },
       { author: "Daniel Ortiz", at: "12 Aug 15:40", text: "UK02 treasury confirms reval journal JE-77812. Requesting reversal." },
-      { author: "AI Advisor", at: "13 Aug 08:02", text: "Similar pattern resolved in CS-0981 via reval true-up; suggested resolution drafted." },
+      { author: "ufme Assist", at: "13 Aug 08:02", text: "Similar pattern resolved in CS-0981 via reval true-up; suggested resolution drafted." },
     ] },
   { id: "CS-1041", title: "DE03 duplicate vendor payments — Acme Supplies", exceptionIds: ["EX-4823"], entity: "DE03", exposure: 312450, priority: "High", status: "In progress", assignee: "Mei Chen", dueIn: "1d", opened: "11 Aug",
     comments: [{ author: "Mei Chen", at: "11 Aug 11:20", text: "Two payments with same invoice ref, 2 days apart. Recall requested." }] },
@@ -51,7 +51,7 @@ export const rules: MatchRule[] = [
   { id: "R-001", name: "IC exact: reference + amount + date", kind: "Exact", scope: "Intercompany", conditions: ["ic_reference = ic_reference", "amount = amount", "value_date = value_date"], priority: 1, enabled: true, hitRate: 61.2, precision: 99.8, version: "v14", lastEdited: "02 Aug · Mei Chen" },
   { id: "R-002", name: "IC tolerance: amount ±0.5%, date ±3d", kind: "Tolerance", scope: "Intercompany", conditions: ["counterparty = entity", "|amount Δ| ≤ 0.5%", "|date Δ| ≤ 3 days"], tolerance: "0.5% / 3d", priority: 2, enabled: true, hitRate: 18.4, precision: 98.1, version: "v9", lastEdited: "29 Jul · Priya Nair" },
   { id: "R-003", name: "FX-adjusted amount match", kind: "Tolerance", scope: "Intercompany", conditions: ["amount_usd(rate=ECB) ≈ amount_usd", "|Δ| ≤ 25 USD"], tolerance: "25 USD", priority: 3, enabled: true, hitRate: 6.7, precision: 96.4, version: "v5", lastEdited: "21 Jul · Arjun Rao" },
-  { id: "R-004", name: "Fuzzy reference (Jaro-Winkler ≥ 0.92)", kind: "Fuzzy", scope: "AP / AR", conditions: ["similarity(reference) ≥ 0.92", "amount = amount"], priority: 4, enabled: true, hitRate: 4.1, precision: 93.0, version: "v3", lastEdited: "15 Jul · Mei Chen" },
+  { id: "R-004", name: "Fuzzy reference (≤ 1 edit, OCR-canonical)", kind: "Fuzzy", scope: "AP / AR", conditions: ["edit_distance(canonical(reference)) ≤ 1", "|amount Δ| ≤ 0.1%", "|date Δ| ≤ 7 days"], priority: 4, enabled: true, hitRate: 4.1, precision: 93.0, version: "v3", lastEdited: "15 Jul · Mei Chen" },
   { id: "R-005", name: "Settlement aggregation (1:M up to 8)", kind: "Many-to-many", scope: "Bank", conditions: ["Σ amount(B) = amount(A)", "|B| ≤ 8", "window ≤ 10 days"], priority: 5, enabled: true, hitRate: 3.2, precision: 95.6, version: "v4", lastEdited: "10 Jul · Daniel Ortiz" },
   { id: "R-006", name: "Payroll batch net-to-gross", kind: "Many-to-many", scope: "Payroll", conditions: ["Σ net + Σ deductions = gross", "batch_id = batch_id"], priority: 6, enabled: false, hitRate: 0, precision: 0, version: "v1 draft", lastEdited: "08 Aug · Sofia Rossi" },
 ];
@@ -153,13 +153,13 @@ export const lineage: Record<string, LineageStep[]> = {
 };
 
 export const featureStore: FeatureDef[] = [
-  { name: "amount_delta_pct", group: "Amount", type: "float", version: "v3", usedBy: ["Rules", "Ranker"], freshness: "Real-time", coverage: 100 },
-  { name: "reference_similarity_jw", group: "Text", type: "float", version: "v2", usedBy: ["Rules", "Ranker"], freshness: "Real-time", coverage: 99.2 },
-  { name: "reference_embedding_768", group: "Text", type: "vector", version: "v1.3", usedBy: ["Ranker"], freshness: "Real-time", coverage: 97.8 },
-  { name: "date_delta_days", group: "Temporal", type: "int", version: "v1", usedBy: ["Rules", "Optimizer", "Ranker"], freshness: "Real-time", coverage: 100 },
-  { name: "counterparty_pair_history", group: "Behavioral", type: "int", version: "v2", usedBy: ["Ranker"], freshness: "Hourly", coverage: 94.5 },
-  { name: "fx_rate_source_mismatch", group: "FX", type: "bool", version: "v1", usedBy: ["Rules", "Ranker"], freshness: "Every minute", coverage: 100 },
-  { name: "duplicate_risk_score", group: "Risk", type: "float", version: "v1", usedBy: ["Ranker", "Exceptions"], freshness: "Hourly", coverage: 98.1 },
+  { name: "amount_delta_pct", group: "Amount", type: "float", version: "v3", usedBy: ["Rules", "Smart ranking"], freshness: "Real-time", coverage: 100 },
+  { name: "reference_similarity_jw", group: "Text", type: "float", version: "v2", usedBy: ["Rules", "Smart ranking"], freshness: "Real-time", coverage: 99.2 },
+  { name: "reference_embedding_768", group: "Text", type: "vector", version: "v1.3", usedBy: ["Smart ranking"], freshness: "Real-time", coverage: 97.8 },
+  { name: "date_delta_days", group: "Temporal", type: "int", version: "v1", usedBy: ["Rules", "Optimizer", "Smart ranking"], freshness: "Real-time", coverage: 100 },
+  { name: "counterparty_pair_history", group: "Behavioral", type: "int", version: "v2", usedBy: ["Smart ranking"], freshness: "Hourly", coverage: 94.5 },
+  { name: "fx_rate_source_mismatch", group: "FX", type: "bool", version: "v1", usedBy: ["Rules", "Smart ranking"], freshness: "Every minute", coverage: 100 },
+  { name: "duplicate_risk_score", group: "Risk", type: "float", version: "v1", usedBy: ["Smart ranking", "Exceptions"], freshness: "Hourly", coverage: 98.1 },
 ];
 
 export const auditEvents: AuditEvent[] = [

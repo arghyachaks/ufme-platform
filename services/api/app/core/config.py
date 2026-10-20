@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     upload_dir: str = "/tmp/ufme-uploads"  # shared volume between api and worker in Docker
     ingest_inline: bool = False  # process uploads in the request (tests / no worker) instead of Celery
     max_upload_mb: int = 200
+    ollama_url: str = "http://localhost:11434"  # Docker: http://host.docker.internal:11434
+    assist_model: str = "gemma4:e4b-it-qat"
     default_tenant: str = "demo"  # until auth (Stage 5) resolves the tenant from the user
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")

@@ -4,7 +4,7 @@ from fastapi import APIRouter
 
 from app.api.deps import CurrentTenant, DbSession
 from app.schemas.read import AdminOut
-from app.services import read
+from app.services import matching_read, read
 
 router = APIRouter()
 
@@ -27,7 +27,7 @@ def graph(db: DbSession, tenant: CurrentTenant) -> Any:
 @router.get("/workspace/recon")
 def workspace_recon(db: DbSession, tenant: CurrentTenant) -> Any:
     """Dashboard/Reconciliation screens' combined payload until Stage 3-4 split it into runs, proposals, approvals."""
-    return read.snapshot(db, tenant, "workspace.recon")
+    return matching_read.workspace(db, tenant, read.snapshot(db, tenant, "workspace.recon"))
 
 
 @router.get("/workspace/dashboard")

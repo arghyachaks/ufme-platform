@@ -183,3 +183,30 @@ export type BatchDetail = IngestionBatch & {
   quarantined: { line: number; errors: string[]; raw: Record<string, string | null> }[];
   issues: QualityIssue[];
 };
+
+export type MatchRunInfo = {
+  id: string;
+  status: "Queued" | "Running" | "Completed" | "Failed";
+  scope: Record<string, string | null>;
+  engineVersion: string;
+  rules: { id: string; name: string; priority: number }[];
+  startedAt: string | null;
+  durationMs: number | null;
+  metrics: Record<string, unknown>;
+  error: string | null;
+};
+
+export type MatchProposal = {
+  id: string;
+  run: string;
+  type: string;
+  decision: "auto" | "suggest";
+  status: "matched" | "proposed" | "accepted" | "rejected" | "superseded";
+  confidence: number;
+  exposureUsd: number;
+  residualUsd: number;
+  entityPair: string;
+  rules: string[];
+  explanation: Record<string, unknown>;
+  lines: { id: string; side: "A" | "B"; entity: string; counterparty: string; amount: number; currency: string; amountUsd: number | null; valueDate: string; reference: string | null; description: string | null }[];
+};

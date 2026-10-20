@@ -1,3 +1,4 @@
+import { CountUp } from "../../components/common/Motion";
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Box, Button, LinearProgress, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
@@ -19,13 +20,13 @@ function DashboardPageView({ d }: { d: DashboardData }) {
 
   return (
     <Stack spacing={3}>
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 2fr" }, gap: 3 }}>
-        <Panel title="Period Close Center" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Q3-2026</Typography>}>
-          <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 28, fontWeight: 700 }}>
-            {closeCompletion}%
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", xl: "minmax(0, 1fr) minmax(0, 2fr)" }, gap: 3, "& > *": { minWidth: 0 } }}>
+        <Panel title="Period close" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Q3-2026</Typography>}>
+          <Typography className="display" sx={{ fontSize: "clamp(32px, 2.6vw, 40px)", lineHeight: 1 }}>
+            <CountUp value={`${closeCompletion}%`} />
           </Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>Close completion</Typography>
-          <LinearProgress variant="determinate" value={closeCompletion} sx={{ height: 8, borderRadius: 99, mb: 1.5 }} />
+          <LinearProgress variant="determinate" value={closeCompletion} sx={{ height: 6, borderRadius: 99, mb: 1.5, mt: 1.5, "& .MuiLinearProgress-bar": { background: "linear-gradient(90deg, var(--brand-blue), var(--brand-indigo))" } }} />
           <Stack direction="row" spacing={1}>
             {closeDays.map((day) => (
               <Box
@@ -49,17 +50,17 @@ function DashboardPageView({ d }: { d: DashboardData }) {
           </Stack>
         </Panel>
 
-        <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" }, gap: 3 }}>
+        <Box sx={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 3, "& > *": { minWidth: 0 } }}>
           {kpiGroups.map((group) => (
             <Panel key={group.title} title={group.title}>
               <Stack spacing={1.25}>
                 {group.items.map((item) => (
                   <Box key={item.label}>
-                    <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+                    <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                       {item.label}
                     </Typography>
-                    <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 18, fontWeight: 700 }}>
-                      {item.value}
+                    <Typography className="display" sx={{ fontSize: "clamp(17px, 1.35vw, 21px)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      <CountUp value={item.value} />
                     </Typography>
                     <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{item.hint}</Typography>
                   </Box>
@@ -70,7 +71,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
         </Box>
       </Box>
 
-      <Panel title="My Work Queue" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>What should I do next?</Typography>}>
+      <Panel title="My work queue" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Start here</Typography>}>
         <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: "repeat(4, 1fr)" }, gap: 2 }}>
           {workQueue.map((item) => (
             <Button
@@ -87,8 +88,8 @@ function DashboardPageView({ d }: { d: DashboardData }) {
                 color: "text.primary",
               }}
             >
-              <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 22, fontWeight: 700, color: item.tone === "crit" ? "error.main" : item.tone === "warn" ? "warning.main" : "success.main" }}>
-                {item.count}
+              <Typography className="display" sx={{ fontSize: "clamp(20px, 1.6vw, 24px)", lineHeight: 1.1, color: item.tone === "crit" ? "error.main" : item.tone === "warn" ? "warning.main" : "success.main" }}>
+                <CountUp value={String(item.count)} />
               </Typography>
               <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{item.label}</Typography>
             </Button>
@@ -98,7 +99,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
 
       <Panel
         title="Reconciliation Workflow Funnel"
-        action={<Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 11, color: "secondary.main" }}>Finance operations lifecycle</Typography>}
+        action={<Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: "secondary.main" }}>Finance operations lifecycle</Typography>}
       >
         <Box sx={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", py: 2.5, gap: 0.5 }}>
           <Box className="pipeline-track">
@@ -118,7 +119,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
                 borderRadius: 2,
               }}
             >
-              <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 13, fontWeight: 700 }}>{node.value}</Typography>
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 13, fontWeight: 700 }}>{node.value}</Typography>
               <Typography sx={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", color: "text.secondary" }}>
                 {node.label}
               </Typography>
@@ -151,16 +152,16 @@ function DashboardPageView({ d }: { d: DashboardData }) {
               {highRiskExceptions.map((row) => (
                 <TableRow key={row.id} hover>
                   <TableCell>
-                    <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700, fontSize: 12 }}>{row.id}</Typography>
+                    <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12 }}>{row.id}</Typography>
                     <StatusPill label={row.severity} tone={row.severity === "CRITICAL" ? "crit" : "warn"} />
                   </TableCell>
-                  <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700, color: "error.main" }}>
+                  <TableCell sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: "error.main" }}>
                     {row.impact}
                   </TableCell>
                   <TableCell>{row.entity}</TableCell>
                   <TableCell>{row.owner}</TableCell>
                   <TableCell>{row.due}</TableCell>
-                  <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{row.age}</TableCell>
+                  <TableCell sx={{ fontFamily: 'var(--font-mono)' }}>{row.age}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -183,14 +184,14 @@ function DashboardPageView({ d }: { d: DashboardData }) {
                   justifyContent: "space-between",
                   gridRow: index === 0 ? "1 / 3" : "auto",
                   ...(tile.tone === "crit"
-                    ? { bgcolor: "var(--crimson-soft)", color: "var(--brand-crimson)", border: "1px solid rgba(220,38,38,0.3)" }
+                    ? { bgcolor: "var(--crimson-soft)", color: "var(--brand-crimson)", border: "1px solid color-mix(in srgb, var(--brand-crimson) 28%, transparent)" }
                     : tile.tone === "warn"
-                      ? { bgcolor: "var(--amber-soft)", color: "var(--brand-amber)", border: "1px solid rgba(217,119,6,0.3)" }
-                      : { bgcolor: "var(--emerald-soft)", color: "var(--brand-emerald)", border: "1px solid rgba(5,150,105,0.3)" }),
+                      ? { bgcolor: "var(--amber-soft)", color: "var(--brand-amber)", border: "1px solid color-mix(in srgb, var(--brand-amber) 28%, transparent)" }
+                      : { bgcolor: "var(--emerald-soft)", color: "var(--brand-emerald)", border: "1px solid color-mix(in srgb, var(--brand-emerald) 28%, transparent)" }),
                 }}
               >
                 <Box>
-                  <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: index === 0 ? 20 : 14, fontWeight: 700 }}>
+                  <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: index === 0 ? 20 : 14, fontWeight: 700 }}>
                     {tile.amount}
                   </Typography>
                   <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{tile.entity}</Typography>
@@ -248,7 +249,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
           <Stack direction="row" spacing={1}>
             {sla.map((item) => (
               <Box key={item.label} sx={{ flex: 1, p: 1.25, borderRadius: 1, border: "1px solid", borderColor: "divider" }}>
-                <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 22, fontWeight: 700 }}>{item.count}</Typography>
+                <Typography className="display" sx={{ fontSize: "clamp(20px, 1.6vw, 24px)", lineHeight: 1.1 }}><CountUp value={String(item.count)} /></Typography>
                 <StatusPill label={item.label} tone={item.tone} />
               </Box>
             ))}
@@ -267,7 +268,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
       </Box>
 
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1.4fr 1fr" }, gap: 3 }}>
-        <Panel title="Agent Collaboration" action={<StatusPill label="ORCHESTRATED" tone="ok" />}>
+        <Panel title="Matching pipeline" action={<StatusPill label="RUNNING" tone="ok" />}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             {agentFlow.map((name, index) => (
               <Stack key={name} direction="row" alignItems="center" spacing={1} sx={{ flex: 1 }}>
@@ -290,12 +291,12 @@ function DashboardPageView({ d }: { d: DashboardData }) {
           </Box>
         </Panel>
 
-        <Panel title="AI Learning Progress">
+        <Panel title="Accuracy over time">
           <Stack spacing={1}>
             {learning.map((item) => (
               <Stack key={item.label} direction="row" justifyContent="space-between" sx={{ py: 0.75, borderBottom: "1px solid", borderColor: "divider" }}>
                 <Typography sx={{ fontSize: 13 }}>{item.label}</Typography>
-                <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>{item.value}</Typography>
+                <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{item.value}</Typography>
               </Stack>
             ))}
           </Stack>
@@ -309,7 +310,7 @@ function ForecastStat({ label, value }: { label: string; value: string }) {
   return (
     <Box>
       <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{label}</Typography>
-      <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>{value}</Typography>
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>{value}</Typography>
     </Box>
   );
 }
@@ -318,7 +319,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <Stack direction="row" justifyContent="space-between" sx={{ fontSize: 11, mb: 0.4 }}>
       <span>{label}</span>
-      <Box component="strong" sx={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>
+      <Box component="strong" sx={{ fontFamily: 'var(--font-mono)' }}>
         {value}
       </Box>
     </Stack>

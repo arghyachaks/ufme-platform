@@ -91,7 +91,7 @@
           "text": "UK02 treasury confirms reval journal JE-77812. Requesting reversal."
         },
         {
-          "author": "AI Advisor",
+          "author": "ufme Assist",
           "at": "13 Aug 08:02",
           "text": "Similar pattern resolved in CS-0981 via reval true-up; suggested resolution drafted."
         }
@@ -675,7 +675,7 @@
       "version": "v3",
       "usedBy": [
         "Rules",
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Real-time",
       "coverage": 100
@@ -687,7 +687,7 @@
       "version": "v2",
       "usedBy": [
         "Rules",
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Real-time",
       "coverage": 99.2
@@ -698,7 +698,7 @@
       "type": "vector",
       "version": "v1.3",
       "usedBy": [
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Real-time",
       "coverage": 97.8
@@ -711,7 +711,7 @@
       "usedBy": [
         "Rules",
         "Optimizer",
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Real-time",
       "coverage": 100
@@ -722,7 +722,7 @@
       "type": "int",
       "version": "v2",
       "usedBy": [
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Hourly",
       "coverage": 94.5
@@ -734,7 +734,7 @@
       "version": "v1",
       "usedBy": [
         "Rules",
-        "Ranker"
+        "Smart ranking"
       ],
       "freshness": "Every minute",
       "coverage": 100
@@ -745,7 +745,7 @@
       "type": "float",
       "version": "v1",
       "usedBy": [
-        "Ranker",
+        "Smart ranking",
         "Exceptions"
       ],
       "freshness": "Hourly",
@@ -1469,12 +1469,13 @@
     },
     {
       "id": "R-004",
-      "name": "Fuzzy reference (Jaro-Winkler ≥ 0.92)",
+      "name": "Fuzzy reference (≤ 1 edit, OCR-canonical)",
       "kind": "Fuzzy",
       "scope": "AP / AR",
       "conditions": [
-        "similarity(reference) ≥ 0.92",
-        "amount = amount"
+        "edit_distance(canonical(reference)) ≤ 1",
+        "|amount Δ| ≤ 0.1%",
+        "|date Δ| ≤ 7 days"
       ],
       "priority": 4,
       "enabled": true,

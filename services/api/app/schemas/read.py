@@ -156,6 +156,12 @@ class AskIn(CamelModel):
     prompt: str
 
 
+class AssistIn(CamelModel):
+    prompt: str
+    history: list[dict[str, str]] = []
+    page: str | None = None
+
+
 class ChatMessageOut(CamelModel):
     role: str
     text: str
@@ -213,3 +219,51 @@ class FxRateOut(CamelModel):
     currency: str
     rate_to_usd: float
     source: str
+
+
+class RunOut(CamelModel):
+    id: str
+    status: str
+    scope: dict[str, str | None]
+    engine_version: str
+    rules: list[dict[str, object]]
+    started_at: str | None
+    duration_ms: int | None
+    metrics: dict[str, object]
+    error: str | None
+
+
+class ProposalLineOut(CamelModel):
+    id: str
+    side: str
+    entity: str
+    counterparty: str
+    amount: int | float
+    currency: str
+    amount_usd: int | float | None
+    value_date: str
+    reference: str | None
+    description: str | None
+
+
+class ProposalOut(CamelModel):
+    id: str
+    run: str
+    type: str
+    decision: str
+    status: str
+    confidence: float
+    exposure_usd: int | float
+    residual_usd: int | float
+    entity_pair: str
+    rules: list[str]
+    explanation: dict[str, object]
+    lines: list[ProposalLineOut]
+
+
+class RunRequest(CamelModel):
+    entity: str | None = None
+
+
+class DecisionIn(CamelModel):
+    reason: str | None = None

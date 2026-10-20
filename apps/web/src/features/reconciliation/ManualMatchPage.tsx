@@ -66,7 +66,7 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
     <>
       <PageHeader
         title="Manual Match Workbench"
-        description="Build 1:1, 1:M, M:1, or M:M matches from unmatched items. Review first, then use AI suggestion."
+        description="Build 1:1, 1:M, M:1, or M:M matches from unmatched items. Review the suggestion, then confirm."
         actions={
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={() => navigate("/exceptions")}>
@@ -206,7 +206,7 @@ function PolicyStat({ label, value }: { label: string; value: string }) {
   return (
     <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
       <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>{label}</Typography>
-      <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 800, fontSize: 16 }}>{value}</Typography>
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 16 }}>{value}</Typography>
     </Box>
   );
 }
@@ -215,7 +215,7 @@ function Metric({ label, value }: { label: string; value: number }) {
   return (
     <Stack direction="row" justifyContent="space-between">
       <Typography sx={{ fontSize: 12 }}>{label}</Typography>
-      <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700, fontSize: 12 }}>
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 12 }}>
         {value.toLocaleString()}
       </Typography>
     </Stack>
@@ -265,7 +265,7 @@ function TxnPicker({
               borderTop: "1px solid",
               borderColor: "divider",
               bgcolor: checked ? "var(--indigo-soft)" : "transparent",
-              boxShadow: checked ? "inset 3px 0 0 var(--brand-indigo, #4f46e5)" : "none",
+              boxShadow: checked ? "inset 3px 0 0 var(--brand-indigo)" : "none",
             }}
           >
             <Stack direction="row" spacing={1} alignItems="flex-start">
@@ -273,7 +273,7 @@ function TxnPicker({
               <Box sx={{ flex: 1 }}>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography sx={{ fontWeight: 700, fontSize: 12 }}>{row.invoice}</Typography>
-                  <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 12, fontWeight: 700 }}>
+                  <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 700 }}>
                     {row.amount.toLocaleString()}
                   </Typography>
                 </Stack>

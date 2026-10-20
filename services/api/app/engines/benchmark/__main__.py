@@ -14,15 +14,20 @@ from collections.abc import Callable
 from pathlib import Path
 
 from app.engines.benchmark import baseline
-from app.engines.benchmark.evaluate import Report, evaluate
+from app.engines.benchmark.evaluate import Report, blocking_recall, evaluate
 from app.engines.benchmark.model import Dataset, Line, Prediction
 from app.engines.benchmark.scenarios import GOLDEN, fingerprint, generate, golden
+from app.engines.matching import engine
 
-MATCHERS: dict[str, Callable[[list[Line]], list[Prediction]]] = {"baseline": baseline.match}
+MATCHERS: dict[str, Callable[[list[Line]], list[Prediction]]] = {
+    "baseline": baseline.match,
+    "engine": engine.match,
+}
 MANIFEST = Path(__file__).resolve().parents[3] / "benchmarks" / "datasets.json"
 # Metrics guarded by the regression gate (higher is better unless listed in LOWER_IS_BETTER).
 GUARDED = ["pair.f1", "pair.precision", "group.f1", "exposure.f1", "auto.precision", "auto.rate"]
 LOWER_IS_BETTER = ["decoy_false_match_rate", "orphan_false_match_rate"]
+OPTIONAL = ["blocking_recall"]  # guarded when present in both reports
 TOLERANCE = 0.002
 
 
@@ -40,6 +45,13 @@ def check_floor(report: Report, floor_path: Path) -> list[str]:
     for key in GUARDED:
         if _get(current, key) < _get(floor, key) - TOLERANCE:
             failures.append(f"{key}: {_get(current, key):.4f} < floor {_get(floor, key):.4f}")
+    for key in OPTIONAL:
+        if (
+            current.get(key) is not None
+            and floor.get(key) is not None
+            and _get(current, key) < _get(floor, key) - TOLERANCE / 10
+        ):
+            failures.append(f"{key}: {_get(current, key):.5f} < floor {_get(floor, key):.5f}")
     for key in LOWER_IS_BETTER:
         if _get(current, key) > _get(floor, key) + TOLERANCE:
             failures.append(f"{key}: {_get(current, key):.4f} > floor {_get(floor, key):.4f}")
@@ -137,8 +149,12 @@ def main() -> int:
         print(f"exported {len(ds.lines):,} lines and {len(ds.truth):,} truth groups to {args.export_csv}")
         return 0
     started = time.perf_counter()
-    predictions = MATCHERS[args.matcher](ds.lines)
-    report = evaluate(ds, predictions, args.matcher, time.perf_counter() - started)
+    if args.matcher == "engine":
+        result = engine.run(ds.lines)
+        report = evaluate(ds, result.predictions, args.matcher, time.perf_counter() - started)
+        report.blocking_recall = blocking_recall(ds, result.candidate_pairs)
+    else:
+        report = evaluate(ds, MATCHERS[args.matcher](ds.lines), args.matcher, time.perf_counter() - started)
     print(summary(report))
     if args.out:
         args.out.parent.mkdir(parents=True, exist_ok=True)

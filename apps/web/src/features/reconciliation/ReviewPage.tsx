@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { api, ApiError } from "../../api/services";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Box,
@@ -55,10 +56,10 @@ function ReviewPageView({ d }: { d: ReconData }) {
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
       const key = event.key.toLowerCase();
       if (key === "a") {
-        setToast(`Approved ${left.id}`);
+        void decide(left.id, "accept");
         goNext();
       }
-      if (key === "r") setToast(`Rejected ${left.id}`);
+      if (key === "r") void decide(left.id, "reject");
       if (key === "e") navigate("/reconciliation/approvals");
       if (key === "n") goNext();
     };
@@ -71,7 +72,25 @@ function ReviewPageView({ d }: { d: ReconData }) {
     setSelectedIds((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   };
 
+  const decide = async (id: string, action: "accept" | "reject") => {
+    if (!id.startsWith("MT-")) {
+      setToast(`${action === "accept" ? "Approved" : "Rejected"} ${id}`);
+      return;
+    }
+    try {
+      await api.recon.decide(id, action);
+      setToast(`${id} ${action === "accept" ? "approved" : "rejected"} — recorded as a training label`);
+      goNext();
+    } catch (err) {
+      setToast(err instanceof ApiError ? err.message : `Could not ${action} ${id}`);
+    }
+  };
+
   const batch = (action: string) => {
+    const ids = queueSelected ? sideA.map((row) => row.id) : selectedIds;
+    if (action === "Approved" || action === "Rejected") {
+      ids.filter((id) => id.startsWith("MT-")).forEach((id) => void api.recon.decide(id, action === "Approved" ? "accept" : "reject").catch(() => undefined));
+    }
     if (!selectedCount) return;
     setToast(`${action} ${selectedCount} matches`);
     setSelectedIds([]);
@@ -148,7 +167,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
           </Stack>
 
           <Stack direction="row" alignItems="baseline" spacing={1.5} sx={{ mb: 1.5 }}>
-            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 32, fontWeight: 800, lineHeight: 1 }}>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 32, fontWeight: 800, lineHeight: 1 }}>
               {suggestedMatch.confidence}
             </Typography>
             <Box
@@ -226,7 +245,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
             {suggestedMatch.similarAnalytics.map((item) => (
               <Box key={item.label} sx={{ flex: 1, p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
                 <Typography sx={{ fontSize: 10, color: "text.secondary" }}>{item.label}</Typography>
-                <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 800 }}>{item.value}</Typography>
+                <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>{item.value}</Typography>
               </Box>
             ))}
           </Stack>
@@ -271,13 +290,13 @@ function ReviewPageView({ d }: { d: ReconData }) {
               variant="contained"
               color="success"
               onClick={() => {
-                setToast(`Approved ${left.id}`);
+                void decide(left.id, "accept");
                 goNext();
               }}
             >
               Approve
             </Button>
-            <Button variant="outlined" color="error" onClick={() => setToast(`Rejected ${left.id}`)}>
+            <Button variant="outlined" color="error" onClick={() => void decide(left.id, "reject")}>
               Reject
             </Button>
             <Button variant="outlined" onClick={() => navigate("/reconciliation/approvals")}>
@@ -332,7 +351,7 @@ function Metric({ label, value, emphasis }: { label: string; value: string; emph
   return (
     <Box sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
       <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>{label}</Typography>
-      <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 18, fontWeight: 800, color: emphasis ? "primary.main" : "text.primary" }}>
+      <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800, color: emphasis ? "primary.main" : "text.primary" }}>
         {value}
       </Typography>
     </Box>
@@ -403,7 +422,7 @@ function TxnList({
             }}
           >
             <Stack direction="row" justifyContent="space-between" alignItems="flex-start" gap={1}>
-              <Stack direction="row" spacing={0.75} alignItems="flex-start">
+              <Stack direction="row" spacing={0.75} alignItems="flex-start" sx={{ minWidth: 0, flex: 1 }}>
                 {onToggle && (
                   <Checkbox
                     size="small"
@@ -413,16 +432,16 @@ function TxnList({
                     sx={{ p: 0, mt: 0.2 }}
                   />
                 )}
-                <Box>
-                  <Typography sx={{ fontWeight: 700, fontSize: 12 }}>{row.invoice}</Typography>
-                  <Typography sx={{ fontSize: 11, color: "text.secondary" }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography title={row.invoice} sx={{ fontFamily: "var(--font-mono)", fontWeight: 600, fontSize: 11.5, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.invoice}</Typography>
+                  <Typography sx={{ fontSize: 11, color: "text.secondary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {row.entity} · {row.date}
                     {row.status ? ` · ${row.status}` : ""}
                     {row.slaRemaining ? ` · SLA ${row.slaRemaining}` : ""}
                   </Typography>
                 </Box>
               </Stack>
-              <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 12, fontWeight: 700 }}>
+              <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>
                 {row.amount.toLocaleString()}
               </Typography>
             </Stack>
@@ -430,7 +449,7 @@ function TxnList({
               <Stack spacing={0.4} sx={{ mt: 0.75 }}>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography sx={{ fontSize: 10, color: "text.secondary" }}>Candidate score</Typography>
-                  <Typography sx={{ fontSize: 11, fontWeight: 800, fontFamily: '"IBM Plex Sans", sans-serif' }}>{row.score}</Typography>
+                  <Typography sx={{ fontSize: 11, fontWeight: 800, fontFamily: 'var(--font-mono)' }}>{row.score}</Typography>
                 </Stack>
                 <LinearProgress variant="determinate" value={row.score} sx={{ height: 6, borderRadius: 99 }} />
               </Stack>

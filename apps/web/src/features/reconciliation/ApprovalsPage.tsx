@@ -67,7 +67,7 @@ function ApprovalsPageView({ d }: { d: ReconData }) {
         {approvalKpis.map((kpi) => (
           <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
-            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
           </Box>
         ))}
       </Box>
@@ -122,7 +122,7 @@ function ApprovalsPageView({ d }: { d: ReconData }) {
                   <TableCell padding="checkbox" onClick={(event) => event.stopPropagation()}>
                     <Checkbox size="small" checked={checked.includes(row.id)} onChange={() => toggle(row.id)} />
                   </TableCell>
-                  <TableCell sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontWeight: 700 }}>
+                  <TableCell sx={{ fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                     {row.id}
                     {row.exceptionOpen ? (
                       <Typography sx={{ fontSize: 10, color: "error.main", fontWeight: 700 }}>Exception linked</Typography>

@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { CircularProgress, Snackbar } from "@mui/material";
+import { api, ApiError } from "../../api/services";
 import { Box, Button, MenuItem, Select, Stack, Typography } from "@mui/material";
 import { workspaceApi, type ReconData } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
@@ -47,9 +50,7 @@ function ReconLayoutView({ d }: { d: ReconData }) {
             <MenuItem value={reconContext.type}>{reconContext.type}</MenuItem>
           </Select>
         </Stack>
-        <Button variant="contained" onClick={() => navigate("/reconciliation/runs")}>
-          Run Reconciliation
-        </Button>
+        <RunButton onDone={() => navigate("/reconciliation/runs")} />
       </Stack>
 
       <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 0.5 }}>
@@ -100,13 +101,13 @@ function ReconRecoBarView({ d }: { d: ReconData }) {
       <Stack direction={{ xs: "column", md: "row" }} justifyContent="space-between" gap={2} alignItems={{ md: "center" }}>
         <Box>
           <Typography sx={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", color: "primary.main" }}>
-            AI Recommendation Card
+            Suggested match
           </Typography>
           <Typography sx={{ fontSize: 16, fontWeight: 700, mt: 0.5 }}>{aiRecoCard.title}</Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.5 }}>{aiRecoCard.detail}</Typography>
           <Stack direction="row" spacing={2} sx={{ mt: 1 }}>
             <Typography sx={{ fontSize: 12 }}>
-              Confidence <Box component="strong" sx={{ fontFamily: '"IBM Plex Sans", sans-serif' }}>{aiRecoCard.confidence}</Box>
+              Confidence <Box component="strong" sx={{ fontFamily: 'var(--font-mono)' }}>{aiRecoCard.confidence}</Box>
             </Typography>
             <Typography sx={{ fontSize: 12, color: "success.main", fontWeight: 700 }}>{aiRecoCard.impact}</Typography>
             <Typography sx={{ fontSize: 12 }}>Execution time {aiRecoCard.executionTime}</Typography>
@@ -117,5 +118,38 @@ function ReconRecoBarView({ d }: { d: ReconData }) {
         </Button>
       </Stack>
     </Box>
+  );
+}
+
+function RunButton({ onDone }: { onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const start = async () => {
+    setBusy(true);
+    try {
+      let run = await api.recon.startRun();
+      for (let i = 0; i < 300 && (run.status === "Queued" || run.status === "Running"); i++) {
+        await new Promise((r) => setTimeout(r, 1000));
+        run = await api.recon.run(run.id);
+      }
+      const m = run.metrics as Record<string, number>;
+      setMessage(run.status === "Completed"
+        ? `${run.id}: ${m.auto?.toLocaleString()} auto-matched, ${m.suggested?.toLocaleString()} to review, ${m.unmatched?.toLocaleString()} open`
+        : `${run.id} ${run.status}${run.error ? ` — ${run.error}` : ""}`);
+      onDone();
+      setTimeout(() => window.location.reload(), 1800);  // refresh the run list and review queue
+    } catch (err) {
+      setMessage(err instanceof ApiError ? err.message : "Could not start the run");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <>
+      <Button variant="contained" onClick={start} disabled={busy} startIcon={busy ? <CircularProgress size={14} color="inherit" /> : undefined}>
+        {busy ? "Matching…" : "Run Reconciliation"}
+      </Button>
+      <Snackbar open={Boolean(message)} autoHideDuration={4000} onClose={() => setMessage("")} message={message} />
+    </>
   );
 }

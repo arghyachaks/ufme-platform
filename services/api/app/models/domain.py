@@ -95,6 +95,7 @@ class MatchRule(TenantScoped, Base):
     version: Mapped[str] = mapped_column(String(24))
     edited_on: Mapped[date] = mapped_column(Date)
     edited_by: Mapped[str] = mapped_column(String(120))
+    definition: Mapped[dict[str, Any] | None] = mapped_column(JSON)  # engine-executable rule DSL
 
 
 class Policy(TenantScoped, Base):

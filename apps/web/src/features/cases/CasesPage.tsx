@@ -119,7 +119,7 @@ export function CasesPage() {
             <Stack spacing={1.25} sx={{ mb: 2 }}>
               {current.comments.length === 0 ? <Typography sx={{ fontSize: 12, color: "text.secondary" }}>No comments yet.</Typography> : null}
               {current.comments.map((m, i) => (
-                <Box key={i} sx={{ p: 1.25, borderRadius: 1, bgcolor: m.author === "AI Advisor" ? "var(--indigo-soft)" : "var(--bg-muted)" }}>
+                <Box key={i} sx={{ p: 1.25, borderRadius: 1, bgcolor: m.author === "ufme Assist" ? "var(--indigo-soft)" : "var(--bg-muted)" }}>
                   <Typography sx={{ fontSize: 11, fontWeight: 700 }}>{m.author} <span style={{ fontWeight: 400, opacity: 0.7 }}>· {m.at}</span></Typography>
                   <Typography sx={{ fontSize: 12 }}>{m.text}</Typography>
                 </Box>

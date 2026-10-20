@@ -11,6 +11,8 @@ x-app-env: &app-env
   CORS_ORIGINS: '["http://localhost:5173"]'
   SEED_DEMO: "true"
   UPLOAD_DIR: /data/uploads
+  OLLAMA_URL: http://host.docker.internal:11434  # Ollama runs on the host GPU
+  ASSIST_MODEL: gemma4:e4b-it-qat
 
 services:
   postgres:
@@ -38,6 +40,7 @@ services:
     environment: *app-env
     ports: ["8000:8000"]
     volumes: [uploads:/data/uploads]
+    extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_healthy }

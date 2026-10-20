@@ -22,7 +22,7 @@ export function OperationsPage() {
           ]} />
           <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 2.5 }}>
             <Panel title="Throughput · last 12h"><Sparkline values={[12.1, 13.4, 12.8, 15.2, 16.9, 18.1, 17.4, 18.8, 19.6, 18.2, 18.9, 18.4]} /></Panel>
-            <Panel title="Error rate · last 12h"><Sparkline values={[0.2, 0.1, 0.3, 0.2, 0.2, 0.4, 0.9, 0.5, 0.3, 0.2, 0.3, 0.2]} color="#dc2626" /></Panel>
+            <Panel title="Error rate · last 12h"><Sparkline values={[0.2, 0.1, 0.3, 0.2, 0.2, 0.4, 0.9, 0.5, 0.3, 0.2, 0.3, 0.2]} color="var(--brand-crimson)" /></Panel>
           </Box>
           <DataTable<ServiceHealth> rows={data.services} rowKey={(s) => s.name} columns={[
             { key: "n", header: "Service", render: (s) => <b style={mono}>{s.name}</b> },

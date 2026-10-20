@@ -37,14 +37,14 @@ export const runs = [
     start: "08:12",
     duration: "11m",
     ruleVersion: "rules-v3.4",
-    modelVersion: "ranker-v4.8",
+    modelVersion: "Model 4.8",
     dataSource: "SAP ECC APAC + Oracle GL US01",
     transactionsProcessed: "2.41M",
-    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5", "DATE_WIN_3"],
+    rulesExecuted: ["Invoice ref exact", "Amount ±0.5%", "Date ±3 days"],
     runtimeBreakdown: [
       { step: "Ingest", time: "2.1m" },
       { step: "Rules", time: "6.4m" },
-      { step: "AI rank", time: "2.5m" },
+      { step: "Smart ranking", time: "2.5m" },
     ],
     exceptionSummary: "18.2k open · $210M exposure",
   },
@@ -62,14 +62,14 @@ export const runs = [
     start: "07:04",
     duration: "9m",
     ruleVersion: "rules-v3.4",
-    modelVersion: "ranker-v4.8",
+    modelVersion: "Model 4.8",
     dataSource: "SAP EMEA + Oracle GL US01",
     transactionsProcessed: "1.12M",
-    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5"],
+    rulesExecuted: ["Invoice ref exact", "Amount ±0.5%"],
     runtimeBreakdown: [
       { step: "Ingest", time: "1.8m" },
       { step: "Rules", time: "5.1m" },
-      { step: "AI rank", time: "2.1m" },
+      { step: "Smart ranking", time: "2.1m" },
     ],
     exceptionSummary: "6.4k open · $400M exposure",
   },
@@ -87,14 +87,14 @@ export const runs = [
     start: "08:31",
     duration: "3m",
     ruleVersion: "rules-v3.3",
-    modelVersion: "ranker-v4.7",
+    modelVersion: "Model 4.7",
     dataSource: "JPM bank file + NAMER GL",
     transactionsProcessed: "410k / 890k",
-    rulesExecuted: ["STMT_REF", "AMT_EXACT"],
+    rulesExecuted: ["Statement ref", "Amount exact"],
     runtimeBreakdown: [
       { step: "Ingest", time: "1.2m" },
       { step: "Rules", time: "1.4m" },
-      { step: "AI rank", time: "in progress" },
+      { step: "Smart ranking", time: "in progress" },
     ],
     exceptionSummary: "Pending until run completes",
   },
@@ -112,14 +112,14 @@ export const runs = [
     start: "05:10",
     duration: "2m",
     ruleVersion: "rules-v3.4",
-    modelVersion: "ranker-v4.8",
+    modelVersion: "Model 4.8",
     dataSource: "SAP ECC APAC",
     transactionsProcessed: "88k / 2.4M",
-    rulesExecuted: ["INV_REF_EXACT"],
+    rulesExecuted: ["Invoice ref exact"],
     runtimeBreakdown: [
       { step: "Ingest", time: "1.1m" },
       { step: "Rules", time: "failed" },
-      { step: "AI rank", time: "—" },
+      { step: "Smart ranking", time: "—" },
     ],
     exceptionSummary: "Source file checksum mismatch",
   },
@@ -137,14 +137,14 @@ export const runs = [
     start: "06:50",
     duration: "12m",
     ruleVersion: "rules-v3.3",
-    modelVersion: "ranker-v4.7",
+    modelVersion: "Model 4.7",
     dataSource: "SAP ECC APAC + Oracle GL US01",
     transactionsProcessed: "1.98M",
-    rulesExecuted: ["INV_REF_EXACT", "AMT_TOL_0.5", "DATE_WIN_3"],
+    rulesExecuted: ["Invoice ref exact", "Amount ±0.5%", "Date ±3 days"],
     runtimeBreakdown: [
       { step: "Ingest", time: "2.4m" },
       { step: "Rules", time: "7.0m" },
-      { step: "AI rank", time: "2.6m" },
+      { step: "Smart ranking", time: "2.6m" },
     ],
     exceptionSummary: "1.1k open · $18M exposure",
   },
@@ -241,12 +241,12 @@ export const suggestedMatch = {
   amountImpact: "$128,400",
   materiality: "Medium",
   risk: "Low",
-  rule: "INV_REF_EXACT + AMT_TOL_0.5",
+  rule: "Invoice ref exact + Amount ±0.5%",
   ruleVersion: "rules-v3.4",
   decision: "Approve",
   exposureReduction: "$128,400",
   similarCases: ["IC-2026-08-12 / SG-3301", "IC-2026-08-11 / SG-3188", "IC-2026-08-09 / SG-3012"],
-  history: ["12 Aug auto-suggested", "12 Aug similar case approved by Analyst_APAC", "Rule v3.4 accepted 1,842 times this quarter"],
+  history: ["12 Aug auto-suggested", "12 Aug similar case approved by Mei Tan (APAC analyst)", "Rule v3.4 accepted 1,842 times this quarter"],
   comments: ["Need to confirm SG- prefix policy with APAC lead."],
   why: [
     "Amount similarity 100%",
@@ -319,7 +319,7 @@ export const approvalHierarchy = ["Analyst", "Manager", "Controller", "Director"
 export const approvals = [
   {
     id: "MT-9004",
-    submittedBy: "Analyst_APAC",
+    submittedBy: "Mei Tan (APAC analyst)",
     entity: "APAC E09",
     exposure: "$6.1M",
     materiality: "Medium",
@@ -331,7 +331,7 @@ export const approvals = [
     exceptionOpen: true,
     rationale: "1:M split invoice after ERP prefix change. Variance within 0.05% FX policy.",
     documents: ["INV SG-4501.pdf", "GL extract 14 Aug.csv"],
-    trail: ["16 Aug 09:12 submitted", "16 Aug 09:14 AI policy check passed", "16 Aug 09:20 queued for controller"],
+    trail: ["16 Aug 09:12 submitted", "16 Aug 09:14 policy check passed", "16 Aug 09:20 queued for controller"],
     confidenceFactors: [
       { label: "Amount", weight: 40 },
       { label: "Reference", weight: 30 },
@@ -341,7 +341,7 @@ export const approvals = [
   },
   {
     id: "MT-8902",
-    submittedBy: "Agent_FX_04",
+    submittedBy: "FX auto-match",
     entity: "EMEA LE04",
     exposure: "$48.2M",
     materiality: "High",
@@ -353,7 +353,7 @@ export const approvals = [
     exceptionOpen: true,
     rationale: "FX swap residual above standard tolerance; override requested with hedge evidence.",
     documents: ["Hedge ticket H-441.xlsx"],
-    trail: ["16 Aug 07:40 AI suggested", "16 Aug 08:02 analyst escalated", "16 Aug 08:15 SLA warning"],
+    trail: ["16 Aug 07:40 match suggested", "16 Aug 08:02 analyst escalated", "16 Aug 08:15 SLA warning"],
     confidenceFactors: [
       { label: "Amount", weight: 20 },
       { label: "FX residual", weight: 35 },
@@ -363,7 +363,7 @@ export const approvals = [
   },
   {
     id: "MT-8830",
-    submittedBy: "Analyst_APAC",
+    submittedBy: "Mei Tan (APAC analyst)",
     entity: "APAC E09",
     exposure: "$64k",
     materiality: "Low",
@@ -373,7 +373,7 @@ export const approvals = [
     sla: "18h remaining",
     slaOverdue: false,
     exceptionOpen: false,
-    rationale: "Amount off by $20 due to rounding. Within AMT_TOL_0.5.",
+    rationale: "Amount off by $20 due to rounding. Within Amount ±0.5%.",
     documents: ["Match packet MT-8830.pdf"],
     trail: ["15 Aug 18:02 submitted"],
     confidenceFactors: [
@@ -392,7 +392,7 @@ export const closeReadiness = [
 ];
 
 export const failedControls = [
-  { id: "CTL-IC-09", name: "Intercompany aging > 45 days", owner: "FinController_Global", impact: "$18.4M" },
+  { id: "CTL-IC-09", name: "Intercompany aging > 45 days", owner: "Priya Raman · Group Controller", impact: "$18.4M" },
 ];
 
 export const signoffChecklist = [
@@ -410,16 +410,16 @@ export const signoffExceptionSummary = [
 ];
 
 export const signoffEvidence = {
-  signedBy: "FD_Global",
+  signedBy: "Finance Director",
   signedDate: "15 Aug 2026 18:04 UTC",
   approvalHash: "sha256:7c9ae21f4b88",
   auditRecordId: "AUD-SOX-2026-0815-044",
 };
 
 export const signoffEntities = [
-  { entity: "APAC E09", status: "Pending controller", exposure: "$210M", exceptions: 62, owner: "FinController_Global", date: "—" },
-  { entity: "EMEA LE04", status: "Manager signed", exposure: "$400M", exceptions: 88, owner: "Mgr_EMEA", date: "16 Aug" },
-  { entity: "NAMER Main", status: "Signed off", exposure: "$42M", exceptions: 6, owner: "FD_Global", date: "15 Aug" },
+  { entity: "APAC E09", status: "Pending controller", exposure: "$210M", exceptions: 62, owner: "Priya Raman · Group Controller", date: "—" },
+  { entity: "EMEA LE04", status: "Manager signed", exposure: "$400M", exceptions: 88, owner: "EMEA Finance Manager", date: "16 Aug" },
+  { entity: "NAMER Main", status: "Signed off", exposure: "$42M", exceptions: 6, owner: "Finance Director", date: "15 Aug" },
 ];
 
 export const signoffFlow = ["Analyst", "Manager", "Controller", "Finance Director"];
@@ -427,7 +427,7 @@ export const signoffFlow = ["Analyst", "Manager", "Controller", "Finance Directo
 export const reconActivity = [
   { time: "08:31", actor: "User", text: "Opened run IC-2026-08-17" },
   { time: "08:22", actor: "AI", text: "Suggested 1:1 for SG-4412 (conf 98.4%)" },
-  { time: "08:18", actor: "Rule", text: "INV_REF_EXACT applied to 1.9M items" },
+  { time: "08:18", actor: "Rule", text: "Invoice ref exact applied to 1.9M items" },
   { time: "08:12", actor: "User", text: "Started Intercompany run for APAC" },
 ];
 

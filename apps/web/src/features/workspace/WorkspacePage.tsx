@@ -11,7 +11,7 @@ export function WorkspacePage() {
       title={leaf?.label ?? "Workspace"}
       description={
         leaf?.description ??
-        "This module is part of the UFME review portal and will be implemented next."
+        "This module is part of the ufme review portal and will be implemented next."
       }
     />
   );

@@ -35,13 +35,13 @@ function EntityRiskPageView({ d }: { d: DashboardData }) {
       />
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
         <Panel title="Exposure">
-          <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 28, fontWeight: 700 }}>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700 }}>
             {entity.exposure}
           </Typography>
           <Typography sx={{ color: "text.secondary" }}>Unmatched financial risk</Typography>
         </Panel>
         <Panel title="Historical match rate">
-          <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 28, fontWeight: 700 }}>
+          <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 28, fontWeight: 700 }}>
             {entity.matchRate}
           </Typography>
           <Stack direction="row" alignItems="flex-end" spacing={0.75} sx={{ height: 72, mt: 1.5 }}>

@@ -51,7 +51,7 @@ export const navItems: NavItem[] = [
       {
         label: "Manual Match",
         to: "/reconciliation/manual-match",
-        description: "Create or override matches when rules and AI cannot auto-match.",
+        description: "Create or override matches when a match needs a person's judgement.",
       },
       {
         label: "Approvals",
@@ -117,12 +117,12 @@ export const navItems: NavItem[] = [
     ],
   },
   {
-    label: "AI Control Hub",
+    label: "Intelligence",
     icon: AutoAwesomeOutlinedIcon,
     description: "Ranking, explainability, model ops, and continuous learning.",
     children: [
       {
-        label: "Copilot",
+        label: "Assistant",
         to: "/ai/copilot",
         description: "Assist analysts with match suggestions, questions, and case summaries.",
       },

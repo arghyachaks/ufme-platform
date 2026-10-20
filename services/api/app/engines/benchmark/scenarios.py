@@ -16,7 +16,7 @@ from app.engines.augmented_data.fx import synthetic_rate
 from app.engines.benchmark.model import Dataset, Line, TruthGroup
 from app.engines.data_quality.normalize import normalize_reference
 
-GENERATOR_VERSION = "2.0"
+GENERATOR_VERSION = "2.1"  # 2.1: decoys carry unrelated references (2.0 decoys were one edit away)
 ENTITY_CURRENCY = {"US01": "USD", "UK02": "GBP", "DE03": "EUR", "IN04": "INR", "SG05": "SGD", "BR06": "BRL"}
 PERIOD_START = date(2026, 8, 1)
 KINDS = ["IC loan", "IC service fee", "IC royalty", "IC recharge", "IC dividend", "IC interest"]
@@ -115,6 +115,7 @@ class _Builder:
                 scenario=scenario,
                 line_ids=frozenset(x.id for x in lines),
                 difficulty=difficulty if difficulty is not None else SCENARIOS.get(scenario, (0, 2))[1],
+                twin_of=twin_of,
             )
         )
 
@@ -341,7 +342,7 @@ def _event(b: _Builder, scenario: str, k: int) -> None:
                 lb.counterparty,
                 Decimal(str(lb.amount)),
                 lb.value_date,
-                b.ref(a, p, k + 500_000),
+                b.ref(a, p, rnd.randint(600_000, 999_999)),
                 "IC",
             )
             b.group("decoy_same_amount", [d])

@@ -11,6 +11,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.engines.augmented_data.fx import DEMO_BASE_RATES, synthetic_rate
+from app.engines.matching.rules import DEFAULT_DEFINITIONS
 from app.models import (
     AppUser,
     AuditEvent,
@@ -63,6 +64,19 @@ def snapshot_payloads(fx: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def sync_rule_definitions(db: Session, tid: Any, core: dict[str, Any]) -> None:
+    """Engine-executable rule definitions (Stage 3b), also for tenants seeded before they existed."""
+    db.flush()
+    for rule in db.scalars(
+        select(MatchRule).where(MatchRule.tenant_id == tid, MatchRule.definition.is_(None))
+    ):
+        if rule.code in DEFAULT_DEFINITIONS:
+            rule.definition = DEFAULT_DEFINITIONS[rule.code]
+            fixture = next((r for r in core["rules"] if r["id"] == rule.code), None)
+            if fixture:
+                rule.name, rule.conditions = fixture["name"], fixture["conditions"]
+
+
 def seed_demo(db: Session, now: datetime | None = None) -> Tenant:
     """Idempotent: creates the demo tenant and rows once; snapshots are refreshed on every run."""
     now = now or datetime.now(UTC)
@@ -98,6 +112,7 @@ def seed_demo(db: Session, now: datetime | None = None) -> Tenant:
                     )
                 )
 
+    sync_rule_definitions(db, tid, core)
     if not created and db.scalar(
         select(func.count()).select_from(ExceptionItem).where(ExceptionItem.tenant_id == tid)
     ):
@@ -259,5 +274,6 @@ def seed_demo(db: Session, now: datetime | None = None) -> Tenant:
                 occurred_at=fmt.parse_second(a["at"]),
             )
         db.flush()
+    sync_rule_definitions(db, tid, core)
     logger.info("Seeded demo tenant")
     return tenant

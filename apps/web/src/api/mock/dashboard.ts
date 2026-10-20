@@ -16,9 +16,9 @@ export const kpiGroups = [
     ],
   },
   {
-    title: "AI Quality",
+    title: "Match quality",
     items: [
-      { label: "Confidence", value: "99.1%", hint: "Model certainty on ranked matches" },
+      { label: "Confidence", value: "99.1%", hint: "Average certainty on suggested matches" },
       { label: "Precision / Recall", value: "98.7% / 97.9%", hint: "Accepted matches that were correct" },
       { label: "False Positive Rate", value: "0.2%", hint: "Incorrect auto-matches" },
     ],
@@ -44,29 +44,29 @@ export const workflowFunnel = [
 
 export const agents = [
   {
-    name: "Duplicate Detection",
+    name: "Duplicate check",
     online: true,
     workload: "0 items",
     precision: "100%",
-    status: "Feeds FX Agent",
+    status: "Hands off to FX check",
   },
   {
-    name: "FX Variance Agent",
+    name: "FX variance check",
     online: true,
     workload: "412 items",
     precision: "97.4%",
-    status: "Feeds IC Agent",
+    status: "Hands off to intercompany",
   },
   {
-    name: "Intercompany Agent",
+    name: "Intercompany matching",
     online: true,
     workload: "2.4M items",
     precision: "99.8%",
-    status: "Active Matching",
+    status: "Matching now",
   },
 ];
 
-export const agentFlow = ["Duplicate Agent", "FX Agent", "Intercompany Agent"];
+export const agentFlow = ["Duplicate Agent", "FX Agent", "Intercompany matching"];
 
 export const exposureTiles = [
   {
@@ -99,7 +99,7 @@ export const highRiskExceptions = [
     category: "FX Variance",
     impact: "$48.2M",
     entity: "EMEA LE04",
-    owner: "FinController_Global",
+    owner: "Priya Raman · Group Controller",
     due: "17 Aug",
     age: "48h",
   },
@@ -119,7 +119,7 @@ export const highRiskExceptions = [
     category: "Format Mismatch",
     impact: "$6.1M",
     entity: "APAC E09",
-    owner: "Agent_IC_01",
+    owner: "Intercompany auto-match",
     due: "18 Aug",
     age: "12h",
   },
@@ -194,10 +194,10 @@ export const copilotThread = [
 ];
 
 export const tickerItems = [
-  "[13:18:02] Agent_IC matched 14,200 intercompany records (Conf: 99.9%)",
-  "[13:17:45] SOX Control Check passed for Q3 Period Closing",
-  "[13:15:10] Exception EX-8902 escalated to Global Controller (FX Variance > $10M)",
-  "[13:12:00] Neural Matching Model v4.8 deployed autonomously across EMEA Nodes",
+  "13:18  14,200 intercompany items matched automatically · 99.9% confidence",
+  "13:17  SOX control check passed for Q3 close",
+  "13:15  EX-8902 escalated to Group Controller · FX variance above $10M",
+  "13:12  Matching model 4.8 approved and live for EMEA",
 ];
 
 export const entityRisk = {

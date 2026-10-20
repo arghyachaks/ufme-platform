@@ -57,7 +57,7 @@ export function InvestigationsPage() {
                   <KeyValue label="Status" value={current.status} />
                 </Box>
                 <Box>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>AI root-cause hypotheses</Typography>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Likely root causes</Typography>
                   {hypotheses(current.rootCause).map((h) => (
                     <Stack key={h.text} direction="row" spacing={1} alignItems="center" sx={{ mb: 1 }}>
                       <Box sx={{ width: `${h.score * 100}%`, maxWidth: 160, minWidth: 8, height: 8, borderRadius: 4, bgcolor: "primary.main", opacity: 0.3 + h.score }} />

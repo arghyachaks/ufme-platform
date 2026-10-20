@@ -1,201 +1,201 @@
 {
   "dataset": "medium",
   "matcher": "baseline",
-  "lines": 100000,
+  "lines": 100001,
   "pair": {
-    "precision": 0.91867,
-    "recall": 0.62779,
-    "f1": 0.74588,
-    "tp": 34405,
-    "fp": 3046,
-    "fn": 20398
+    "precision": 0.92064,
+    "recall": 0.63058,
+    "f1": 0.74849,
+    "tp": 34526,
+    "fp": 2976,
+    "fn": 20227
   },
   "group": {
-    "precision": 0.91835,
-    "recall": 0.81052,
-    "f1": 0.86107,
-    "tp": 34393,
-    "fp": 3058,
-    "fn": 8040
+    "precision": 0.92035,
+    "recall": 0.81359,
+    "f1": 0.86368,
+    "tp": 34515,
+    "fp": 2987,
+    "fn": 7908
   },
   "exposure": {
-    "precision": 0.94222,
-    "recall": 0.79616,
-    "f1": 0.86305
+    "precision": 0.94588,
+    "recall": 0.79781,
+    "f1": 0.86556
   },
   "auto": {
-    "precision": 0.9885,
-    "rate": 0.48899,
-    "lines": 47122
+    "precision": 0.99491,
+    "rate": 0.4928,
+    "lines": 47186
   },
-  "decoy_false_match_rate": 0.25521,
-  "orphan_false_match_rate": 0.18452,
+  "decoy_false_match_rate": 0.21143,
+  "orphan_false_match_rate": 0.18363,
   "by_scenario": {
     "bank_fee": {
-      "precision": 0.94175,
-      "recall": 0.74748,
-      "f1": 0.83344,
-      "tp": 1261,
-      "fp": 78,
-      "fn": 426
+      "precision": 0.94527,
+      "recall": 0.74868,
+      "f1": 0.83557,
+      "tp": 1278,
+      "fp": 74,
+      "fn": 429
     },
     "bundle_m1": {
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 573,
-      "fn": 5244
+      "fp": 592,
+      "fn": 5304
     },
     "clean": {
       "precision": 1.0,
-      "recall": 1.0,
-      "f1": 1.0,
-      "tp": 18749,
+      "recall": 0.99995,
+      "f1": 0.99997,
+      "tp": 18730,
       "fp": 0,
-      "fn": 0
+      "fn": 1
     },
     "decoy_same_amount": {
       "precision": 0.0,
       "recall": 1.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 137,
+      "fp": 132,
       "fn": 0,
-      "total": 1265,
-      "wrongly_matched": 265
+      "total": 1268,
+      "wrongly_matched": 266
     },
     "decoy_same_ref": {
       "precision": 0.0,
       "recall": 1.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 49,
+      "fp": 61,
       "fn": 0,
-      "total": 886,
-      "wrongly_matched": 105
+      "total": 891,
+      "wrongly_matched": 109
     },
     "duplicate_extra": {
       "precision": 0.0,
       "recall": 1.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 189,
+      "fp": 147,
       "fn": 0,
-      "total": 874,
-      "wrongly_matched": 402
+      "total": 868,
+      "wrongly_matched": 265
     },
     "duplicate_posting": {
-      "precision": 0.7405,
-      "recall": 0.64645,
-      "f1": 0.69029,
-      "tp": 565,
-      "fp": 198,
-      "fn": 309
+      "precision": 0.87407,
+      "recall": 0.81567,
+      "f1": 0.84386,
+      "tp": 708,
+      "fp": 102,
+      "fn": 160
     },
     "fx_rounding": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tp": 1725,
+      "tp": 1764,
       "fp": 0,
       "fn": 0
     },
     "fx_source_mismatch": {
-      "precision": 0.96082,
-      "recall": 0.80053,
-      "f1": 0.87338,
-      "tp": 2428,
-      "fp": 99,
-      "fn": 605
+      "precision": 0.95417,
+      "recall": 0.79782,
+      "f1": 0.86902,
+      "tp": 2415,
+      "fp": 116,
+      "fn": 612
     },
     "netting_mm": {
-      "precision": 0.03226,
-      "recall": 0.00217,
-      "f1": 0.00407,
-      "tp": 12,
-      "fp": 360,
-      "fn": 5511
+      "precision": 0.02941,
+      "recall": 0.00205,
+      "f1": 0.00384,
+      "tp": 11,
+      "fp": 363,
+      "fn": 5348
     },
     "orphan": {
       "precision": 0.0,
       "recall": 1.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 181,
+      "fp": 167,
       "fn": 0,
-      "total": 1718,
-      "wrongly_matched": 317
+      "total": 1710,
+      "wrongly_matched": 314
     },
     "period_cutoff": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tp": 1305,
+      "tp": 1302,
       "fp": 0,
       "fn": 0
     },
     "ref_in_description": {
-      "precision": 0.90602,
-      "recall": 0.86437,
-      "f1": 0.88471,
-      "tp": 376,
-      "fp": 39,
-      "fn": 59
+      "precision": 0.92195,
+      "recall": 0.87298,
+      "f1": 0.8968,
+      "tp": 378,
+      "fp": 32,
+      "fn": 55
     },
     "ref_missing": {
-      "precision": 0.90714,
-      "recall": 0.87687,
-      "f1": 0.89175,
-      "tp": 762,
-      "fp": 78,
-      "fn": 107
+      "precision": 0.88928,
+      "recall": 0.86089,
+      "f1": 0.87486,
+      "tp": 755,
+      "fp": 94,
+      "fn": 122
     },
     "ref_ocr": {
-      "precision": 0.93907,
-      "recall": 0.89726,
-      "f1": 0.91769,
-      "tp": 786,
-      "fp": 51,
-      "fn": 90
+      "precision": 0.91492,
+      "recall": 0.89408,
+      "f1": 0.90438,
+      "tp": 785,
+      "fp": 73,
+      "fn": 93
     },
     "ref_prefix": {
-      "precision": 0.92986,
-      "recall": 0.90728,
-      "f1": 0.91844,
-      "tp": 822,
-      "fp": 62,
-      "fn": 84
+      "precision": 0.93486,
+      "recall": 0.90889,
+      "f1": 0.92169,
+      "tp": 818,
+      "fp": 57,
+      "fn": 82
     },
     "ref_truncated": {
-      "precision": 0.93237,
-      "recall": 0.89977,
-      "f1": 0.91578,
-      "tp": 386,
-      "fp": 28,
-      "fn": 43
+      "precision": 0.91872,
+      "recall": 0.8818,
+      "f1": 0.89988,
+      "tp": 373,
+      "fp": 33,
+      "fn": 50
     },
     "ref_typo": {
-      "precision": 0.93169,
-      "recall": 0.90217,
-      "f1": 0.91669,
-      "tp": 1623,
-      "fp": 119,
-      "fn": 176
+      "precision": 0.93588,
+      "recall": 0.90452,
+      "f1": 0.91993,
+      "tp": 1620,
+      "fp": 111,
+      "fn": 171
     },
     "reversal_pair": {
       "precision": 0.0,
       "recall": 0.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 67,
-      "fn": 476
+      "fp": 60,
+      "fn": 462
     },
     "reversal_repost": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tp": 476,
+      "tp": 462,
       "fp": 0,
       "fn": 0
     },
@@ -204,14 +204,14 @@
       "recall": 0.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 620,
-      "fn": 6377
+      "fp": 631,
+      "fn": 6467
     },
     "timing_lag": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "tp": 3129,
+      "tp": 3127,
       "fp": 0,
       "fn": 0
     },
@@ -220,9 +220,10 @@
       "recall": 0.0,
       "f1": 0.0,
       "tp": 0,
-      "fp": 118,
-      "fn": 891
+      "fp": 131,
+      "fn": 871
     }
   },
-  "seconds": 6.199
+  "seconds": 0.0,
+  "blocking_recall": null
 }

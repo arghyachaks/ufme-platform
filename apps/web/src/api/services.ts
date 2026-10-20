@@ -5,7 +5,7 @@
 import * as db from "./mock/db";
 import * as reconMock from "./mock/recon";
 import * as dashboardMock from "./mock/dashboard";
-import type { BatchDetail, ChatMessage, IngestionBatch } from "./types";
+import type { BatchDetail, ChatMessage, IngestionBatch, MatchProposal, MatchRunInfo, MatchRule } from "./types";
 
 export type ReconData = typeof reconMock;
 export type DashboardData = typeof dashboardMock;
@@ -49,10 +49,64 @@ const mockBatch = (sourceId: string, fileName: string): IngestionBatch => {
   return batch;
 };
 
+const mockRun: MatchRunInfo = {
+  id: "RUN-00001", status: "Completed", scope: {}, engineVersion: "mock", rules: [], startedAt: null, durationMs: 0,
+  metrics: {}, error: null,
+};
+
+
+export type AssistTurn = { role: "user" | "assistant"; content: string };
+export type AssistStatus = { online: boolean; model: string };
+type AssistArgs = { prompt: string; history: AssistTurn[]; page?: string; onDelta: (text: string) => void; signal?: AbortSignal };
+
+async function mockAssist({ prompt, onDelta, signal }: AssistArgs): Promise<"fallback"> {
+  const words = db.copilotAnswer(prompt).text.split(/(\s+)/);
+  for (const w of words) {
+    if (signal?.aborted) break;
+    await new Promise((r) => setTimeout(r, 18));
+    onDelta(w);
+  }
+  return "fallback";
+}
+
+/** Streams ufme Assist's answer (NDJSON from the API, which proxies the local model). Resolves with the source. */
+async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs): Promise<string> {
+  const res = await fetch(`${BASE}/ai/assist/stream`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, history, page }),
+    signal,
+  });
+  if (!res.ok || !res.body) throw new ApiError(res.status, { title: "Assist unavailable" });
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  let source = "local-llm";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line) continue;
+      const msg = JSON.parse(line) as { delta?: string; done?: boolean; source?: string };
+      if (msg.delta) onDelta(msg.delta);
+      if (msg.done && msg.source) source = msg.source;
+    }
+  }
+  return source;
+}
+
 const mockApi = {
   exceptions: { list: () => delay(db.exceptions) },
   cases: { list: () => delay(db.cases) },
-  rules: { list: () => delay(db.rules) },
+  rules: {
+    list: () => delay(db.rules),
+    setEnabled: (code: string, enabled: boolean): Promise<MatchRule> =>
+      delay({ ...(db.rules.find((r) => r.id === code) ?? db.rules[0]), enabled }),
+  },
   policies: { list: () => delay(db.policies) },
   simulation: {
     scenarios: () => delay(Object.entries(db.simulationResults).map(([key, value]) => ({ key, label: value.scenario }))),
@@ -65,6 +119,8 @@ const mockApi = {
     learning: () => delay({ signals: db.learningSignals, stats: db.learningStats }),
     copilotSeed: () => delay({ messages: db.copilotSeed, prompts: db.copilotPrompts }),
     ask: (prompt: string): Promise<ChatMessage> => delay(db.copilotAnswer(prompt), 700),
+    assist: (args: AssistArgs): Promise<string> => mockAssist(args),
+    assistStatus: (): Promise<AssistStatus> => delay({ online: false, model: "demo" }),
   },
   data: {
     sources: () => delay(db.sources),
@@ -81,6 +137,14 @@ const mockApi = {
       delay(db.qualityIssues.find((i) => i.id === code) ?? db.qualityIssues[0]),
   },
   audit: { events: () => delay(db.auditEvents), controls: () => delay(db.controlTests) },
+  recon: {
+    startRun: (_entity?: string): Promise<MatchRunInfo> => delay(mockRun, 400),
+    run: (_code: string): Promise<MatchRunInfo> => delay(mockRun),
+    runs: (): Promise<MatchRunInfo[]> => delay([mockRun]),
+    proposals: (_params?: { run?: string; status?: string }): Promise<MatchProposal[]> => delay([]),
+    decide: (code: string, action: "accept" | "reject"): Promise<MatchProposal> =>
+      delay({ id: code, status: action === "accept" ? "accepted" : "rejected" } as MatchProposal),
+  },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
   graph: { get: () => delay({ nodes: db.graphNodes, edges: db.graphEdges }) },
@@ -92,7 +156,11 @@ type R<F extends (...args: never[]) => Promise<unknown>> = Awaited<ReturnType<F>
 const httpApi: Api = {
   exceptions: { list: () => http("/exceptions") },
   cases: { list: () => http("/cases") },
-  rules: { list: () => http("/rules") },
+  rules: {
+    list: () => http("/rules"),
+    setEnabled: (code: string, enabled: boolean) =>
+      http<MatchRule>(`/rules/${encodeURIComponent(code)}`, { method: "PATCH", body: JSON.stringify({ enabled }) }),
+  },
   policies: { list: () => http("/policies") },
   simulation: {
     scenarios: () => http("/rules/simulations"),
@@ -105,6 +173,8 @@ const httpApi: Api = {
     learning: () => http("/ai/learning"),
     copilotSeed: () => http("/ai/copilot"),
     ask: (prompt: string) => post<ChatMessage>("/ai/copilot/ask", { prompt }),
+    assist: httpAssist,
+    assistStatus: () => http<AssistStatus>("/ai/assist/status"),
   },
   data: {
     sources: () => http("/data/sources"),
@@ -128,6 +198,15 @@ const httpApi: Api = {
       post(`/data/quality/${encodeURIComponent(code)}/${action}`),
   },
   audit: { events: () => http("/audit/events"), controls: () => http("/audit/controls") },
+  recon: {
+    startRun: (entity?: string) => post<MatchRunInfo>("/recon/runs", entity ? { entity } : undefined),
+    run: (code: string) => http<MatchRunInfo>(`/recon/runs/${encodeURIComponent(code)}`),
+    runs: () => http<MatchRunInfo[]>("/recon/runs"),
+    proposals: (params?: { run?: string; status?: string }) =>
+      http<MatchProposal[]>(`/recon/proposals?${new URLSearchParams(Object.entries(params ?? {}).filter(([, v]) => v) as [string, string][])}`),
+    decide: (code: string, action: "accept" | "reject") =>
+      post<MatchProposal>(`/recon/proposals/${encodeURIComponent(code)}/${action}`),
+  },
   admin: { all: () => http("/admin") },
   ops: { all: () => http("/ops") },
   graph: { get: () => http("/graph") },

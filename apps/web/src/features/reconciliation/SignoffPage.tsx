@@ -66,7 +66,7 @@ function SignoffPageView({ d }: { d: ReconData }) {
         }}
       >
         <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>Close readiness</Typography>
-        <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 40, fontWeight: 800, lineHeight: 1.1 }}>92% Ready</Typography>
+        <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 40, fontWeight: 800, lineHeight: 1.1 }}>92% Ready</Typography>
         <Typography sx={{ fontSize: 12, color: "text.secondary" }}>Executive KPI for APAC E09 Q3 close</Typography>
       </Box>
 
@@ -74,7 +74,7 @@ function SignoffPageView({ d }: { d: ReconData }) {
         {closeReadiness.map((kpi) => (
           <Box key={kpi.label} className="glass" sx={{ p: 1.5, borderRadius: 2 }}>
             <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase" }}>{kpi.label}</Typography>
-            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 20, fontWeight: 700 }}>{kpi.value}</Typography>
             {kpi.label === "Controls Passed" && (
               <Button size="small" sx={{ px: 0 }} onClick={() => setControlOpen(true)}>
                 View failed control

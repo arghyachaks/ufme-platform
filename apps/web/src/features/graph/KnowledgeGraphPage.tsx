@@ -7,8 +7,8 @@ import type { GraphNode } from "../../api/types";
 import { Panel } from "../../components/common/Panel";
 import { KeyValue, Page, glass } from "../../components/common/Blocks";
 
-const kindColor: Record<GraphNode["kind"], string> = { Entity: "#4f46e5", Counterparty: "#0284c7", Account: "#64748b", Transaction: "#059669", Case: "#dc2626" };
-const riskRing = { ok: "#059669", warn: "#d97706", crit: "#dc2626" };
+const kindColor: Record<GraphNode["kind"], string> = { Entity: "var(--brand-indigo)", Counterparty: "var(--brand-blue)", Account: "var(--text-muted)", Transaction: "var(--brand-emerald)", Case: "var(--brand-crimson)" };
+const riskRing = { ok: "var(--brand-emerald)", warn: "var(--brand-amber)", crit: "var(--brand-crimson)" };
 
 export function KnowledgeGraphPage() {
   const { data, loading } = useQuery(api.graph.get);

@@ -18,7 +18,18 @@ export function RulesPage() {
   useEffect(() => { if (data) { setRules(data); setSelectedId(data[0]?.id); } }, [data]);
   const selected = rules.find((r) => r.id === selectedId);
 
-  const toggle = (id: string) => setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
+  const toggle = async (id: string) => {
+    const rule = rules.find((r) => r.id === id);
+    if (!rule) return;
+    setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled: !r.enabled } : r)));
+    try {
+      await api.rules.setEnabled(id, !rule.enabled);
+      toast(`${id} ${rule.enabled ? "disabled" : "enabled"} — applies from the next run`);
+    } catch {
+      setRules((rs) => rs.map((r) => (r.id === id ? { ...r, enabled: rule.enabled } : r)));
+      toast(`Could not update ${id}`);
+    }
+  };
   const save = () => {
     if (!draft) return;
     const isNew = !draft.id;
@@ -31,7 +42,7 @@ export function RulesPage() {
 
   const enabled = rules.filter((r) => r.enabled);
   return (
-    <Page title="Matching rules" description="Deterministic exact, tolerance, fuzzy, and many-to-many rules, evaluated in priority order before optimization and AI ranking." loading={loading}
+    <Page title="Matching rules" description="Exact, tolerance, near-match and many-to-many rules, applied in priority order before smart ranking." loading={loading}
       actions={<Button variant="contained" onClick={() => setDraft({ ...emptyRule })}>New rule</Button>}>
       <StatGrid items={[
         { label: "Active rules", value: `${enabled.length}/${rules.length}` },

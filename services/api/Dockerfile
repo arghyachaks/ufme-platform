@@ -22,4 +22,4 @@ COPY tests ./tests
 COPY benchmarks ./benchmarks
 RUN chown -R ufme /app
 USER ufme
-CMD ["sh", "-c", "ruff check . && ruff format --check . && mypy app && pytest -p no:cacheprovider --cov=app --cov-report=term --cov-fail-under=80 && python -m app.engines.benchmark --dataset medium --matcher baseline --check benchmarks/floor_medium_baseline.json"]
+CMD ["sh", "-c", "ruff check . && ruff format --check . && mypy app && pytest -p no:cacheprovider --cov=app --cov-report=term --cov-fail-under=80 && python -m app.engines.benchmark --dataset medium --matcher baseline --check benchmarks/floor_medium_baseline.json && python -m app.engines.benchmark --dataset medium --matcher engine --check benchmarks/floor_medium_engine.json"]

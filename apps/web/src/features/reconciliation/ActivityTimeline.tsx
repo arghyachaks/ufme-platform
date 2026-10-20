@@ -17,7 +17,7 @@ function ActivityTimelineView({ d }: { d: ReconData }) {
       <Stack spacing={0.75}>
         {reconActivity.map((item) => (
           <Stack key={`${item.time}-${item.text}`} direction="row" spacing={1}>
-            <Typography sx={{ fontFamily: '"IBM Plex Sans", sans-serif', fontSize: 11, color: "text.secondary", minWidth: 40 }}>
+            <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: "text.secondary", minWidth: 40 }}>
               {item.time}
             </Typography>
             <Typography sx={{ fontSize: 11, fontWeight: 700, minWidth: 36 }}>{item.actor}</Typography>

@@ -6,7 +6,7 @@ import {
 import type { Kpi, Severity, Tone } from "../../api/types";
 import { PageHeader } from "./PageHeader";
 
-export const mono = { fontFamily: '"IBM Plex Sans", sans-serif' } as const;
+export const mono = { fontFamily: 'var(--font-mono)' } as const;
 export const glass = {
   bgcolor: "var(--glass-bg)",
   backdropFilter: "blur(18px) saturate(150%)",
@@ -131,7 +131,7 @@ export function Meter({ value, max = 100, tone, label }: { value: number; max?: 
   );
 }
 
-export function Sparkline({ values, width = 240, height = 56, color = "#4f46e5" }: { values: number[]; width?: number; height?: number; color?: string }) {
+export function Sparkline({ values, width = 240, height = 56, color = "var(--brand-indigo)" }: { values: number[]; width?: number; height?: number; color?: string }) {
   const min = Math.min(...values);
   const max = Math.max(...values);
   const span = max - min || 1;
