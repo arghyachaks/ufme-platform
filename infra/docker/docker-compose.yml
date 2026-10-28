@@ -45,6 +45,7 @@ services:
     build: { context: ../../services/api, target: runtime }
     environment: *app-env
     ports: ["8000:8000"]
+    restart: unless-stopped
     volumes: [uploads:/data/uploads]
     extra_hosts: ["host.docker.internal:host-gateway"]
     depends_on:
@@ -53,6 +54,7 @@ services:
 
   worker:
     build: { context: ../../services/api, target: runtime }
+    restart: unless-stopped  # an OOM kill must not leave the queue without a worker
     command: celery -A app.workers.celery_app worker --loglevel=INFO --pool=threads --concurrency=2  # threads: a match run fans out to its own process pool
     environment: *app-env
     volumes: [uploads:/data/uploads]

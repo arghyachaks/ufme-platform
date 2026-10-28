@@ -6,7 +6,7 @@ import uuid
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import Any, NamedTuple
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
@@ -41,9 +41,18 @@ def load_rules(db: Session, tenant: Tenant) -> list[Rule]:
     return [Rule.from_definition(r.code, r.name, r.definition or {}, priority=r.priority) for r in rows]
 
 
+class TxnRef(NamedTuple):
+    """What persistence needs from a ledger line: its row id and human code (not a full ORM object)."""
+
+    id: uuid.UUID
+    code: str
+
+
 def open_lines(
     db: Session, tenant: Tenant, entity: str | None = None
-) -> tuple[list[Line], dict[str, LedgerTxn], int]:
+) -> tuple[list[Line], dict[str, TxnRef], int]:
+    """Open (unmatched) ledger lines. Selects columns, not ORM entities: ~700K identity-mapped objects cost
+    gigabytes and pushed parallel runs into out-of-memory kills."""
     # NOT EXISTS (an anti-join), not NOT IN: with ~500K members NOT IN degrades to a per-row subplan.
     closed = (
         select(MatchMember.id)
@@ -54,32 +63,47 @@ def open_lines(
             MatchGroup.status.in_(CLOSED),
         )
     )
-    q = select(LedgerTxn).where(LedgerTxn.tenant_id == tenant.id, ~closed.exists())
+    t = LedgerTxn
+    q = select(
+        t.id,
+        t.code,
+        t.entity_code,
+        t.counterparty_code,
+        t.amount,
+        t.currency,
+        t.amount_usd,
+        t.value_date,
+        t.posting_date,
+        t.reference_raw,
+        t.reference_norm,
+        t.description,
+        t.account,
+    ).where(t.tenant_id == tenant.id, ~closed.exists())
     if entity:
-        q = q.where((LedgerTxn.entity_code == entity) | (LedgerTxn.counterparty_code == entity))
+        q = q.where((t.entity_code == entity) | (t.counterparty_code == entity))
     lines: list[Line] = []
-    by_id: dict[str, LedgerTxn] = {}
+    by_id: dict[str, TxnRef] = {}
     skipped = 0
-    for t in db.scalars(q):
-        if t.amount_usd is None:  # no FX rate: cannot be compared across currencies
+    for row in db.execute(q.execution_options(yield_per=50_000)):
+        if row.amount_usd is None:  # no FX rate: cannot be compared across currencies
             skipped += 1
             continue
-        key = str(t.id)
-        by_id[key] = t
+        key = str(row.id)
+        by_id[key] = TxnRef(row.id, row.code)
         lines.append(
             Line(
                 id=key,
-                entity=t.entity_code,
-                counterparty=t.counterparty_code,
-                amount=float(t.amount),
-                currency=t.currency,
-                amount_usd=float(t.amount_usd),
-                value_date=t.value_date,
-                posting_date=t.posting_date or t.value_date,
-                reference=t.reference_raw or "",
-                reference_norm=t.reference_norm,
-                description=t.description or "",
-                account=t.account or "",
+                entity=row.entity_code,
+                counterparty=row.counterparty_code,
+                amount=float(row.amount),
+                currency=row.currency,
+                amount_usd=float(row.amount_usd),
+                value_date=row.value_date,
+                posting_date=row.posting_date or row.value_date,
+                reference=row.reference_raw or "",
+                reference_norm=row.reference_norm,
+                description=row.description or "",
+                account=row.account or "",
             )
         )
     return lines, by_id, skipped
@@ -122,7 +146,7 @@ def create_run(db: Session, tenant: Tenant, entity: str | None = None, actor: st
         code=f"RUN-{n:05d}",
         status="Queued",
         scope={"entity": entity},
-        engine_version=engine.ENGINE_VERSION,
+        engine_version=engine.version_label(),
         rules=[],
         metrics={},
         requested_by=actor,
@@ -150,7 +174,7 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                 .values(status="superseded")
             )
             t1 = time.perf_counter()
-            result = engine.run(lines, rules)
+            result = engine.run(lines, rules, keep_candidates=False)
             t2 = time.perf_counter()
             base = _next_code(db, MatchGroup, tenant, "MT")
             auto = suggested = 0
@@ -209,7 +233,7 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
             run.metrics = {
                 "lines": len(lines),
                 "skipped_no_fx": skipped,
-                "candidates": len(result.candidate_pairs),
+                "candidates": result.candidate_count,
                 "auto": auto,
                 "suggested": suggested,
                 "unmatched": len(unmatched),

@@ -24,12 +24,12 @@ from app.engines.matching.assignment import max_weight_assignment
 from app.engines.matching.rules import Rule, default_rules
 from app.engines.matching.text import affix, edit_distance, jaro_winkler
 
-ENGINE_VERSION = "engine-1.2 (3c groups + 1:1 assignment)"  # stored in a 64-char column
+ENGINE_VERSION = "engine-1.3"  # + scorer version via version_label(); stored in a 64-char column
 POLICY_TOLERANCE = 0.005  # auto-match only within the 0.5% tolerance policy
 AUTO_THRESHOLD = 0.985
 SUGGEST_THRESHOLD = 0.5
 PARALLEL_MIN = 50_000  # lines; below this, process start-up costs more than it saves
-MAX_WORKERS = 8  # memory: each process holds one entity pair
+MAX_WORKERS = int(os.environ.get("UFME_MATCH_WORKERS", "4"))  # memory: each process holds one entity pair
 MAX_RESIDUAL_GAP = 0.2  # ref-strong pairs up to 20% apart are proposed with a residual (fees, withholding)
 
 
@@ -41,8 +41,8 @@ class PairResult:
     log_odds: float
     contributions: dict[str, float]
     rules: list[str] = field(default_factory=list)
-    row: list[float] | None = None  # learned-model feature vector (3d), kept for explanations
-    explain: dict[str, Any] | None = None  # model drivers + counterfactuals for suggestions
+    explain: dict[str, Any] | None = None  # model drivers + counterfactuals for suggestions (3d)
+    index: int | None = None  # this pair's row in the entity pair's feature matrix, for explanations
 
     @property
     def probability(self) -> float:
@@ -55,6 +55,7 @@ class EngineResult:
     candidate_pairs: set[frozenset[str]]
     details: dict[frozenset[str], "PairResult | grp.GroupResult"]
     alternatives: dict[frozenset[str], list[tuple[str, float]]]
+    candidate_count: int = 0  # always set; candidate_pairs itself is only kept when asked (benchmarks)
 
 
 def pair_features(a: cand.Prepared, b: cand.Prepared, sources: set[str], ambiguity: int) -> dict[str, Any]:
@@ -146,14 +147,19 @@ def match(lines: list[Line], rules: list[Rule] | None = None, explain: bool = Fa
     return run(lines, rules).predictions
 
 
-def run(lines: list[Line], rules: list[Rule] | None = None, workers: int | None = None) -> EngineResult:
+def run(
+    lines: list[Line],
+    rules: list[Rule] | None = None,
+    workers: int | None = None,
+    keep_candidates: bool = True,
+) -> EngineResult:
     """Entity pairs are independent, so large runs fan out across processes; results are merged in pair
     order, so output is identical to a serial run."""
     rules = sorted(rules if rules is not None else default_rules(), key=lambda r: r.priority)
     by_pair: dict[tuple[str, str], tuple[list[Line], list[Line]]] = defaultdict(lambda: ([], []))
     for line in lines:
         by_pair[line.pair][0 if line.side == "A" else 1].append(line)
-    jobs = [(by_pair[k][0], by_pair[k][1], rules) for k in sorted(by_pair)]
+    jobs = [(by_pair[k][0], by_pair[k][1], rules, keep_candidates) for k in sorted(by_pair)]
     if workers is None:
         workers = min(len(jobs), os.cpu_count() or 1, MAX_WORKERS) if len(lines) >= PARALLEL_MIN else 1
     if workers > 1:
@@ -175,14 +181,18 @@ def run(lines: list[Line], rules: list[Rule] | None = None, workers: int | None 
     for part in parts:
         out.predictions.extend(part.predictions)
         out.candidate_pairs |= part.candidate_pairs
+        out.candidate_count += part.candidate_count
         out.details.update(part.details)
         out.alternatives.update(part.alternatives)
     return out
 
 
-def _run_pair_job(job: tuple[list[Line], list[Line], list[Rule]]) -> EngineResult:
-    a, b, rules = job
-    return _run_pair([cand.prepare(x) for x in a], [cand.prepare(x) for x in b], rules)
+def _run_pair_job(job: tuple[list[Line], list[Line], list[Rule], bool]) -> EngineResult:
+    a, b, rules, keep_candidates = job
+    out = _run_pair([cand.prepare(x) for x in a], [cand.prepare(x) for x in b], rules)
+    if not keep_candidates:  # ~8.6M frozensets at full scale: never ship them back unless a benchmark asks
+        out.candidate_pairs = set()
+    return out
 
 
 def candidates_with_features(
@@ -221,13 +231,18 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
     pair_start = 0
     prep, blocks, entries = candidates_with_features(side_a, side_b)
     candidate_pairs.update(frozenset(k) for k in blocks)
+    n_candidates = len(blocks)
+    del blocks
     model = learned.load()
-    feature_rows = [learned_row(a, b, f) for a, b, f in entries] if model is not None else []
-    probs = (
-        model.proba(np.asarray(feature_rows, dtype=np.float64))
-        if model is not None and feature_rows
-        else None
-    )
+    # One float64 matrix per entity pair (~140 B/pair) instead of Python lists (~1 KB/pair): at 8.6M candidate
+    # pairs across parallel workers that is the difference between fitting in memory and an OOM kill.
+    features_x: np.ndarray | None = None
+    probs = None
+    if model is not None and entries:
+        features_x = np.empty((len(entries), len(learned.FEATURE_NAMES)), dtype=np.float64)
+        for i, (a, b, f) in enumerate(entries):
+            features_x[i] = learned_row(a, b, f)
+        probs = model.proba(features_x)
     auto_threshold = model.auto_threshold if model is not None else AUTO_THRESHOLD
 
     scored: list[PairResult] = []
@@ -245,11 +260,10 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             if floor_lo > lo:
                 contrib["rule"] = floor_lo - lo
                 lo = floor_lo
-        pr = PairResult(
-            a.line, b.line, f, lo, contrib, [r.id for r in fired], feature_rows[i] if feature_rows else None
-        )
+        pr = PairResult(a.line, b.line, f, lo, contrib, [r.id for r in fired], index=i)
         if pr.probability >= SUGGEST_THRESHOLD:
             scored.append(pr)
+    del entries  # candidate features below the suggest threshold are no longer needed: free them now
 
     # Global 1:1 assignment per connected component, maximizing total log-odds.
     adj: dict[str, list[PairResult]] = defaultdict(list)
@@ -295,8 +309,14 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             margin_ok = not runner_up or pr.log_odds - runner_up[0].log_odds >= 1.0
             if decision == "auto" and not margin_ok:
                 decision = "suggest"  # a close competitor exists: a human should confirm
-            if decision == "suggest" and model is not None and pr.row is not None:
-                pr.explain = learned.explain(model, pr.row, auto_threshold, within_policy, margin_ok)
+            if (
+                decision == "suggest"
+                and model is not None
+                and features_x is not None
+                and pr.index is not None
+            ):
+                row = features_x[pr.index].tolist()
+                pr.explain = learned.explain(model, row, auto_threshold, within_policy, margin_ok)
             reasons = [*pr.rules, *(f"{k} {v:+.1f}" for k, v in pr.contributions.items() if k != "prior")]
             predictions.append(Prediction(key, round(p, 6), decision, reasons))
             details[key] = pr
@@ -334,7 +354,14 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             predictions.append(Prediction(key, round(gp, 6), decision, reasons))
             details[key] = g
             alternatives[key] = []
-    return EngineResult(predictions, candidate_pairs, details, alternatives)
+    return EngineResult(predictions, candidate_pairs, details, alternatives, n_candidates)
+
+
+def version_label() -> str:
+    """What scored a run, for the audit record: engine version + learned model (or the hand-set fallback)."""
+    model = learned.load()
+    scorer = model.meta.get("version", "scorer") if model is not None else "hand-scorer"
+    return f"{ENGINE_VERSION} ({scorer} + 3c groups)"[:64]
 
 
 def learned_row(a: cand.Prepared, b: cand.Prepared, f: dict[str, Any]) -> list[float]:
