@@ -29,6 +29,7 @@ GUARDED = ["pair.f1", "pair.precision", "group.f1", "exposure.f1", "auto.precisi
 LOWER_IS_BETTER = ["decoy_false_match_rate", "orphan_false_match_rate"]
 OPTIONAL = ["blocking_recall"]  # guarded when present in both reports
 TOLERANCE = 0.002
+MAX_CALIBRATION_ERROR = 0.02  # 3d exit criterion: confidence must mean what it says
 
 
 def _get(report: dict[str, object], path: str) -> float:
@@ -55,6 +56,15 @@ def check_floor(report: Report, floor_path: Path) -> list[str]:
     for key in LOWER_IS_BETTER:
         if _get(current, key) > _get(floor, key) + TOLERANCE:
             failures.append(f"{key}: {_get(current, key):.4f} > floor {_get(floor, key):.4f}")
+    ece, ece_floor = current.get("calibration_error"), floor.get("calibration_error")
+    if (
+        isinstance(ece, (int, float))
+        and isinstance(ece_floor, (int, float))
+        and (ece > float(ece_floor) + 0.005 or (ece_floor <= MAX_CALIBRATION_ERROR < ece))
+    ):
+        failures.append(
+            f"calibration_error: {ece:.4f} (floor {ece_floor:.4f}, limit {MAX_CALIBRATION_ERROR})"
+        )
     return failures
 
 
@@ -117,6 +127,7 @@ def summary(r: Report) -> str:
         f"  exposure  P {r.exposure['precision']:.4f}  R {r.exposure['recall']:.4f}  F1 {r.exposure['f1']:.4f}",
         f"  auto      precision {r.auto['precision']:.4f}  rate {r.auto['rate']:.4f}",
         f"  decoys wrongly matched {r.decoy_false_match_rate:.2%}   orphans wrongly matched {r.orphan_false_match_rate:.2%}",
+        f"  calibration error (ECE) {r.calibration_error if r.calibration_error is not None else 0:.4f}",
         "  by scenario:",
     ]
     for name, m in r.by_scenario.items():

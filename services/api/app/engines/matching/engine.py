@@ -14,9 +14,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from app.engines.benchmark.model import Line, Prediction
 from app.engines.matching import candidates as cand
 from app.engines.matching import groups as grp
+from app.engines.matching import learned
 from app.engines.matching.assignment import max_weight_assignment
 from app.engines.matching.rules import Rule, default_rules
 from app.engines.matching.text import affix, edit_distance, jaro_winkler
@@ -38,6 +41,8 @@ class PairResult:
     log_odds: float
     contributions: dict[str, float]
     rules: list[str] = field(default_factory=list)
+    row: list[float] | None = None  # learned-model feature vector (3d), kept for explanations
+    explain: dict[str, Any] | None = None  # model drivers + counterfactuals for suggestions
 
     @property
     def probability(self) -> float:
@@ -180,16 +185,16 @@ def _run_pair_job(job: tuple[list[Line], list[Line], list[Rule]]) -> EngineResul
     return _run_pair([cand.prepare(x) for x in a], [cand.prepare(x) for x in b], rules)
 
 
-def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: list[Rule]) -> EngineResult:
-    predictions: list[Prediction] = []
-    candidate_pairs: set[frozenset[str]] = set()
-    details: dict[frozenset[str], PairResult | grp.GroupResult] = {}
-    alternatives: dict[frozenset[str], list[tuple[str, float]]] = {}
-    pair_start = 0
+def candidates_with_features(
+    side_a: list[cand.Prepared], side_b: list[cand.Prepared]
+) -> tuple[
+    dict[str, cand.Prepared],
+    dict[tuple[str, str], set[str]],
+    list[tuple[cand.Prepared, cand.Prepared, dict[str, Any]]],
+]:
+    """Candidate pairs for one entity pair with their features: the single path shared by scoring and training."""
     prep = {p.line.id: p for p in (*side_a, *side_b)}
     blocks = cand.generate(side_a, side_b)
-    candidate_pairs.update(frozenset(k) for k in blocks)
-
     # Ambiguity: how many tolerance-close counterparts each line has (both directions).
     close_a: dict[str, int] = defaultdict(int)
     close_b: dict[str, int] = defaultdict(int)
@@ -201,12 +206,38 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
         ):
             close_a[ai] += 1
             close_b[bi] += 1
+    entries = [
+        (prep[ai], prep[bi], pair_features(prep[ai], prep[bi], sources, max(close_a[ai], close_b[bi])))
+        for (ai, bi), sources in blocks.items()
+    ]
+    return prep, blocks, entries
+
+
+def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: list[Rule]) -> EngineResult:
+    predictions: list[Prediction] = []
+    candidate_pairs: set[frozenset[str]] = set()
+    details: dict[frozenset[str], PairResult | grp.GroupResult] = {}
+    alternatives: dict[frozenset[str], list[tuple[str, float]]] = {}
+    pair_start = 0
+    prep, blocks, entries = candidates_with_features(side_a, side_b)
+    candidate_pairs.update(frozenset(k) for k in blocks)
+    model = learned.load()
+    feature_rows = [learned_row(a, b, f) for a, b, f in entries] if model is not None else []
+    probs = (
+        model.proba(np.asarray(feature_rows, dtype=np.float64))
+        if model is not None and feature_rows
+        else None
+    )
+    auto_threshold = model.auto_threshold if model is not None else AUTO_THRESHOLD
 
     scored: list[PairResult] = []
-    for (ai, bi), sources in blocks.items():
-        a, b = prep[ai], prep[bi]
-        f = pair_features(a, b, sources, max(close_a[ai], close_b[bi]))
+    for i, (a, b, f) in enumerate(entries):
         lo, contrib = score(f)
+        if probs is not None:  # learned, calibrated confidence; hand terms stay as the readable rationale
+            p_model = min(max(float(probs[i]), 1e-6), 1 - 1e-6)
+            learned_lo = math.log(p_model / (1 - p_model))
+            contrib["learned"] = learned_lo - lo
+            lo = learned_lo
         fired = [r for r in rules if r.matches(f)]
         if fired:
             floor = max(r.confidence for r in fired)
@@ -214,7 +245,9 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             if floor_lo > lo:
                 contrib["rule"] = floor_lo - lo
                 lo = floor_lo
-        pr = PairResult(a.line, b.line, f, lo, contrib, [r.id for r in fired])
+        pr = PairResult(
+            a.line, b.line, f, lo, contrib, [r.id for r in fired], feature_rows[i] if feature_rows else None
+        )
         if pr.probability >= SUGGEST_THRESHOLD:
             scored.append(pr)
 
@@ -255,13 +288,15 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             key = frozenset((pr.a.id, pr.b.id))
             p = pr.probability
             within_policy = pr.features["amount_gap"] <= POLICY_TOLERANCE
-            decision = "auto" if p >= AUTO_THRESHOLD and within_policy else "suggest"
+            decision = "auto" if p >= auto_threshold and within_policy else "suggest"
             runner_up = sorted(
                 (o for o in adj[pr.a.id] + adj[pr.b.id] if o is not pr), key=lambda o: -o.log_odds
             )
             margin_ok = not runner_up or pr.log_odds - runner_up[0].log_odds >= 1.0
             if decision == "auto" and not margin_ok:
                 decision = "suggest"  # a close competitor exists: a human should confirm
+            if decision == "suggest" and model is not None and pr.row is not None:
+                pr.explain = learned.explain(model, pr.row, auto_threshold, within_policy, margin_ok)
             reasons = [*pr.rules, *(f"{k} {v:+.1f}" for k, v in pr.contributions.items() if k != "prior")]
             predictions.append(Prediction(key, round(p, 6), decision, reasons))
             details[key] = pr
@@ -300,6 +335,10 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             details[key] = g
             alternatives[key] = []
     return EngineResult(predictions, candidate_pairs, details, alternatives)
+
+
+def learned_row(a: cand.Prepared, b: cand.Prepared, f: dict[str, Any]) -> list[float]:
+    return learned.vectorize(f, a.line.amount_usd, bool(a.line.account) and a.line.account == b.line.account)
 
 
 def cand_key(line: Line) -> tuple[float, str, str, str]:

@@ -25,8 +25,8 @@
   },
   "auto": {
     "precision": 1.0,
-    "rate": 0.92445,
-    "lines": 881
+    "rate": 0.95803,
+    "lines": 913
   },
   "decoy_false_match_rate": 0.0,
   "orphan_false_match_rate": 0.0,
@@ -200,6 +200,7 @@
       "total": 10
     }
   },
-  "seconds": 0.068,
-  "blocking_recall": 1.0
+  "seconds": 0.162,
+  "blocking_recall": 1.0,
+  "calibration_error": 0.0021
 }

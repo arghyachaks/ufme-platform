@@ -139,6 +139,7 @@ FEATURE_LABEL = {
     "ambiguity": "Ambiguity",
     "residual": "Residual",
     "family": "Partial family",
+    "learned": "Learned model",
     "size": "Group size",
 }
 
@@ -270,6 +271,11 @@ def workspace(db: Session, tenant: Tenant, snapshot: dict[str, Any]) -> dict[str
                     f"Date variance {features.get('date_gap_days', '—')} days",
                     f"Entity relationship: {top.entity_pair.replace('-', ' ↔ ')} (intercompany)",
                     f"Found by: {', '.join(expl.get('blocking', []) or ['—'])}",
+                    *(f"Needs review: {b}" for b in (expl.get("model") or {}).get("blockers", [])),
+                    *(
+                        f"Would auto-match: {c.removeprefix('would be auto-matched if ')}"
+                        for c in (expl.get("model") or {}).get("counterfactuals", [])
+                    ),
                 ],
             }
         )

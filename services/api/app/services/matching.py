@@ -188,6 +188,12 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                                 for x, p in result.alternatives.get(pred.line_ids, [])
                                 if x in by_id
                             ],
+                            # 3d: learned-model drivers, blockers and counterfactuals (suggestions only)
+                            **(
+                                {"model": getattr(detail, "explain", None)}
+                                if getattr(detail, "explain", None)
+                                else {}
+                            ),
                         },
                     }
                 )

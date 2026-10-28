@@ -3,41 +3,41 @@
   "matcher": "engine",
   "lines": 100001,
   "pair": {
-    "precision": 0.99998,
-    "recall": 0.98917,
-    "f1": 0.99455,
-    "tp": 54160,
-    "fp": 1,
-    "fn": 593
+    "precision": 1.0,
+    "recall": 0.99631,
+    "f1": 0.99815,
+    "tp": 54551,
+    "fp": 0,
+    "fn": 202
   },
   "group": {
-    "precision": 0.9994,
-    "recall": 0.98687,
-    "f1": 0.9931,
-    "tp": 41866,
-    "fp": 25,
-    "fn": 557
+    "precision": 0.99943,
+    "recall": 0.99609,
+    "f1": 0.99776,
+    "tp": 42257,
+    "fp": 24,
+    "fn": 166
   },
   "exposure": {
     "precision": 0.99993,
-    "recall": 0.98779,
-    "f1": 0.99382
+    "recall": 0.99645,
+    "f1": 0.99819
   },
   "auto": {
     "precision": 1.0,
-    "rate": 0.92333,
-    "lines": 88015
+    "rate": 0.94533,
+    "lines": 90111
   },
-  "decoy_false_match_rate": 0.00033,
+  "decoy_false_match_rate": 0.0,
   "orphan_false_match_rate": 0.0,
   "by_scenario": {
     "bank_fee": {
       "precision": 1.0,
-      "recall": 0.99883,
-      "f1": 0.99941,
-      "tp": 1705,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 1707,
       "fp": 0,
-      "fn": 2
+      "fn": 0
     },
     "bundle_m1": {
       "precision": 1.0,
@@ -54,16 +54,6 @@
       "tp": 18731,
       "fp": 0,
       "fn": 0
-    },
-    "decoy_same_ref": {
-      "precision": 0.0,
-      "recall": 1.0,
-      "f1": 0.0,
-      "tp": 0,
-      "fp": 1,
-      "fn": 0,
-      "total": 891,
-      "wrongly_matched": 1
     },
     "duplicate_posting": {
       "precision": 1.0,
@@ -115,11 +105,11 @@
     },
     "ref_missing": {
       "precision": 1.0,
-      "recall": 0.38312,
-      "f1": 0.554,
-      "tp": 336,
+      "recall": 0.82668,
+      "f1": 0.90512,
+      "tp": 725,
       "fp": 0,
-      "fn": 541
+      "fn": 152
     },
     "ref_ocr": {
       "precision": 1.0,
@@ -204,8 +194,13 @@
     "orphan": {
       "wrongly_matched": 0,
       "total": 1710
+    },
+    "decoy_same_ref": {
+      "wrongly_matched": 0,
+      "total": 891
     }
   },
-  "seconds": 15.21,
-  "blocking_recall": 0.99994
+  "seconds": 28.151,
+  "blocking_recall": 0.99994,
+  "calibration_error": 0.00229
 }

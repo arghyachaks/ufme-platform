@@ -2,7 +2,7 @@
 
 import random
 from dataclasses import replace
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
@@ -170,15 +170,31 @@ def test_engine_noise_never_increases_confidence(sample: Dataset) -> None:
     clean = [p for p in res.predictions if "R-001" in p.reasons][:100]
     noisy = dict(lines)
     for p in clean:
-        i = sorted(p.line_ids)[0]
+        i, j = sorted(p.line_ids)
+        # Degrade the evidence: amounts 0.4% apart and dates 2 days further apart (away from the counterpart,
+        # so a pair that already had a lag is never accidentally re-aligned).
+        away = -2 if lines[j].value_date >= lines[i].value_date else 2
         noisy[i] = replace(
             lines[i],
             amount_usd=lines[i].amount_usd * 1.004,
-            value_date=lines[i].value_date.replace(day=min(lines[i].value_date.day + 2, 28)),
+            value_date=lines[i].value_date + timedelta(days=away),
         )
-    after = {p.line_ids: p.confidence for p in engine.match(list(noisy.values()))}
+    res_after = engine.run(list(noisy.values()))
+    after = {p.line_ids: p.confidence for p in res_after.predictions}
+
+    def ambiguity(r: engine.EngineResult, key: frozenset[str]) -> int | None:
+        d = r.details.get(key)
+        return d.features.get("ambiguity") if d is not None else None
+
+    compared = 0
     for p in clean:
+        # Less exact evidence must never raise confidence, all else equal. A nudge can also move a line away
+        # from a look-alike (fewer near-identical amounts), which legitimately raises it: compare like with like.
+        if p.line_ids in after and ambiguity(res, p.line_ids) != ambiguity(res_after, p.line_ids):
+            continue
+        compared += 1
         assert after.get(p.line_ids, 0.0) <= p.confidence + 1e-9
+    assert compared >= len(clean) // 2
 
 
 # ---- benchmark floors -----------------------------------------------------------------------------------

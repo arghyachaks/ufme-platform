@@ -51,6 +51,7 @@ class Report:
     by_scenario: dict[str, dict[str, float]] = field(default_factory=dict)
     seconds: float = 0.0
     blocking_recall: float | None = None  # share of true cross-entity pairs present in the candidate set
+    calibration_error: float | None = None  # 10-bin ECE of prediction confidence vs. exact-group correctness
 
     def as_dict(self) -> dict[str, object]:
         return asdict(self)
@@ -169,7 +170,22 @@ def evaluate(ds: Dataset, predictions: list[Prediction], matcher: str = "?", sec
         entry["total"] = entry.get("total", 0) + 1
         entry["wrongly_matched"] = entry.get("wrongly_matched", 0) + (1 if g.line_ids & matched_ids else 0)
 
+    # Calibration: does "95% confident" mean right 95% of the time? (expected calibration error, 10 bins)
+    bins: dict[int, list[tuple[float, bool]]] = defaultdict(list)
+    for pr in predictions:
+        bins[min(int(pr.confidence * 10), 9)].append((pr.confidence, pr.line_ids in truth_sets))
+    n_pred = len(predictions)
+    ece = (
+        sum(
+            abs(sum(c for c, _ in b) / len(b) - sum(ok for _, ok in b) / len(b)) * len(b) / n_pred
+            for b in bins.values()
+        )
+        if n_pred
+        else 0.0
+    )
+
     return Report(
+        calibration_error=round(ece, 5),
         dataset=ds.name,
         matcher=matcher,
         lines=len(ds.lines),
