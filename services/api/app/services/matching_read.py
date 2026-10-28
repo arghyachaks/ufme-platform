@@ -138,6 +138,8 @@ FEATURE_LABEL = {
     "rule": "Rule",
     "ambiguity": "Ambiguity",
     "residual": "Residual",
+    "family": "Partial family",
+    "size": "Group size",
 }
 
 
@@ -189,10 +191,10 @@ def workspace(db: Session, tenant: Tenant, snapshot: dict[str, Any]) -> dict[str
     if pending:
 
         def a_side(p: s.ProposalOut) -> s.ProposalLineOut:
-            return next(x for x in p.lines if x.side == "A")
+            return next((x for x in p.lines if x.side == "A"), p.lines[0])
 
-        def b_side(p: s.ProposalOut) -> s.ProposalLineOut:
-            return next(x for x in p.lines if x.side == "B")
+        def b_side(p: s.ProposalOut) -> s.ProposalLineOut:  # reversal groups sit on one side
+            return next((x for x in p.lines if x.side == "B"), p.lines[-1])
 
         data["sideA"] = [
             {
@@ -215,16 +217,18 @@ def workspace(db: Session, tenant: Tenant, snapshot: dict[str, Any]) -> dict[str
         top = pending[0]
         expl: dict[str, Any] = dict(top.explanation)
         alternatives = expl.get("alternatives", []) or []
+        others = [x for x in top.lines if x.side == "B"] or top.lines[1:]  # every counterpart of a group
         data["sideB"] = [
             {
-                "id": b_side(top).id,
-                "invoice": b_side(top).reference or "—",
-                "amount": b_side(top).amount,
-                "date": fmt.day(_d(b_side(top).value_date)),
-                "entity": b_side(top).entity,
+                "id": x.id,
+                "invoice": x.reference or "—",
+                "amount": x.amount,
+                "date": fmt.day(_d(x.value_date)),
+                "entity": x.entity,
                 "score": round(100 * top.confidence, 1),
-                "status": "Candidate",
+                "status": "Candidate" if top.type == "1:1" else f"{top.type} part",
             }
+            for x in others
         ] + [
             {
                 "id": alt["txn"],
@@ -280,6 +284,10 @@ def _d(iso: str) -> Any:
 
 
 def _ref_story(f: dict[str, Any]) -> str:
+    if f.get("ref_root"):
+        return (
+            f"shared reference family {f['ref_root']} ({f.get('items_a', 0)} : {f.get('items_b', 0)} items)"
+        )
     if f.get("ref_exact"):
         return "exact match"
     if f.get("ref_canonical_exact"):

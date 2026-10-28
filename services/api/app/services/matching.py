@@ -135,6 +135,7 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
             for offset, pred in enumerate(sorted(result.predictions, key=lambda p: -p.confidence)):
                 detail = result.details[pred.line_ids]
                 a, b = detail.a, detail.b
+                members_of = getattr(detail, "lines", None) or [a, b]  # groups (3c) carry all their lines
                 matched_ids |= set(pred.line_ids)
                 gid = uuid.uuid4()
                 groups.append(
@@ -143,11 +144,13 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                         "tenant_id": tenant.id,
                         "code": f"MT-{base + offset:06d}",
                         "run_id": run.id,
-                        "match_type": "1:1",
+                        "match_type": getattr(detail, "match_type", "1:1"),
                         "decision": pred.decision,
                         "status": "matched" if pred.decision == "auto" else "proposed",
                         "confidence": pred.confidence,
-                        "exposure_usd": Decimal(str(round(abs(a.amount_usd), 4))),
+                        "exposure_usd": Decimal(
+                            str(round(getattr(detail, "exposure_usd", abs(a.amount_usd)), 4))
+                        ),
                         "residual_usd": Decimal(str(round(detail.features["amount_gap_usd"], 4))),
                         "entity_pair": "-".join(a.pair),
                         "rule_ids": detail.rules,
@@ -163,10 +166,7 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                         },
                     }
                 )
-                members += [
-                    {"group_id": gid, "txn_id": by_id[a.id].id, "side": a.side},
-                    {"group_id": gid, "txn_id": by_id[b.id].id, "side": b.side},
-                ]
+                members += [{"group_id": gid, "txn_id": by_id[x.id].id, "side": x.side} for x in members_of]
                 auto += pred.decision == "auto"
                 suggested += pred.decision == "suggest"
             # COPY, not ORM objects: ~270K groups + ~540K members per 1M lines would otherwise flush for minutes.

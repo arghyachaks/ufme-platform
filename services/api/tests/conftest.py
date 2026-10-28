@@ -48,6 +48,6 @@ def db(engine) -> Iterator[Session]:  # type: ignore[no-untyped-def]
 @pytest.fixture
 def client(db: Session) -> Iterator[TestClient]:
     app.dependency_overrides[get_db] = lambda: db
-    with TestClient(app, raise_server_exceptions=False) as c:
+    with TestClient(app, raise_server_exceptions=os.environ.get("UFME_RAISE") == "1") as c:
         yield c
     app.dependency_overrides.clear()

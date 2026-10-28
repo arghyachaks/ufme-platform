@@ -41,8 +41,10 @@ def test_run_produces_explained_proposals(api: TestClient, db: Session) -> None:
 
     proposals = api.get(f"/api/v1/recon/proposals?run={result['id']}&limit=5000").json()
     assert len(proposals) == m["auto"] + m["suggested"]
-    p = proposals[0]
-    assert p["type"] == "1:1" and len(p["lines"]) == 2 and {x["side"] for x in p["lines"]} == {"A", "B"}
+    p = next(x for x in proposals if x["type"] == "1:1")
+    assert len(p["lines"]) == 2 and {x["side"] for x in p["lines"]} == {"A", "B"}
+    for g in (x for x in proposals if x["type"] not in ("1:1", "reversal")):  # 3c groups keep every line
+        assert len(g["lines"]) >= 3 and {x["side"] for x in g["lines"]} == {"A", "B"}
     assert p["explanation"]["contributions"] and p["explanation"]["blocking"]
     assert all(x["decision"] != "auto" or x["status"] == "matched" for x in proposals)
     tenant = db.scalar(select(Tenant))

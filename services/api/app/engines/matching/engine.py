@@ -11,11 +11,12 @@ from typing import Any
 
 from app.engines.benchmark.model import Line, Prediction
 from app.engines.matching import candidates as cand
+from app.engines.matching import groups as grp
 from app.engines.matching.assignment import max_weight_assignment
 from app.engines.matching.rules import Rule, default_rules
 from app.engines.matching.text import affix, edit_distance, jaro_winkler
 
-ENGINE_VERSION = "engine-1.1 (3b rules + scorer + assignment)"
+ENGINE_VERSION = "engine-1.2 (3c groups + 1:1 assignment)"  # stored in a 64-char column
 POLICY_TOLERANCE = 0.005  # auto-match only within the 0.5% tolerance policy
 AUTO_THRESHOLD = 0.985
 SUGGEST_THRESHOLD = 0.5
@@ -40,7 +41,7 @@ class PairResult:
 class EngineResult:
     predictions: list[Prediction]
     candidate_pairs: set[frozenset[str]]
-    details: dict[frozenset[str], PairResult]
+    details: dict[frozenset[str], "PairResult | grp.GroupResult"]
     alternatives: dict[frozenset[str], list[tuple[str, float]]]
 
 
@@ -143,10 +144,11 @@ def run(lines: list[Line], rules: list[Rule] | None = None) -> EngineResult:
 
     predictions: list[Prediction] = []
     candidate_pairs: set[frozenset[str]] = set()
-    details: dict[frozenset[str], PairResult] = {}
+    details: dict[frozenset[str], PairResult | grp.GroupResult] = {}
     alternatives: dict[frozenset[str], list[tuple[str, float]]] = {}
 
     for side_a, side_b in by_pair.values():
+        pair_start = len(predictions)
         prep = {p.line.id: p for p in (*side_a, *side_b)}
         blocks = cand.generate(side_a, side_b)
         candidate_pairs.update(frozenset(k) for k in blocks)
@@ -229,6 +231,39 @@ def run(lines: list[Line], rules: list[Rule] | None = None) -> EngineResult:
                 alternatives[key] = [
                     (o.b.id if o.a.id == pr.a.id else o.a.id, round(o.probability, 4)) for o in runner_up[:3]
                 ]
+
+        # Stage 3c: groups (1:M, M:1, M:M, reversals) over everything not auto-matched 1:1.
+        auto_ids = {i for p in predictions[pair_start:] if p.decision == "auto" for i in p.line_ids}
+        open_lines = [x.line for x in (*side_a, *side_b) if x.line.id not in auto_ids]
+        built = grp.build(open_lines)
+        if built:
+            in_groups = {x.id for g in built for x in g.lines}
+            # A clean group beats a residual 1:1 suggestion over the same lines.
+            kept = [
+                x for x in predictions[pair_start:] if x.decision == "auto" or not (x.line_ids & in_groups)
+            ]
+            kept_ids = {id(x) for x in kept}  # identity, not equality: O(n), not O(n^2)
+            for dropped in predictions[pair_start:]:
+                if id(dropped) not in kept_ids:
+                    details.pop(dropped.line_ids, None)
+                    alternatives.pop(dropped.line_ids, None)
+            del predictions[pair_start:]
+            predictions.extend(kept)
+            for g in built:
+                key = frozenset(x.id for x in g.lines)
+                gp = g.probability
+                within_policy = g.features["amount_gap_usd"] <= grp.tolerance(g.exposure_usd)
+                decision = (
+                    "auto" if gp >= AUTO_THRESHOLD and within_policy and g.features["unique"] else "suggest"
+                )
+                reasons = [
+                    *g.rules,
+                    g.match_type,
+                    *(f"{k} {v:+.1f}" for k, v in g.contributions.items() if k != "prior"),
+                ]
+                predictions.append(Prediction(key, round(gp, 6), decision, reasons))
+                details[key] = g
+                alternatives[key] = []
     return EngineResult(predictions, candidate_pairs, details, alternatives)
 
 

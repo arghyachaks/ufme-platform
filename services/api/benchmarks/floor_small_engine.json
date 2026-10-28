@@ -4,29 +4,29 @@
   "lines": 1001,
   "pair": {
     "precision": 1.0,
-    "recall": 0.68864,
-    "f1": 0.81562,
-    "tp": 376,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tp": 546,
     "fp": 0,
-    "fn": 170
+    "fn": 0
   },
   "group": {
     "precision": 1.0,
-    "recall": 0.88471,
-    "f1": 0.93883,
-    "tp": 376,
+    "recall": 1.0,
+    "f1": 1.0,
+    "tp": 425,
     "fp": 0,
-    "fn": 49
+    "fn": 0
   },
   "exposure": {
     "precision": 1.0,
-    "recall": 0.84541,
-    "f1": 0.91623
+    "recall": 1.0,
+    "f1": 1.0
   },
   "auto": {
     "precision": 1.0,
-    "rate": 0.71354,
-    "lines": 680
+    "rate": 0.92445,
+    "lines": 881
   },
   "decoy_false_match_rate": 0.0,
   "orphan_false_match_rate": 0.0,
@@ -41,11 +41,11 @@
     },
     "bundle_m1": {
       "precision": 1.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "tp": 0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 47,
       "fp": 0,
-      "fn": 47
+      "fn": 0
     },
     "clean": {
       "precision": 1.0,
@@ -81,11 +81,11 @@
     },
     "netting_mm": {
       "precision": 1.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "tp": 0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 53,
       "fp": 0,
-      "fn": 53
+      "fn": 0
     },
     "period_cutoff": {
       "precision": 1.0,
@@ -145,11 +145,11 @@
     },
     "reversal_pair": {
       "precision": 1.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "tp": 0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 3,
       "fp": 0,
-      "fn": 3
+      "fn": 0
     },
     "reversal_repost": {
       "precision": 1.0,
@@ -161,11 +161,11 @@
     },
     "split_1m": {
       "precision": 1.0,
-      "recall": 0.0,
-      "f1": 0.0,
-      "tp": 0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "tp": 67,
       "fp": 0,
-      "fn": 67
+      "fn": 0
     },
     "timing_lag": {
       "precision": 1.0,
@@ -200,6 +200,6 @@
       "total": 10
     }
   },
-  "seconds": 0.0,
+  "seconds": 0.068,
   "blocking_recall": 1.0
 }
