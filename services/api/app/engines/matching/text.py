@@ -111,3 +111,20 @@ def reference_tokens(text: str) -> set[str]:
 
 def grams(text: str, n: int = 3) -> set[str]:
     return {text[i : i + n] for i in range(len(text) - n + 1)} if len(text) >= n else {text}
+
+
+_WORD = re.compile(r"[a-z]+")
+_ENTITY_CODE = re.compile(r"\b[a-z]{2}\d{2,3}\b")
+_STOP = {"ic", "the", "of", "to", "for", "and", "per", "re"}
+
+
+def description_words(text: str | None) -> frozenset[str]:
+    """Content words of a description, without entity codes (they mirror across sides) or filler."""
+    t = _ENTITY_CODE.sub(" ", (text or "").lower())
+    return frozenset(w for w in _WORD.findall(t) if len(w) >= 2 and w not in _STOP)
+
+
+def jaccard(a: frozenset[str], b: frozenset[str]) -> float:
+    if not a or not b:
+        return 0.0
+    return len(a & b) / len(a | b)

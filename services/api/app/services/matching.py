@@ -204,7 +204,15 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                         "entity_pair": "-".join(a.pair),
                         "rule_ids": detail.rules,
                         "explanation": {
-                            "features": {k: v for k, v in detail.features.items() if k != "blocking"},
+                            "features": {
+                                k: (
+                                    [by_id[x].code for x in v if x in by_id]
+                                    if k == "duplicate_postings"
+                                    else v
+                                )
+                                for k, v in detail.features.items()
+                                if k != "blocking"
+                            },
                             "blocking": detail.features["blocking"],
                             "contributions": {k: round(v, 3) for k, v in detail.contributions.items()},
                             "alternatives": [

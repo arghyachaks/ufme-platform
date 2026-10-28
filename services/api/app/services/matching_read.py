@@ -210,7 +210,7 @@ def workspace(db: Session, tenant: Tenant, snapshot: dict[str, Any]) -> dict[str
                 "businessUnit": "Intercompany",
                 "description": a_side(p).description or "",
                 "slaRemaining": "48h remaining",
-                "status": "Suggested",
+                "status": _residual_label(p.explanation),
                 "attachments": [],
             }
             for p in pending
@@ -271,6 +271,24 @@ def workspace(db: Session, tenant: Tenant, snapshot: dict[str, Any]) -> dict[str
                     f"Date variance {features.get('date_gap_days', '—')} days",
                     f"Entity relationship: {top.entity_pair.replace('-', ' ↔ ')} (intercompany)",
                     f"Found by: {', '.join(expl.get('blocking', []) or ['—'])}",
+                    *(
+                        [f"Residual: {features['residual']['label']}. {features['residual']['detail']}"]
+                        if isinstance(features.get("residual"), dict)
+                        else []
+                    ),
+                    *(
+                        [
+                            f"ufme Assist ({expl['judge']['confidence']}% sure, "
+                            f"{expl['judge']['cause'].replace('_', ' ')}): {expl['judge']['note']}"
+                        ]
+                        if isinstance(expl.get("judge"), dict)
+                        else []
+                    ),
+                    *(
+                        [f"Duplicate posting(s) also open: {', '.join(features['duplicate_postings'])}"]
+                        if features.get("duplicate_postings")
+                        else []
+                    ),
                     *(f"Needs review: {b}" for b in (expl.get("model") or {}).get("blockers", [])),
                     *(
                         f"Would auto-match: {c.removeprefix('would be auto-matched if ')}"
@@ -307,3 +325,9 @@ def _ref_story(f: dict[str, Any]) -> str:
     if f.get("ref_missing"):
         return "missing on one side (amount/date evidence)"
     return "partial"
+
+
+def _residual_label(explanation: Any) -> str:
+    features = (explanation or {}).get("features") or {}
+    res = features.get("residual") if isinstance(features, dict) else None
+    return str(res.get("label", "Suggested")) if isinstance(res, dict) else "Suggested"

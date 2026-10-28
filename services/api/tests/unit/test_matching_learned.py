@@ -86,7 +86,7 @@ def test_suggestions_carry_drivers_and_counterfactuals(model: learned.TreeModel)
         n_sources=4.0,
     )
     e = learned.explain(model, residual, model.auto_threshold, within_policy=True, margin_ok=True)
-    assert e["model"] == "scorer-v1" and e["drivers"] and all("log_odds" in d for d in e["drivers"])
+    assert e["model"] == "scorer-v2" and e["drivers"] and all("log_odds" in d for d in e["drivers"])
     assert e["probability"] < model.auto_threshold
     assert any("amounts agreed" in c for c in e["counterfactuals"])
     assert any(d["label"].startswith("Amounts differ by 15.0") for d in e["drivers"])

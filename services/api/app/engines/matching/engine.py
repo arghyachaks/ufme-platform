@@ -19,10 +19,10 @@ import numpy as np
 from app.engines.benchmark.model import Line, Prediction
 from app.engines.matching import candidates as cand
 from app.engines.matching import groups as grp
-from app.engines.matching import learned
+from app.engines.matching import learned, residual
 from app.engines.matching.assignment import max_weight_assignment
 from app.engines.matching.rules import Rule, default_rules
-from app.engines.matching.text import affix, edit_distance, jaro_winkler
+from app.engines.matching.text import affix, edit_distance, jaccard, jaro_winkler
 
 ENGINE_VERSION = "engine-1.3"  # + scorer version via version_label(); stored in a 64-char column
 POLICY_TOLERANCE = 0.005  # auto-match only within the 0.5% tolerance policy
@@ -58,7 +58,14 @@ class EngineResult:
     candidate_count: int = 0  # always set; candidate_pairs itself is only kept when asked (benchmarks)
 
 
-def pair_features(a: cand.Prepared, b: cand.Prepared, sources: set[str], ambiguity: int) -> dict[str, Any]:
+def pair_features(
+    a: cand.Prepared,
+    b: cand.Prepared,
+    sources: set[str],
+    ambiguity: int,
+    desc_similarity: float = 0.0,
+    text_ambiguity: int = 1,
+) -> dict[str, Any]:
     la, lb = a.line, b.line
     base = max(abs(la.amount_usd), abs(lb.amount_usd), 1.0)
     gap = abs(la.amount_usd + lb.amount_usd) / base
@@ -95,6 +102,8 @@ def pair_features(a: cand.Prepared, b: cand.Prepared, sources: set[str], ambigui
         "ref_conflict": both and not strong and not digits_equal and edits > 2,
         "ref_missing": not both,
         "ambiguity": ambiguity,
+        "desc_similarity": round(desc_similarity, 4),  # 3e: same kind of transaction, entities mirrored
+        "text_ambiguity": text_ambiguity,  # look-alike amounts whose description also matches
         "blocking": sorted(sources),
     }
 
@@ -208,16 +217,34 @@ def candidates_with_features(
     # Ambiguity: how many tolerance-close counterparts each line has (both directions).
     close_a: dict[str, int] = defaultdict(int)
     close_b: dict[str, int] = defaultdict(int)
+    text_a: dict[str, int] = defaultdict(int)  # ... of which the description also matches
+    text_b: dict[str, int] = defaultdict(int)
+    sim: dict[tuple[str, str], float] = {}
     for ai, bi in blocks:
         la, lb = prep[ai].line, prep[bi].line
+        sim[(ai, bi)] = s_ = jaccard(prep[ai].words, prep[bi].words)
         if (
             abs(la.amount_usd + lb.amount_usd) / max(abs(la.amount_usd), abs(lb.amount_usd), 1.0)
             <= POLICY_TOLERANCE
         ):
             close_a[ai] += 1
             close_b[bi] += 1
+            if s_ >= 0.99:
+                text_a[ai] += 1
+                text_b[bi] += 1
     entries = [
-        (prep[ai], prep[bi], pair_features(prep[ai], prep[bi], sources, max(close_a[ai], close_b[bi])))
+        (
+            prep[ai],
+            prep[bi],
+            pair_features(
+                prep[ai],
+                prep[bi],
+                sources,
+                max(close_a[ai], close_b[bi]),
+                sim[(ai, bi)],
+                max(text_a[ai], text_b[bi], 1),
+            ),
+        )
         for (ai, bi), sources in blocks.items()
     ]
     return prep, blocks, entries
@@ -306,7 +333,11 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             runner_up = sorted(
                 (o for o in adj[pr.a.id] + adj[pr.b.id] if o is not pr), key=lambda o: -o.log_odds
             )
-            margin_ok = not runner_up or pr.log_odds - runner_up[0].log_odds >= 1.0
+            # 3e: a competitor that is an exact twin of the chosen counterpart (duplicate posting) is not real
+            # ambiguity: either copy is the same match. Match one, report the other as a duplicate.
+            twins = [o for o in runner_up if _twin_of(o, pr) is not None]
+            real = [o for o in runner_up if _twin_of(o, pr) is None]
+            margin_ok = not real or pr.log_odds - real[0].log_odds >= 1.0
             if decision == "auto" and not margin_ok:
                 decision = "suggest"  # a close competitor exists: a human should confirm
             if (
@@ -318,6 +349,14 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
                 row = features_x[pr.index].tolist()
                 pr.explain = learned.explain(model, row, auto_threshold, within_policy, margin_ok)
             reasons = [*pr.rules, *(f"{k} {v:+.1f}" for k, v in pr.contributions.items() if k != "prior")]
+            if decision == "suggest" and not within_policy:  # 3e: name the residual for the reviewer
+                rc = residual.classify(pr.a, pr.b)
+                pr.features["residual"] = {"cause": rc.cause, "label": rc.label, "detail": rc.detail}
+                reasons.append(rc.label)
+            if twins:
+                dup_ids = sorted(d for d in {_twin_of(o, pr) for o in twins} if d)
+                pr.features["duplicate_postings"] = dup_ids
+                reasons.append(f"duplicate posting x{len(dup_ids)}")
             predictions.append(Prediction(key, round(p, 6), decision, reasons))
             details[key] = pr
             alternatives[key] = [
@@ -355,6 +394,31 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
             details[key] = g
             alternatives[key] = []
     return EngineResult(predictions, candidate_pairs, details, alternatives, n_candidates)
+
+
+def _same_posting(x: Line, y: Line) -> bool:
+    """Two bookings indistinguishable as evidence: same entity, counterparty, amount, reference, description,
+    value date within a day."""
+    return (
+        x.id != y.id
+        and x.entity == y.entity
+        and x.counterparty == y.counterparty
+        and x.currency == y.currency
+        and abs(x.amount - y.amount) < 0.005
+        and (x.reference_norm or "") == (y.reference_norm or "")
+        and x.description == y.description
+        and abs((x.value_date - y.value_date).days) <= 1
+    )
+
+
+def _twin_of(other: "PairResult", chosen: "PairResult") -> str | None:
+    """If `other` competes with `chosen` only through an exact duplicate of chosen's counterpart, return the
+    duplicate's id."""
+    if other.a.id == chosen.a.id and _same_posting(other.b, chosen.b):
+        return other.b.id
+    if other.b.id == chosen.b.id and _same_posting(other.a, chosen.a):
+        return other.a.id
+    return None
 
 
 def version_label() -> str:

@@ -127,9 +127,9 @@ def main() -> int:
     x_train, y_train = np.vstack(xs), np.concatenate(ys)
 
     est = HistGradientBoostingClassifier(
-        max_iter=120,
-        learning_rate=0.1,
-        max_depth=5,
+        max_iter=250,
+        learning_rate=0.08,
+        max_depth=6,
         min_samples_leaf=40,
         l2_regularization=1.0,
         monotonic_cst=learned.MONOTONIC,
@@ -163,12 +163,12 @@ def main() -> int:
     # Risk-controlled auto threshold on the calibration ledger, measured on what the engine would really
     # auto-match (assigned, within policy, clear margin), not on raw candidates.
     artifact = {
-        "version": "scorer-v1",
+        "version": "scorer-v2",
         "features": learned.FEATURE_NAMES,
         "monotonic": learned.MONOTONIC,
         "trees": trees,
         "baseline": baseline,
-        "learning_rate": 0.1,
+        "learning_rate": 0.08,
         "calibration": {"x": cal_x.tolist(), "y": cal_y.tolist()},
         "auto_threshold": 1.01,  # measurement pass: nothing auto, so groups claim their lines exactly as in production
     }
@@ -182,7 +182,8 @@ def main() -> int:
         if len(p.line_ids) != 2 or not isinstance(d, engine.PairResult):
             continue
         within_policy = d.features["amount_gap"] <= engine.POLICY_TOLERANCE
-        alts = result.alternatives.get(p.line_ids, [])
+        twins = set(d.features.get("duplicate_postings", []))  # same rule as the engine: twins aren't rivals
+        alts = [x for x in result.alternatives.get(p.line_ids, []) if x[0] not in twins]
         margin_ok = (
             not alts or d.log_odds - math.log(max(alts[0][1], 1e-9) / max(1 - alts[0][1], 1e-9)) >= 1.0
         )

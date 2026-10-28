@@ -5,7 +5,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass
 
 from app.engines.benchmark.model import Line
-from app.engines.matching.text import canonical, digit_core, grams, reference_tokens
+from app.engines.matching.text import canonical, description_words, digit_core, grams, reference_tokens
 
 AMOUNT_WINDOW = 0.01  # 1% …
 AMOUNT_FLOOR_USD = 60.0  # … or $60 (bank fees), whichever is larger
@@ -23,6 +23,7 @@ class Prepared:
     core: str | None
     desc_tokens: set[str]
     grams: set[str]
+    words: frozenset[str] = frozenset()  # description content words (3e text evidence)
 
 
 def prepare(line: Line) -> Prepared:
@@ -34,6 +35,7 @@ def prepare(line: Line) -> Prepared:
         digit_core(canon),
         reference_tokens(line.description),
         grams(canon) if len(canon) >= 6 else set(),
+        description_words(line.description),
     )
 
 

@@ -1,6 +1,7 @@
 import uuid
 from datetime import UTC, datetime
 
+from app.core.config import settings
 from app.db.session import SessionLocal
 from app.models import IngestionBatch, MatchRun
 from app.services import matching
@@ -40,8 +41,19 @@ def match_run(run_id: str) -> dict[str, object]:
         run = db.get(MatchRun, uuid.UUID(run_id))
         assert run is not None
         matching.execute_run(db, run)
-        return {
+        out: dict[str, object] = {
             "run": run.code,
             "status": run.status,
             **{k: run.metrics.get(k) for k in ("auto", "suggested", "unmatched")},
         }
+    if out["status"] == "Completed" and settings.judge_enabled:
+        judge_suggestions.delay(run_id)  # advisory; runs after the results are committed and visible
+    return out
+
+
+@celery_app.task(name="ufme.judge_suggestions")
+def judge_suggestions(run_id: str) -> dict[str, int]:
+    from app.services.judge import judge_run
+
+    with SessionLocal() as db:
+        return judge_run(db, uuid.UUID(run_id))

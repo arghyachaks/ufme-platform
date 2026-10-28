@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     max_upload_mb: int = 200
     ollama_url: str = "http://localhost:11434"  # Docker: http://host.docker.internal:11434
     assist_model: str = "gemma4:e4b-it-qat"
+    judge_enabled: bool = True  # 3e: advisory LLM second opinion on suggestions after each run
+    judge_max: int = 200  # largest-exposure suggestions judged per run (about 1 s each on a laptop GPU)
     demo_user: str = "priya.nair@example.com"  # acting user until SSO (Stage 5); X-Ufme-User overrides
     default_tenant: str = "demo"  # until auth (Stage 5) resolves the tenant from the user
 

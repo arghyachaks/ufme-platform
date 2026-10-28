@@ -40,6 +40,8 @@ FEATURES: list[tuple[str, int]] = [
     ("ambiguity", -1),
     ("n_sources", 1),
     ("same_account", 1),
+    ("desc_similarity", 1),  # 3e: descriptions describe the same kind of transaction
+    ("text_ambiguity", -1),  # 3e: look-alikes that also share the description
 ]
 FEATURE_NAMES = [f for f, _ in FEATURES]
 MONOTONIC = [m for _, m in FEATURES]
@@ -65,6 +67,8 @@ def vectorize(f: dict[str, Any], amount_usd: float, same_account: bool) -> list[
         float(min(f["ambiguity"], 10)),
         float(len(f.get("blocking", []))),
         float(same_account),
+        float(f.get("desc_similarity", 0.0)),
+        float(min(f.get("text_ambiguity", 1), 10)),
     ]
 
 
@@ -177,6 +181,8 @@ _LABEL = {
     "ambiguity": "Look-alike candidates",
     "n_sources": "Found by several searches",
     "same_account": "Same GL account",
+    "desc_similarity": "Description match",
+    "text_ambiguity": "Look-alikes with the same description",
 }
 
 
@@ -213,6 +219,10 @@ def describe(feature: str, value: float) -> str:
         )
     if feature == "ambiguity":
         return f"{int(value)} candidate(s) with a near-identical amount"
+    if feature == "desc_similarity":
+        return f"Descriptions {100 * value:.0f}% alike"
+    if feature == "text_ambiguity":
+        return f"{int(value)} look-alike(s) with the same description"
     if feature == "n_sources":
         return f"Found by {int(value)} independent search(es)"
     return _LABEL.get(feature, feature)
