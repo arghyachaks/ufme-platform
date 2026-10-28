@@ -18,6 +18,12 @@ services:
   postgres:
     image: postgres:16-alpine
     environment: { POSTGRES_USER: ufme, POSTGRES_PASSWORD: ufme, POSTGRES_DB: ufme }
+    # Defaults (128 MB cache, 1 GB WAL) checkpoint constantly during 300K-row COPYs; sized for a laptop.
+    command: >-
+      postgres -c shared_buffers=1GB -c effective_cache_size=3GB -c work_mem=32MB
+      -c maintenance_work_mem=512MB -c max_wal_size=8GB -c checkpoint_timeout=15min
+      -c wal_compression=on
+    shm_size: 1gb
     ports: ["5432:5432"]
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -47,7 +53,7 @@ services:
 
   worker:
     build: { context: ../../services/api, target: runtime }
-    command: celery -A app.workers.celery_app worker --loglevel=INFO --concurrency=2
+    command: celery -A app.workers.celery_app worker --loglevel=INFO --pool=threads --concurrency=2  # threads: a match run fans out to its own process pool
     environment: *app-env
     volumes: [uploads:/data/uploads]
     healthcheck:

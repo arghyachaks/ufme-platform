@@ -1,5 +1,5 @@
 from collections.abc import Iterator
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -123,3 +123,24 @@ def test_only_one_run_at_a_time(api: TestClient, db: Session) -> None:
     db.flush()
     r = api.post("/api/v1/recon/runs")
     assert r.status_code == 409 and r.json()["code"] == "run_in_progress"
+
+
+def test_abandoned_run_does_not_block_new_runs(api: TestClient, db: Session) -> None:
+    tenant = db.scalar(select(Tenant))
+    assert tenant is not None
+    stuck = MatchRun(
+        tenant_id=tenant.id,
+        code="RUN-99998",
+        status="Running",
+        scope={},
+        engine_version="x",
+        rules=[],
+        metrics={},
+        started_at=datetime.now(UTC) - timedelta(hours=3),  # its worker died long ago
+    )
+    db.add(stuck)
+    db.flush()
+    r = api.post("/api/v1/recon/runs")
+    assert r.status_code == 202, r.text
+    db.refresh(stuck)
+    assert stuck.status == "Failed" and "Abandoned" in (stuck.error or "")

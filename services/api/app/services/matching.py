@@ -4,7 +4,7 @@ import logging
 import time
 import uuid
 from collections import defaultdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -21,6 +21,7 @@ from app.services.ingestion import bulk_insert
 from app.services.workflow import Actor
 
 logger = logging.getLogger("ufme.matching")
+STALE_RUN_AFTER = timedelta(hours=1)
 CLOSED = ("matched", "accepted", "pending_approval")  # lines in these groups are no longer open
 
 
@@ -85,6 +86,30 @@ def open_lines(
 
 
 def create_run(db: Session, tenant: Tenant, entity: str | None = None, actor: str = "api") -> MatchRun:
+    # A run whose worker died (restart, OOM) would otherwise block every future run.
+    stale_before = datetime.now(UTC) - STALE_RUN_AFTER
+    for stuck in db.scalars(
+        select(MatchRun).where(
+            MatchRun.tenant_id == tenant.id,
+            MatchRun.status.in_(("Queued", "Running")),
+            func.coalesce(MatchRun.started_at, MatchRun.created_at) < stale_before,
+        )
+    ):
+        stuck.status, stuck.error = (
+            "Failed",
+            "Abandoned: no progress within the time limit (worker restarted?)",
+        )
+        stuck.finished_at = datetime.now(UTC)
+        audit.record(
+            db,
+            tenant_id=tenant.id,
+            actor="system",
+            action="match_run.abandoned",
+            object_type="match_run",
+            object_id=stuck.code,
+            control="IC-03",
+        )
+    db.flush()
     if db.scalar(
         select(func.count())
         .select_from(MatchRun)
