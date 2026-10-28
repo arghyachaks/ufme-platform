@@ -60,7 +60,7 @@ def test_accept_and_reject_become_labels(api: TestClient, db: Session) -> None:
         api.post(f"/api/v1/recon/proposals/{a}/accept", json={"reason": "confirmed with UK02"}).json()[
             "status"
         ]
-        == "accepted"
+        == "pending_approval"  # accepted suggestions go to the approval queue (Stage 4)
     )
     assert api.post(f"/api/v1/recon/proposals/{b}/reject").json()["status"] == "rejected"
     again = api.post(f"/api/v1/recon/proposals/{a}/reject")

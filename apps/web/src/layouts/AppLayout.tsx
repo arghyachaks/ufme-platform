@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
-import { Avatar, Badge, Box, Collapse, IconButton, InputBase, Stack, Typography } from "@mui/material";
+import { Badge, Box, Collapse, IconButton, InputBase, Stack, Typography } from "@mui/material";
 import DarkModeOutlinedIcon from "@mui/icons-material/DarkModeOutlined";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import LightModeOutlinedIcon from "@mui/icons-material/LightModeOutlined";
@@ -12,6 +12,7 @@ import { navItems } from "../navigation/navConfig";
 import { ActivityTicker } from "../components/shell/ActivityTicker";
 import { CopilotDock } from "../components/shell/CopilotDock";
 import { Logo } from "../components/common/Logo";
+import { ActingAs } from "../components/shell/ActingAs";
 import { toggleColorMode } from "../store/uiSlice";
 import type { RootState } from "../store";
 
@@ -134,10 +135,7 @@ export function AppLayout() {
           <Badge badgeContent={8} color="warning">
             <NotificationsNoneOutlinedIcon sx={{ color: "text.secondary" }} />
           </Badge>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Avatar sx={{ width: 26, height: 26, bgcolor: "var(--bg-muted)", color: "text.primary", border: "1px solid var(--border-strong)", fontSize: 11, fontWeight: 600 }}>PR</Avatar>
-            <Typography sx={{ fontWeight: 500, fontSize: 12.5 }}>Priya Raman</Typography>
-          </Stack>
+          <ActingAs />
         </Stack>
       </Box>
 

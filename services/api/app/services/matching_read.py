@@ -56,6 +56,7 @@ def proposals(
     status: str | None = None,
     decision: str | None = None,
     limit: int = 100,
+    code: str | None = None,
 ) -> list[s.ProposalOut]:
     q = (
         select(MatchGroup, MatchRun.code)
@@ -68,6 +69,8 @@ def proposals(
         q = q.where(MatchGroup.status == status)
     if decision:
         q = q.where(MatchGroup.decision == decision)
+    if code:
+        q = q.where(MatchGroup.code == code)
     rows = db.execute(q.order_by(MatchGroup.exposure_usd.desc(), MatchGroup.code).limit(limit)).all()
     members = group_lines(db, [g for g, _ in rows])
     out = []
@@ -106,12 +109,10 @@ def proposals(
 
 
 def proposal(db: Session, tenant: Tenant, code: str) -> s.ProposalOut:
-    group = db.scalar(select(MatchGroup).where(MatchGroup.tenant_id == tenant.id, MatchGroup.code == code))
-    if group is None:
+    found = proposals(db, tenant, code=code, limit=1)
+    if not found:
         raise NotFoundError(f"Proposal '{code}' not found.", code="proposal_not_found")
-    run = db.get(MatchRun, group.run_id)
-    assert run is not None
-    return next(p for p in proposals(db, tenant, run_code=run.code, limit=100_000) if p.id == code)
+    return found[0]
 
 
 def _money(usd: float) -> str:

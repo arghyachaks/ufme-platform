@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Button, Chip, MenuItem, Stack, TextField, Typography } from "@mui/material";
-import { api } from "../../api/services";
+import { api, ApiError } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
 import type { ExceptionItem } from "../../api/types";
 import { Panel, StatusPill } from "../../components/common/Panel";
@@ -16,7 +16,7 @@ const agingBuckets = [
 ];
 
 export function ExceptionsDashboardPage() {
-  const { data = [], loading } = useQuery(api.exceptions.list);
+  const { data = [], loading, reload } = useQuery(api.exceptions.list);
   const navigate = useNavigate();
   const { toast, toastNode } = useToast();
   const [severity, setSeverity] = useState("All");
@@ -35,9 +35,24 @@ export function ExceptionsDashboardPage() {
     .sort((a, b) => b[1] - a[1]);
   const byOwner = Object.entries(open.reduce<Record<string, number>>((acc, e) => ((acc[e.owner] = (acc[e.owner] ?? 0) + 1), acc), {}));
 
-  const bulk = (label: string) => {
-    toast(`${label} ${checked.length} exception${checked.length > 1 ? "s" : ""}`);
+  const plural = (n: number) => `${n} exception${n > 1 ? "s" : ""}`;
+  const fail = (e: unknown) => toast(e instanceof ApiError ? e.message : String(e));
+  const bulk = async (label: "Investigating" | "Escalated" | "Case") => {
+    const ids = checked;
     setChecked([]);
+    try {
+      if (label === "Case") {
+        const c = await api.workflow.createCase(ids);
+        toast(`${c.id} opened for ${plural(ids.length)}`);
+        navigate("/exceptions/cases");
+        return;
+      }
+      await Promise.all(ids.map((id) => api.workflow.setExceptionStatus(id, label)));
+      toast(`${label === "Escalated" ? "Escalated" : "Started investigating"} ${plural(ids.length)}`);
+    } catch (e) {
+      fail(e);
+    }
+    reload();
   };
 
   return (
@@ -103,9 +118,9 @@ export function ExceptionsDashboardPage() {
           </TextField>
         </Stack>
         <Stack direction="row" spacing={1}>
-          <Button size="small" variant="outlined" disabled={!checked.length} onClick={() => bulk("Assigned")}>Assign</Button>
-          <Button size="small" variant="outlined" disabled={!checked.length} onClick={() => bulk("Created case for")}>Create case</Button>
-          <Button size="small" variant="outlined" color="error" disabled={!checked.length} onClick={() => bulk("Escalated")}>Escalate</Button>
+          <Button size="small" variant="outlined" disabled={!checked.length} onClick={() => void bulk("Investigating")}>Start investigating</Button>
+          <Button size="small" variant="outlined" disabled={!checked.length} onClick={() => void bulk("Case")}>Create case</Button>
+          <Button size="small" variant="outlined" color="error" disabled={!checked.length} onClick={() => void bulk("Escalated")}>Escalate</Button>
         </Stack>
       </Stack>
 

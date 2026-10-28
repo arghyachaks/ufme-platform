@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar, Box, Button, Chip, Drawer, Stack, TextField, ToggleButton, ToggleButtonGroup, Typography } from "@mui/material";
-import { api } from "../../api/services";
+import { api, ApiError } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
 import type { CaseItem } from "../../api/types";
 import { StatusPill } from "../../components/common/Panel";
@@ -21,14 +21,33 @@ export function CasesPage() {
   useEffect(() => { if (data) setCases(data); }, [data]);
   const current = cases.find((c) => c.id === openId);
 
+  const replace = (updated: CaseItem) => setCases((cs) => cs.map((c) => (c.id === updated.id ? updated : c)));
+  const fail = (e: unknown) => toast(e instanceof ApiError ? e.message : String(e));
+
+  /** Saved on the server and written to the audit trail; the board updates from the response. */
   const move = (id: string, status: CaseItem["status"]) => {
+    const previous = cases;
     setCases((cs) => cs.map((c) => (c.id === id ? { ...c, status } : c)));
-    toast(`${id} → ${status}`);
+    api.workflow
+      .updateCase(id, { status })
+      .then((updated) => {
+        replace(updated);
+        toast(`${id} → ${status}${status === "Closed" ? " · linked exceptions resolved" : ""}`);
+      })
+      .catch((e) => {
+        setCases(previous);
+        fail(e);
+      });
   };
   const addComment = () => {
-    if (!current || !comment) return;
-    setCases((cs) => cs.map((c) => (c.id === current.id ? { ...c, comments: [...c.comments, { author: "You", at: "Just now", text: comment }] } : c)));
-    setComment("");
+    if (!current || !comment.trim()) return;
+    api.workflow
+      .comment(current.id, comment)
+      .then((updated) => {
+        replace(updated);
+        setComment("");
+      })
+      .catch(fail);
   };
 
   const active = cases.filter((c) => c.status !== "Closed");

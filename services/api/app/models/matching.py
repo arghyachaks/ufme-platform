@@ -33,6 +33,7 @@ class MatchGroup(TenantScoped, Base):
     __table_args__ = (
         UniqueConstraint("tenant_id", "code", name="uq_match_group_tenant_code"),
         Index("ix_match_group_tenant_status", "tenant_id", "status"),
+        Index("ix_match_group_tenant_run_status", "tenant_id", "run_id", "status"),
     )
 
     run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("match_run.id", ondelete="CASCADE"), index=True)

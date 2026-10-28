@@ -3,9 +3,9 @@ from typing import Any
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
-from app.api.deps import CurrentTenant, DbSession
+from app.api.deps import CurrentActor, CurrentTenant, DbSession
 from app.schemas.read import AskIn, AssistIn, ChatMessageOut
-from app.services import assist, copilot, read
+from app.services import assist, audit, copilot, read
 
 router = APIRouter(prefix="/ai")
 
@@ -41,7 +41,19 @@ def assist_status() -> dict[str, Any]:
 
 
 @router.post("/assist/stream")
-def assist_stream(body: AssistIn, db: DbSession, tenant: CurrentTenant) -> StreamingResponse:
+def assist_stream(
+    body: AssistIn, db: DbSession, tenant: CurrentTenant, actor: CurrentActor
+) -> StreamingResponse:
+    audit.record(
+        db,
+        tenant_id=tenant.id,
+        actor=actor.email,
+        action="assist.asked",
+        object_type="assist",
+        object_id=(body.page or "-")[:64],
+        after={"prompt": body.prompt[:500]},
+    )
+    db.commit()  # the stream outlives the request transaction
     return StreamingResponse(
         assist.stream(db, tenant, body.prompt, body.history, body.page),
         media_type="application/x-ndjson",

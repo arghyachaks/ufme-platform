@@ -2,7 +2,7 @@ from typing import Annotated, Literal
 
 from fastapi import APIRouter, BackgroundTasks, Query
 
-from app.api.deps import CurrentTenant, DbSession
+from app.api.deps import CurrentActor, CurrentTenant, DbSession
 from app.core.config import settings
 from app.schemas.read import DecisionIn, ProposalOut, RunOut, RunRequest
 from app.services import matching, matching_read
@@ -12,9 +12,13 @@ router = APIRouter(prefix="/recon")
 
 @router.post("/runs", response_model=RunOut, status_code=202)
 def start_run(
-    db: DbSession, tenant: CurrentTenant, background: BackgroundTasks, body: RunRequest | None = None
+    db: DbSession,
+    tenant: CurrentTenant,
+    actor: CurrentActor,
+    background: BackgroundTasks,
+    body: RunRequest | None = None,
 ) -> RunOut:
-    run = matching.create_run(db, tenant, entity=(body.entity if body else None))
+    run = matching.create_run(db, tenant, entity=(body.entity if body else None), actor=actor.email)
     if settings.ingest_inline:
         matching.execute_run(db, run)
     else:
@@ -52,7 +56,8 @@ def decide(
     action: Literal["accept", "reject"],
     db: DbSession,
     tenant: CurrentTenant,
+    actor: CurrentActor,
     body: DecisionIn | None = None,
 ) -> ProposalOut:
-    group = matching.decide(db, tenant, code, action, actor="api", reason=body.reason if body else None)
+    group = matching.decide(db, tenant, code, action, actor=actor, reason=body.reason if body else None)
     return matching_read.proposal(db, tenant, group.code)

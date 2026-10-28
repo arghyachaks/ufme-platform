@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Box, Button, Divider, Stack, Typography } from "@mui/material";
-import { api } from "../../api/services";
+import { api, ApiError } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
 import { Panel, StatusPill } from "../../components/common/Panel";
 import { DataTable, KeyValue, Page, glass, money, mono, severityTone, useToast } from "../../components/common/Blocks";
@@ -13,13 +13,33 @@ const hypotheses = (cause: string) => [
 ];
 
 export function InvestigationsPage() {
-  const { data = [], loading } = useQuery(api.exceptions.list);
+  const { data = [], loading, reload } = useQuery(api.exceptions.list);
   const [params, setParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast, toastNode } = useToast();
   const [note, setNote] = useState("");
   const open = data.filter((e) => e.status !== "Resolved");
   const current = open.find((e) => e.id === params.get("id")) ?? open[0];
+  const fail = (e: unknown) => toast(e instanceof ApiError ? e.message : String(e));
+  const createCase = (id: string) =>
+    api.workflow.createCase([id]).then((c) => toast(`${c.id} opened for ${id}`)).catch(fail);
+  const resolve = (id: string) =>
+    api.workflow
+      .setExceptionStatus(id, "Resolved", note || undefined)
+      .then(() => {
+        toast(`${id} resolved and recorded in the audit trail`);
+        setNote("");
+        reload();
+      })
+      .catch(fail);
+  const addNote = (id: string, status: string) =>
+    api.workflow
+      .setExceptionStatus(id, status, note)
+      .then(() => {
+        toast("Note added to the audit trail");
+        setNote("");
+      })
+      .catch(fail);
 
   return (
     <Page title="Investigations" description="Deep-dive an unmatched item: evidence, likely root cause, nearest candidates, and lineage." loading={loading}>
@@ -43,8 +63,8 @@ export function InvestigationsPage() {
             <Panel title={`${current.id} · ${current.type}`} action={
               <Stack direction="row" spacing={1}>
                 <Button size="small" variant="outlined" onClick={() => navigate("/reconciliation/manual-match")}>Manual match</Button>
-                <Button size="small" variant="outlined" onClick={() => toast(`Case created for ${current.id}`)}>Create case</Button>
-                <Button size="small" variant="contained" onClick={() => toast(`${current.id} marked resolved`)}>Resolve</Button>
+                <Button size="small" variant="outlined" onClick={() => void createCase(current.id)}>Create case</Button>
+                <Button size="small" variant="contained" onClick={() => void resolve(current.id)}>Resolve</Button>
               </Stack>
             }>
               <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
@@ -99,7 +119,7 @@ export function InvestigationsPage() {
               <Stack direction="row" spacing={1}>
                 <Box component="input" value={note} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value)} placeholder="Add an investigation note…"
                   sx={{ flex: 1, px: 1.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "transparent", color: "text.primary", font: "inherit", fontSize: 13 }} />
-                <Button variant="contained" disabled={!note} onClick={() => { toast("Note added to audit trail"); setNote(""); }}>Add</Button>
+                <Button variant="contained" disabled={!note} onClick={() => void addNote(current.id, current.status)}>Add</Button>
               </Stack>
             </Panel>
           </Stack>

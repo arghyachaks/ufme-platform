@@ -7,6 +7,12 @@ import type { ChatMessage } from "../../api/types";
 import { Panel } from "../../components/common/Panel";
 import { Page, glass } from "../../components/common/Blocks";
 
+const tidy = (t: string) =>
+  t
+    .replace(/\$\\leftrightarrow\$|\\leftrightarrow/g, "↔")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/^\s*[*-]\s+/gm, "• ");
+
 export function CopilotPage() {
   const { data, loading } = useQuery(api.ai.copilotSeed);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -16,14 +22,30 @@ export function CopilotPage() {
   useEffect(() => { if (data) setMessages(data.messages); }, [data]);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [messages, thinking]);
 
+  /** Streams from ufme Assist (the private on-premise model), falling back to standard answers when it's off. */
   const send = async (text: string) => {
     if (!text.trim() || thinking) return;
-    setMessages((m) => [...m, { role: "user", text }]);
+    const history = messages.map((m) => ({ role: m.role, content: m.text }));
+    setMessages((m) => [...m, { role: "user", text }, { role: "assistant", text: "" }]);
     setInput("");
     setThinking(true);
-    const reply = await api.ai.ask(text);
-    setMessages((m) => [...m, reply]);
-    setThinking(false);
+    const append = (t: string) =>
+      setMessages((m) => {
+        const last = m[m.length - 1];
+        return [...m.slice(0, -1), { ...last, text: last.text + t }];
+      });
+    try {
+      await api.ai.assist({ prompt: text, history, page: "/ai/copilot", onDelta: append });
+    } catch {
+      append("Sorry, I couldn't reach the assistant just now. Please try again.");
+    } finally {
+      setMessages((m) => {
+        const last = m[m.length - 1];
+        const refs = Array.from(new Set(last.text.match(/\b(?:EX|CS|MT|AP|RUN|JE)-\d+\b/g) ?? []));
+        return [...m.slice(0, -1), { ...last, text: tidy(last.text), refs }];
+      });
+      setThinking(false);
+    }
   };
 
   return (
@@ -32,7 +54,7 @@ export function CopilotPage() {
         <Box sx={{ ...glass, display: "flex", flexDirection: "column", height: 560 }}>
           <Box sx={{ flex: 1, overflowY: "auto", p: 2 }}>
             <Stack spacing={1.5}>
-              {messages.map((m, i) => (
+              {messages.filter((m) => m.text || !thinking).map((m, i) => (
                 <Box key={i} sx={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start", maxWidth: "80%" }}>
                   <Box sx={{ px: 1.75, py: 1.25, borderRadius: 2, bgcolor: m.role === "user" ? "primary.main" : "var(--indigo-soft)", color: m.role === "user" ? "#fff" : "text.primary" }}>
                     {m.role === "assistant" ? <AutoAwesomeOutlinedIcon sx={{ fontSize: 14, mr: 0.75, verticalAlign: "-2px", color: "primary.main" }} /> : null}
@@ -62,7 +84,7 @@ export function CopilotPage() {
             </Stack>
           </Panel>
           <Panel title="Guardrails">
-            {["Read-only by default", "Cites records it used", "No approvals without a human", "Every answer is logged to audit"].map((g) => (
+            {["Runs privately on your own hardware", "Answers only from your ufme data", "Quotes the record IDs it used", "Can't approve or change anything", "Every question is logged to the audit trail"].map((g) => (
               <Typography key={g} sx={{ fontSize: 12, mb: 0.5 }}>• {g}</Typography>
             ))}
           </Panel>

@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Alert, Box, Button, Checkbox, Drawer, Stack, Typography } from "@mui/material";
+import { Alert, Box, Button, Checkbox, Drawer, Snackbar, Stack, TextField, Typography } from "@mui/material";
 import { PageHeader } from "../../components/common/PageHeader";
 import { StatusPill } from "../../components/common/Panel";
 import { ActivityTimeline } from "./ActivityTimeline";
-import { workspaceApi, type ReconData } from "../../api/services";
+import { api, ApiError } from "../../api/services";
+import type { UnmatchedSet, UnmatchedTxn } from "../../api/types";
 import { useQuery } from "../../api/useQuery";
 import { PageSkeleton } from "../../components/common/Blocks";
 
-type Txn = (ReconData["unmatchedA"])[number];
+type Txn = UnmatchedTxn;
+const TOLERANCE_PCT = 0.005;
+const TOLERANCE_CAP_USD = 500;
 
 function matchTypeLabel(aCount: number, bCount: number) {
   if (!aCount || !bCount) return "Select both sides";
@@ -19,13 +22,17 @@ function matchTypeLabel(aCount: number, bCount: number) {
 }
 
 export function ManualMatchPage() {
-  const { data } = useQuery(workspaceApi.recon);
-  return data ? <ManualMatchPageView d={data} /> : <PageSkeleton />;
+  const q = useQuery(() => api.recon.unmatched());
+  return q.data ? <ManualMatchPageView d={q.data} reload={q.reload} /> : <PageSkeleton />;
 }
 
-function ManualMatchPageView({ d }: { d: ReconData }) {
-  const { matchTolerancePolicy, manualSuggestWhy, unmatchedA, unmatchedB } = d;
+function ManualMatchPageView({ d, reload }: { d: UnmatchedSet; reload: () => void }) {
+  const { sideA: unmatchedA, sideB: unmatchedB } = d;
   const navigate = useNavigate();
+  const [why, setWhy] = useState<string[]>([]);
+  const [rationale, setRationale] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<{ text: string; error?: boolean } | null>(null);
   const [selectedA, setSelectedA] = useState<string[]>([]);
   const [selectedB, setSelectedB] = useState<string[]>([]);
   const [suggested, setSuggested] = useState(false);
@@ -36,8 +43,10 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
   const totalA = aRows.reduce((sum, row) => sum + row.amount, 0);
   const totalB = bRows.reduce((sum, row) => sum + row.amount, 0);
   const difference = totalA - totalB;
-  const variance = totalA === 0 ? 0 : Math.abs(difference) / totalA;
-  const withinTolerance = variance <= matchTolerancePolicy;
+  const exposure = Math.max(totalA, totalB);
+  const variance = exposure === 0 ? 0 : Math.abs(difference) / exposure;
+  const allowedUsd = Math.min(exposure * TOLERANCE_PCT, TOLERANCE_CAP_USD);
+  const withinTolerance = Math.abs(difference) <= allowedUsd;
   const typeLabel = matchTypeLabel(aRows.length, bRows.length);
   const policyReady = Boolean(aRows.length && bRows.length && withinTolerance);
 
@@ -46,27 +55,64 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
       return "Select at least one transaction on each side.";
     }
     if (!withinTolerance) {
-      return "Variance exceeds 0.5% tolerance policy.";
+      return `Variance of ${Math.abs(difference).toLocaleString(undefined, { maximumFractionDigits: 2 })} USD is above the ${allowedUsd.toLocaleString(undefined, { maximumFractionDigits: 2 })} USD limit (0.5%, capped at 500 USD).`;
     }
-    return "Within policy. Ready to submit or convert remaining items to exceptions.";
-  }, [aRows.length, bRows.length, withinTolerance]);
+    return "Within policy. Submitting sends it to the approver set by the approval matrix.";
+  }, [aRows.length, bRows.length, withinTolerance, difference, allowedUsd]);
 
   function toggle(id: string, side: "A" | "B") {
     const setter = side === "A" ? setSelectedA : setSelectedB;
     setter((current) => (current.includes(id) ? current.filter((item) => item !== id) : [...current, id]));
   }
 
+  /** Closest-amount pairing across the two sides (1:1 or 1:2), checked against the tolerance policy. */
   function suggestMatch() {
-    setSelectedA(["INV-4501"]);
-    setSelectedB(["GL-8902", "GL-8903"]);
+    let best: { a: Txn; b: Txn[]; gap: number } | null = null;
+    for (const a of unmatchedA) {
+      for (let i = 0; i < unmatchedB.length; i++) {
+        const b1 = unmatchedB[i];
+        const g1 = Math.abs(a.amount - b1.amount);
+        if (!best || g1 < best.gap) best = { a, b: [b1], gap: g1 };
+        for (let j = i + 1; j < unmatchedB.length; j++) {
+          const g2 = Math.abs(a.amount - b1.amount - unmatchedB[j].amount);
+          if (g2 < best.gap) best = { a, b: [b1, unmatchedB[j]], gap: g2 };
+        }
+      }
+    }
+    if (!best) return;
+    setSelectedA([best.a.id]);
+    setSelectedB(best.b.map((b) => b.id));
+    const total = best.b.reduce((s, b) => s + b.amount, 0);
+    setWhy([
+      `Closest amounts on this pair: ${best.a.amount.toLocaleString()} vs ${total.toLocaleString()} USD`,
+      `Variance ${best.gap.toLocaleString(undefined, { maximumFractionDigits: 2 })} USD (${((100 * best.gap) / Math.max(best.a.amount, total || 1)).toFixed(3)}%)`,
+      best.b.length > 1 ? "Split across two B-side items (1:M)" : "One-to-one",
+    ]);
     setSuggested(true);
+  }
+
+  async function submit() {
+    setBusy(true);
+    try {
+      const r = await api.workflow.manualMatch([...selectedA, ...selectedB], rationale.trim() || "Manual match from the workbench");
+      setToast({ text: `${r.matchId} (${r.type}) submitted · ${r.approvalId} routed to ${r.stage}` });
+      setSelectedA([]);
+      setSelectedB([]);
+      setSuggested(false);
+      setRationale("");
+      reload();
+    } catch (e) {
+      setToast({ text: e instanceof ApiError ? e.message : String(e), error: true });
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
     <>
       <PageHeader
         title="Manual Match Workbench"
-        description="Build 1:1, 1:M, M:1, or M:M matches from unmatched items. Review the suggestion, then confirm."
+        description={`Build 1:1, 1:M, M:1 or M:M matches from open items${d.pair ? ` on ${d.pair}` : ""}. Amounts are in USD; the server re-checks the tolerance policy before routing for approval.`}
         actions={
           <Stack direction="row" spacing={1}>
             <Button variant="outlined" onClick={() => navigate("/exceptions")}>
@@ -108,7 +154,7 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
           </Stack>
 
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2 }}>
-            <PolicyStat label="Tolerance allowed" value="0.5%" />
+            <PolicyStat label="Allowed variance" value={`${allowedUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD`} />
             <PolicyStat label="Current variance" value={`${(variance * 100).toFixed(2)}%`} />
             <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
               <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>Status</Typography>
@@ -141,7 +187,7 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
           {suggested && (
             <Box sx={{ p: 1.25, mb: 2, bgcolor: "var(--indigo-soft)", borderRadius: 1 }}>
               <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5 }}>Why suggested</Typography>
-              {manualSuggestWhy.map((item) => (
+              {why.map((item) => (
                 <Typography key={item} sx={{ fontSize: 12 }}>
                   • {item}
                 </Typography>
@@ -152,9 +198,10 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
           <Alert severity={policyReady ? "success" : "warning"} sx={{ mb: 2 }}>
             {validation}
           </Alert>
+          <TextField size="small" fullWidth placeholder="Why do these belong together? (saved with the approval)" value={rationale} onChange={(e) => setRationale(e.target.value)} sx={{ mb: 1.5 }} />
           <Stack direction="row" spacing={1} flexWrap="wrap">
-            <Button variant="contained" disabled={!policyReady} onClick={() => navigate("/reconciliation/approvals")}>
-              Save & submit approval
+            <Button variant="contained" disabled={!policyReady || busy} onClick={() => void submit()}>
+              Submit for approval
             </Button>
             <Button variant="outlined" color="warning" onClick={() => navigate("/exceptions/cases")}>
               Create exception
@@ -185,6 +232,16 @@ function ManualMatchPageView({ d }: { d: ReconData }) {
       </Box>
       <ActivityTimeline />
 
+      <Snackbar open={Boolean(toast)} autoHideDuration={6000} onClose={() => setToast(null)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+        <Alert severity={toast?.error ? "warning" : "success"} variant="filled" onClose={() => setToast(null)} sx={{ maxWidth: 620 }}>
+          {toast?.text}
+          {!toast?.error ? (
+            <Button size="small" color="inherit" onClick={() => navigate("/reconciliation/approvals")} sx={{ ml: 1 }}>
+              View
+            </Button>
+          ) : null}
+        </Alert>
+      </Snackbar>
       <Drawer anchor="right" open={Boolean(preview)} onClose={() => setPreview(null)}>
         <Box sx={{ width: { xs: 320, sm: 400 }, p: 2.5 }}>
           <Typography variant="h6" sx={{ mb: 1 }}>
@@ -282,7 +339,7 @@ function TxnPicker({
                     {row.entity} · {row.date}
                   </Typography>
                   <StatusPill
-                    label={row.exceptionRisk}
+                    label={row.exceptionRisk ?? "Medium"}
                     tone={row.exceptionRisk === "High" ? "crit" : row.exceptionRisk === "Medium" ? "warn" : "ok"}
                   />
                 </Stack>

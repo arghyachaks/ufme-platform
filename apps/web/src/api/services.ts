@@ -5,7 +5,22 @@
 import * as db from "./mock/db";
 import * as reconMock from "./mock/recon";
 import * as dashboardMock from "./mock/dashboard";
-import type { BatchDetail, ChatMessage, IngestionBatch, MatchProposal, MatchRunInfo, MatchRule } from "./types";
+import type {
+  Actor,
+  Approval,
+  BatchDetail,
+  CaseItem,
+  ChatMessage,
+  ExceptionItem,
+  IngestionBatch,
+  ManualMatchResult,
+  MatchProposal,
+  MatchRunInfo,
+  MatchRule,
+  SignoffState,
+  UnmatchedSet,
+  UnmatchedTxn,
+} from "./types";
 
 export type ReconData = typeof reconMock;
 export type DashboardData = typeof dashboardMock;
@@ -19,11 +34,41 @@ export class ApiError extends Error {
   }
 }
 
+/** Who the demo is acting as (until SSO). Sent as X-Ufme-User; the server enforces roles and segregation of duties. */
+const ACTOR_KEY = "ufme.actingUser";
+const actorListeners = new Set<(email: string | null) => void>();
+export const actingUser = {
+  get(): string | null {
+    try {
+      return localStorage.getItem(ACTOR_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(email: string) {
+    try {
+      localStorage.setItem(ACTOR_KEY, email);
+    } catch {
+      /* private mode: keeps working for this page load via listeners */
+    }
+    actorListeners.forEach((fn) => fn(email));
+  },
+  subscribe(fn: (email: string | null) => void) {
+    actorListeners.add(fn);
+    return () => void actorListeners.delete(fn);
+  },
+};
+const actorHeader = (): Record<string, string> => {
+  const email = actingUser.get();
+  return email ? { "X-Ufme-User": email } : {};
+};
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
+      ...actorHeader(),
       ...(init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
@@ -35,6 +80,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 const post = <T,>(path: string, body?: unknown) => http<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+const patch = <T,>(path: string, body: unknown) => http<T>(path, { method: "PATCH", body: JSON.stringify(body) });
 
 const delay = <T,>(value: T, ms = 250) => new Promise<T>((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
 
@@ -73,7 +119,7 @@ async function mockAssist({ prompt, onDelta, signal }: AssistArgs): Promise<"fal
 async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs): Promise<string> {
   const res = await fetch(`${BASE}/ai/assist/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...actorHeader() },
     body: JSON.stringify({ prompt, history, page }),
     signal,
   });
@@ -99,6 +145,12 @@ async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs
   return source;
 }
 
+const DEMO_ACTORS: Actor[] = [
+  { email: "priya.nair@example.com", name: "Priya Nair", role: "Analyst", entities: ["US01", "UK02"] },
+  { email: "daniel.ortiz@example.com", name: "Daniel Ortiz", role: "Controller", entities: ["US01", "UK02", "DE03"] },
+  { email: "liam.walsh@example.com", name: "Liam Walsh", role: "Finance Director", entities: ["All"] },
+];
+
 const mockApi = {
   exceptions: { list: () => delay(db.exceptions) },
   cases: { list: () => delay(db.cases) },
@@ -112,7 +164,6 @@ const mockApi = {
     scenarios: () => delay(Object.entries(db.simulationResults).map(([key, value]) => ({ key, label: value.scenario }))),
     run: (key: string) => delay(db.simulationResults[key], 900),
   },
-  workflow: { stages: () => delay(db.workflowStages) },
   ai: {
     models: () => delay({ models: db.models, trend: db.modelTrend }),
     explanations: () => delay(db.explanations),
@@ -143,7 +194,31 @@ const mockApi = {
     runs: (): Promise<MatchRunInfo[]> => delay([mockRun]),
     proposals: (_params?: { run?: string; status?: string }): Promise<MatchProposal[]> => delay([]),
     decide: (code: string, action: "accept" | "reject"): Promise<MatchProposal> =>
-      delay({ id: code, status: action === "accept" ? "accepted" : "rejected" } as MatchProposal),
+      delay({ id: code, status: action === "accept" ? "pending_approval" : "rejected" } as MatchProposal),
+    unmatched: (_pair?: string): Promise<UnmatchedSet> =>
+      delay({ pair: "DEMO", sideA: reconMock.unmatchedA as UnmatchedTxn[], sideB: reconMock.unmatchedB as UnmatchedTxn[] }),
+  },
+  workflow: {
+    stages: () => delay(db.workflowStages),
+    me: (): Promise<Actor> => delay(DEMO_ACTORS.find((a) => a.email === actingUser.get()) ?? DEMO_ACTORS[0]),
+    actors: (): Promise<Actor[]> => delay(DEMO_ACTORS),
+    approvals: (): Promise<Approval[]> => delay([]),
+    decideApproval: (_code: string, _action: "approve" | "reject" | "request-info", _comment?: string): Promise<Approval> =>
+      Promise.reject(new ApiError(501, { detail: "Approvals need the backend (demo mocks are read-only)." })),
+    manualMatch: (_txnIds: string[], _rationale: string): Promise<ManualMatchResult> =>
+      delay({ matchId: "MT-DEMO", approvalId: "AP-DEMO", type: "1:M", varianceUsd: 0, stage: "Controller" }),
+    signoff: (): Promise<SignoffState[]> => delay([]),
+    sign: (_entity: string): Promise<SignoffState> =>
+      Promise.reject(new ApiError(501, { detail: "Sign-off needs the backend (demo mocks are read-only)." })),
+    evaluateControls: (): Promise<{ id: string; name: string; result: string; lastRun: string }[]> => delay([]),
+    createCase: (_exceptionIds: string[]): Promise<CaseItem> =>
+      Promise.reject(new ApiError(501, { detail: "Cases need the backend." })),
+    updateCase: (_code: string, _changes: Partial<Pick<CaseItem, "status" | "assignee" | "priority">>): Promise<CaseItem> =>
+      Promise.reject(new ApiError(501, { detail: "Cases need the backend." })),
+    comment: (_code: string, _text: string): Promise<CaseItem> =>
+      Promise.reject(new ApiError(501, { detail: "Cases need the backend." })),
+    setExceptionStatus: (_code: string, _status: string, _note?: string): Promise<ExceptionItem> =>
+      Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
   },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
@@ -166,7 +241,6 @@ const httpApi: Api = {
     scenarios: () => http("/rules/simulations"),
     run: (key: string) => post(`/rules/simulations/${encodeURIComponent(key)}/run`),
   },
-  workflow: { stages: () => http("/workflow/stages") },
   ai: {
     models: () => http("/ai/models"),
     explanations: () => http("/ai/explanations"),
@@ -206,6 +280,27 @@ const httpApi: Api = {
       http<MatchProposal[]>(`/recon/proposals?${new URLSearchParams(Object.entries(params ?? {}).filter(([, v]) => v) as [string, string][])}`),
     decide: (code: string, action: "accept" | "reject") =>
       post<MatchProposal>(`/recon/proposals/${encodeURIComponent(code)}/${action}`),
+    unmatched: (pair?: string) => http<UnmatchedSet>(`/recon/unmatched${pair ? `?pair=${encodeURIComponent(pair)}` : ""}`),
+  },
+  workflow: {
+    stages: () => http("/workflow/stages"),
+    me: () => http<Actor>("/me"),
+    actors: () => http<Actor[]>("/users/acting"),
+    approvals: () => http<Approval[]>("/approvals"),
+    decideApproval: (code: string, action: "approve" | "reject" | "request-info", comment?: string) =>
+      post<Approval>(`/approvals/${encodeURIComponent(code)}/${action}`, comment ? { comment } : undefined),
+    manualMatch: (txnIds: string[], rationale: string) =>
+      post<ManualMatchResult>("/recon/manual-matches", { txnIds, rationale }),
+    signoff: () => http<SignoffState[]>("/signoff"),
+    sign: (entity: string) => post<SignoffState>(`/signoff/${encodeURIComponent(entity)}/sign`),
+    evaluateControls: () =>
+      post<{ id: string; name: string; result: string; lastRun: string }[]>("/audit/controls/evaluate"),
+    createCase: (exceptionIds: string[]) => post<CaseItem>("/cases", { exceptionIds }),
+    updateCase: (code: string, changes: Partial<Pick<CaseItem, "status" | "assignee" | "priority">>) =>
+      patch<CaseItem>(`/cases/${encodeURIComponent(code)}`, changes),
+    comment: (code: string, text: string) => post<CaseItem>(`/cases/${encodeURIComponent(code)}/comments`, { text }),
+    setExceptionStatus: (code: string, status: string, note?: string) =>
+      post<ExceptionItem>(`/exceptions/${encodeURIComponent(code)}/status`, { status, note }),
   },
   admin: { all: () => http("/admin") },
   ops: { all: () => http("/ops") },

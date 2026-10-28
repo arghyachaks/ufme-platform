@@ -1,5 +1,7 @@
 """Response models. Field names are camelCase on the wire to match apps/web/src/api/types.ts."""
 
+from typing import Any
+
 from pydantic import BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
@@ -267,3 +269,98 @@ class RunRequest(CamelModel):
 
 class DecisionIn(CamelModel):
     reason: str | None = None
+
+
+# ---------------------------------------------------------------- Stage 4 workflow
+
+
+class ActorOut(CamelModel):
+    email: str
+    name: str
+    role: str
+    entities: list[str]
+
+
+class ApprovalStepOut(CamelModel):
+    name: str
+    role: str
+    at: str
+
+
+class ApprovalOut(CamelModel):
+    id: str
+    match_id: str
+    kind: str
+    submitted_by: str
+    entity: str
+    exposure: str
+    exposure_usd: int | float
+    materiality: str
+    confidence: str
+    date: str
+    stage: str
+    sla: str
+    sla_overdue: bool
+    exception_open: bool
+    rationale: str
+    documents: list[str]
+    trail: list[str]
+    confidence_factors: list[dict[str, Any]]
+    status: str
+    approvals: list[ApprovalStepOut]
+    approvals_needed: int
+
+
+class ApprovalDecisionIn(CamelModel):
+    comment: str | None = None
+
+
+class ManualMatchIn(CamelModel):
+    txn_ids: list[str]
+    rationale: str = ""
+
+
+class ManualMatchOut(CamelModel):
+    match_id: str
+    approval_id: str
+    type: str
+    variance_usd: int | float
+    stage: str
+
+
+class SignoffOut(CamelModel):
+    entity: str
+    period: str
+    status: str
+    signatures: list[dict[str, Any]]
+    open_exceptions: int
+    critical_exceptions: int
+    pending_approvals: int
+    failing_controls: list[str]
+    checklist: list[dict[str, Any]]
+    readiness: int
+    blockers: list[str]
+    ready: bool
+    next_signer: str | None
+
+
+class CaseCreateIn(CamelModel):
+    exception_ids: list[str]
+    title: str | None = None
+    assignee: str | None = None
+    priority: str | None = None
+
+
+class CaseUpdateIn(CamelModel):
+    status: str | None = None
+    assignee: str | None = None
+    priority: str | None = None
+
+
+class CommentIn(CamelModel):
+    text: str
+
+
+class ExceptionStatusIn(CamelModel):
+    status: str
+    note: str | None = None

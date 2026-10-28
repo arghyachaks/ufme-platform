@@ -2,6 +2,7 @@
 
 import logging
 import time
+import uuid
 from collections import defaultdict
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -15,10 +16,12 @@ from app.engines.benchmark.model import Line
 from app.engines.matching import engine
 from app.engines.matching.rules import Rule
 from app.models import LedgerTxn, MatchGroup, MatchLabel, MatchMember, MatchRule, MatchRun, Tenant
-from app.services import audit
+from app.services import audit, workflow
+from app.services.ingestion import bulk_insert
+from app.services.workflow import Actor
 
 logger = logging.getLogger("ufme.matching")
-CLOSED = ("matched", "accepted")  # lines in these groups are no longer open
+CLOSED = ("matched", "accepted", "pending_approval")  # lines in these groups are no longer open
 
 
 def _next_code(db: Session, model: Any, tenant: Tenant, prefix: str, width: int = 5) -> int:
@@ -40,12 +43,17 @@ def load_rules(db: Session, tenant: Tenant) -> list[Rule]:
 def open_lines(
     db: Session, tenant: Tenant, entity: str | None = None
 ) -> tuple[list[Line], dict[str, LedgerTxn], int]:
+    # NOT EXISTS (an anti-join), not NOT IN: with ~500K members NOT IN degrades to a per-row subplan.
     closed = (
-        select(MatchMember.txn_id)
+        select(MatchMember.id)
         .join(MatchGroup, MatchGroup.id == MatchMember.group_id)
-        .where(MatchGroup.tenant_id == tenant.id, MatchGroup.status.in_(CLOSED))
+        .where(
+            MatchMember.txn_id == LedgerTxn.id,
+            MatchGroup.tenant_id == tenant.id,
+            MatchGroup.status.in_(CLOSED),
+        )
     )
-    q = select(LedgerTxn).where(LedgerTxn.tenant_id == tenant.id, LedgerTxn.id.not_in(closed))
+    q = select(LedgerTxn).where(LedgerTxn.tenant_id == tenant.id, ~closed.exists())
     if entity:
         q = q.where((LedgerTxn.entity_code == entity) | (LedgerTxn.counterparty_code == entity))
     lines: list[Line] = []
@@ -122,41 +130,49 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
             base = _next_code(db, MatchGroup, tenant, "MT")
             auto = suggested = 0
             matched_ids: set[str] = set()
+            groups: list[dict[str, Any]] = []
+            members: list[dict[str, Any]] = []
             for offset, pred in enumerate(sorted(result.predictions, key=lambda p: -p.confidence)):
                 detail = result.details[pred.line_ids]
                 a, b = detail.a, detail.b
                 matched_ids |= set(pred.line_ids)
-                exposure = Decimal(str(round(abs(a.amount_usd), 4)))
-                group = MatchGroup(
-                    tenant_id=tenant.id,
-                    code=f"MT-{base + offset:06d}",
-                    run_id=run.id,
-                    match_type="1:1",
-                    decision=pred.decision,
-                    status="matched" if pred.decision == "auto" else "proposed",
-                    confidence=pred.confidence,
-                    exposure_usd=exposure,
-                    residual_usd=Decimal(str(round(detail.features["amount_gap_usd"], 4))),
-                    entity_pair="-".join(a.pair),
-                    rule_ids=detail.rules,
-                    explanation={
-                        "features": {k: v for k, v in detail.features.items() if k != "blocking"},
-                        "blocking": detail.features["blocking"],
-                        "contributions": {k: round(v, 3) for k, v in detail.contributions.items()},
-                        "alternatives": [
-                            {"txn": by_id[x].code, "probability": p}
-                            for x, p in result.alternatives.get(pred.line_ids, [])
-                            if x in by_id
-                        ],
-                    },
+                gid = uuid.uuid4()
+                groups.append(
+                    {
+                        "id": gid,
+                        "tenant_id": tenant.id,
+                        "code": f"MT-{base + offset:06d}",
+                        "run_id": run.id,
+                        "match_type": "1:1",
+                        "decision": pred.decision,
+                        "status": "matched" if pred.decision == "auto" else "proposed",
+                        "confidence": pred.confidence,
+                        "exposure_usd": Decimal(str(round(abs(a.amount_usd), 4))),
+                        "residual_usd": Decimal(str(round(detail.features["amount_gap_usd"], 4))),
+                        "entity_pair": "-".join(a.pair),
+                        "rule_ids": detail.rules,
+                        "explanation": {
+                            "features": {k: v for k, v in detail.features.items() if k != "blocking"},
+                            "blocking": detail.features["blocking"],
+                            "contributions": {k: round(v, 3) for k, v in detail.contributions.items()},
+                            "alternatives": [
+                                {"txn": by_id[x].code, "probability": p}
+                                for x, p in result.alternatives.get(pred.line_ids, [])
+                                if x in by_id
+                            ],
+                        },
+                    }
                 )
-                group.members = [
-                    MatchMember(txn_id=by_id[a.id].id, side=a.side),
-                    MatchMember(txn_id=by_id[b.id].id, side=b.side),
+                members += [
+                    {"group_id": gid, "txn_id": by_id[a.id].id, "side": a.side},
+                    {"group_id": gid, "txn_id": by_id[b.id].id, "side": b.side},
                 ]
-                db.add(group)
                 auto += pred.decision == "auto"
                 suggested += pred.decision == "suggest"
+            # COPY, not ORM objects: ~270K groups + ~540K members per 1M lines would otherwise flush for minutes.
+            db.flush()
+            bulk_insert(db, MatchGroup, groups)
+            bulk_insert(db, MatchMember, members)
             t3 = time.perf_counter()
             unmatched = [x for x in lines if x.id not in matched_ids]
             run.metrics = {
@@ -206,31 +222,38 @@ def _period(lines: list[Line]) -> str:
 
 
 def decide(
-    db: Session, tenant: Tenant, code: str, action: str, actor: str, reason: str | None = None
+    db: Session, tenant: Tenant, code: str, action: str, actor: Actor, reason: str | None = None
 ) -> MatchGroup:
+    """Reject closes the proposal. Accept submits it for approval under the matrix (Stage 4): the lines stay
+    locked while it waits, and the group becomes `accepted` only when the approval completes."""
     group = db.scalar(select(MatchGroup).where(MatchGroup.tenant_id == tenant.id, MatchGroup.code == code))
     if group is None:
         raise NotFoundError(f"Proposal '{code}' not found.", code="proposal_not_found")
     if group.status != "proposed":
-        raise ConflictError(f"{code} is already {group.status}.", code="proposal_not_pending")
+        raise ConflictError(
+            f"{code} is already {group.status.replace('_', ' ')}.", code="proposal_not_pending"
+        )
     before = group.status
-    group.status = "accepted" if action == "accept" else "rejected"
-    group.decided_by, group.decided_at = actor, datetime.now(UTC)
     db.add(
         MatchLabel(
             tenant_id=tenant.id,
             group_id=group.id,
             action=action,
-            actor=actor,
+            actor=actor.email,
             reason=reason,
             model_confidence=group.confidence,
             features=group.explanation.get("features", {}),
         )
     )
+    if action == "accept":
+        workflow.submit(db, tenant, group, actor, "review", reason or "Reviewed and accepted from the queue.")
+    else:
+        group.status = "rejected"
+        group.decided_by, group.decided_at = actor.email, datetime.now(UTC)
     audit.record(
         db,
         tenant_id=tenant.id,
-        actor=actor,
+        actor=actor.email,
         action=f"match.{action}ed",
         object_type="match_group",
         object_id=code,
@@ -247,11 +270,12 @@ def group_lines(db: Session, groups: list[MatchGroup]) -> dict[Any, list[tuple[s
     out: dict[Any, list[tuple[str, LedgerTxn]]] = defaultdict(list)
     if not ids:
         return out
-    rows = db.execute(
-        select(MatchMember.group_id, MatchMember.side, LedgerTxn)
-        .join(LedgerTxn, LedgerTxn.id == MatchMember.txn_id)
-        .where(MatchMember.group_id.in_(ids))
-    )
-    for gid, side, txn in rows:
-        out[gid].append((side, txn))
+    for i in range(0, len(ids), 10_000):  # Postgres caps a statement at 65,535 bind parameters
+        rows = db.execute(
+            select(MatchMember.group_id, MatchMember.side, LedgerTxn)
+            .join(LedgerTxn, LedgerTxn.id == MatchMember.txn_id)
+            .where(MatchMember.group_id.in_(ids[i : i + 10_000]))
+        )
+        for gid, side, txn in rows:
+            out[gid].append((side, txn))
     return out

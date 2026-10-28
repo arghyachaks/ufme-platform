@@ -74,12 +74,16 @@ function ReviewPageView({ d }: { d: ReconData }) {
 
   const decide = async (id: string, action: "accept" | "reject") => {
     if (!id.startsWith("MT-")) {
-      setToast(`${action === "accept" ? "Approved" : "Rejected"} ${id}`);
+      setToast(`${action === "accept" ? "Accepted" : "Rejected"} ${id}`);
       return;
     }
     try {
       await api.recon.decide(id, action);
-      setToast(`${id} ${action === "accept" ? "approved" : "rejected"} — recorded as a training label`);
+      setToast(
+        action === "accept"
+          ? `${id} accepted and sent for approval under the matrix`
+          : `${id} rejected — recorded as a training label`,
+      );
       goNext();
     } catch (err) {
       setToast(err instanceof ApiError ? err.message : `Could not ${action} ${id}`);
@@ -294,7 +298,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
                 goNext();
               }}
             >
-              Approve
+              Accept
             </Button>
             <Button variant="outlined" color="error" onClick={() => void decide(left.id, "reject")}>
               Reject

@@ -210,3 +210,64 @@ export type MatchProposal = {
   explanation: Record<string, unknown>;
   lines: { id: string; side: "A" | "B"; entity: string; counterparty: string; amount: number; currency: string; amountUsd: number | null; valueDate: string; reference: string | null; description: string | null }[];
 };
+
+// ---------------------------------------------------------------- Stage 4 workflow
+
+export type Actor = { email: string; name: string; role: string; entities: string[] };
+
+export type Approval = {
+  id: string;
+  matchId: string;
+  kind: "review" | "manual";
+  submittedBy: string;
+  entity: string;
+  exposure: string;
+  exposureUsd: number;
+  materiality: "High" | "Medium" | "Low";
+  confidence: string;
+  date: string;
+  stage: string;
+  sla: string;
+  slaOverdue: boolean;
+  exceptionOpen: boolean;
+  rationale: string;
+  documents: string[];
+  trail: string[];
+  confidenceFactors: { label: string; weight: number }[];
+  status: "Pending" | "Info requested" | "Approved" | "Rejected";
+  approvals: { name: string; role: string; at: string }[];
+  approvalsNeeded: number;
+};
+
+export type ManualMatchResult = { matchId: string; approvalId: string; type: string; varianceUsd: number; stage: string };
+
+export type SignoffState = {
+  entity: string;
+  period: string;
+  status: string;
+  signatures: { actor: string; name: string; role: string; step: string; at: string }[];
+  openExceptions: number;
+  criticalExceptions: number;
+  pendingApprovals: number;
+  failingControls: string[];
+  checklist: { label: string; done: boolean }[];
+  readiness: number;
+  blockers: string[];
+  ready: boolean;
+  nextSigner: string | null;
+};
+
+export type UnmatchedTxn = {
+  id: string;
+  invoice: string;
+  amount: number;
+  date: string;
+  entity: string;
+  attachments: string[];
+  exceptionRisk?: string;
+  currency?: string;
+  originalAmount?: number;
+  originalCurrency?: string;
+  description?: string;
+};
+export type UnmatchedSet = { pair: string | null; sideA: UnmatchedTxn[]; sideB: UnmatchedTxn[] };
