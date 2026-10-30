@@ -147,3 +147,11 @@ input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #ffffff inset !important
 #kc-header-wrapper { animation: ufme-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
 .pf-v5-c-login__main { animation: ufme-rise 0.8s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+
+/* Full rectangle on every field: PatternFly leaves the bottom edge to its underline, which is hidden above. */
+.pf-v5-c-form-control::before {
+  border: 1px solid rgba(0, 6, 61, 0.45) !important;
+  border-radius: 4px !important;
+}
+.pf-v5-c-form-control:hover::before { border-color: var(--ufme-ink) !important; }
+.pf-v5-c-form-control:focus-within::before { border: 2px solid var(--ufme-green) !important; }
