@@ -58,6 +58,7 @@ def proposals(
     limit: int = 100,
     code: str | None = None,
     order: str = "exposure",
+    actor: Any = None,
 ) -> list[s.ProposalOut]:
     q = (
         select(MatchGroup, MatchRun.code)
@@ -72,6 +73,10 @@ def proposals(
         q = q.where(MatchGroup.decision == decision)
     if code:
         q = q.where(MatchGroup.code == code)
+    from app.services.workflow import entity_clause
+
+    if (scope := entity_clause(actor, MatchGroup.entity_pair)) is not None:
+        q = q.where(scope)
     # "learning" (3f): a random sample of open suggestions. Measured on the settlement-lag benchmark with 300
     # reviewer answers: random +7.1 pp auto rate, closest-to-50% +3.0, closest-to-threshold +2.1. Borderline
     # items resemble each other; a representative mix teaches the model more. Default: largest exposure first.

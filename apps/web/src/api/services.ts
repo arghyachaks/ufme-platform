@@ -2,6 +2,7 @@
  * UFME data services. Pages call `api.*` / `workspaceApi.*`; they never know where data comes from.
  * Default: the FastAPI backend at /api/v1 (Vite proxies /api). Set VITE_USE_MOCKS=true to use local mocks.
  */
+import { AUTH_MODE, accessToken, login } from "../auth/oidc";
 import * as db from "./mock/db";
 import * as reconMock from "./mock/recon";
 import * as dashboardMock from "./mock/dashboard";
@@ -24,6 +25,7 @@ import type {
   UnmatchedTxn,
 } from "./types";
 
+export type ChainCheck = { ok: boolean; events: number; headHash?: string | null; brokenAt?: number; reason?: string };
 export type ReconData = typeof reconMock;
 export type DashboardData = typeof dashboardMock;
 
@@ -65,18 +67,27 @@ const actorHeader = (): Record<string, string> => {
   return email ? { "X-Ufme-User": email } : {};
 };
 
+/** Stage 5: a Bearer token from the signed-in session (OIDC), or the demo acting-as header (dev). */
+async function authHeaders(): Promise<Record<string, string>> {
+  if (AUTH_MODE !== "oidc") return actorHeader();
+  const token = await accessToken();
+  if (!token) await login();
+  return { Authorization: `Bearer ${token}` };
+}
+
 async function http<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
-      ...actorHeader(),
+      ...(await authHeaders()),
       ...(init?.body && !(init.body instanceof FormData) ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
     },
   });
   if (!response.ok) {
     const problem = await response.json().catch(() => ({}));
+    if (response.status === 401 && AUTH_MODE === "oidc") await login(); // session ended: sign in again
     throw new ApiError(response.status, problem);
   }
   return response.json() as Promise<T>;
@@ -121,7 +132,7 @@ async function mockAssist({ prompt, onDelta, signal }: AssistArgs): Promise<"fal
 async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs): Promise<string> {
   const res = await fetch(`${BASE}/ai/assist/stream`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", ...actorHeader() },
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
     body: JSON.stringify({ prompt, history, page }),
     signal,
   });
@@ -189,7 +200,13 @@ const mockApi = {
     resolveIssue: (code: string, _action: "resolve" | "ignore") =>
       delay(db.qualityIssues.find((i) => i.id === code) ?? db.qualityIssues[0]),
   },
-  audit: { events: () => delay(db.auditEvents), controls: () => delay(db.controlTests) },
+  audit: {
+    events: () => delay(db.auditEvents),
+    controls: () => delay(db.controlTests),
+    verify: (): Promise<ChainCheck> => delay({ ok: true, events: db.auditEvents.length, headHash: "demo" }),
+    evidence: (): Promise<{ blob: Blob; name: string }> =>
+      Promise.reject(new ApiError(501, { detail: "Evidence export needs the backend." })),
+  },
   recon: {
     startRun: (_entity?: string): Promise<MatchRunInfo> => delay(mockRun, 400),
     run: (_code: string): Promise<MatchRunInfo> => delay(mockRun),
@@ -290,7 +307,17 @@ const httpApi: Api = {
     resolveIssue: (code: string, action: "resolve" | "ignore") =>
       post(`/data/quality/${encodeURIComponent(code)}/${action}`),
   },
-  audit: { events: () => http("/audit/events"), controls: () => http("/audit/controls") },
+  audit: {
+    events: () => http("/audit/events"),
+    controls: () => http("/audit/controls"),
+    verify: () => http<ChainCheck>("/audit/verify"),
+    evidence: async () => {
+      const r = await fetch(`${BASE}/audit/evidence`, { headers: await authHeaders() });
+      if (!r.ok) throw new ApiError(r.status, await r.json().catch(() => ({})));
+      const name = /filename="([^"]+)"/.exec(r.headers.get("Content-Disposition") ?? "")?.[1] ?? "ufme-evidence.zip";
+      return { blob: await r.blob(), name };
+    },
+  },
   recon: {
     startRun: (entity?: string) => post<MatchRunInfo>("/recon/runs", entity ? { entity } : undefined),
     run: (code: string) => http<MatchRunInfo>(`/recon/runs/${encodeURIComponent(code)}`),

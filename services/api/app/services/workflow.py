@@ -13,7 +13,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import ColumnElement, false, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -79,6 +79,27 @@ def resolve_actor(db: Session, tenant: Tenant, email: str | None) -> Actor:
         raise ForbiddenError(f"Unknown user '{email}'.", code="unknown_user")
     user, role, entities = row
     return Actor(email=user.email, name=user.display_name, role=role, entities=list(entities or []))
+
+
+# ---------------------------------------------------------------- authorization (Stage 5)
+
+
+def entity_clause(actor: Actor | None, column: Any) -> ColumnElement[bool] | None:
+    """SQL filter for the entities a user is assigned to (None = no restriction)."""
+    if actor is None or "All" in actor.entities:
+        return None
+    return or_(*[column.contains(e) for e in actor.entities]) if actor.entities else false()
+
+
+def require_scope(actor: Actor, entity: str) -> None:
+    if not actor.covers(entity):
+        raise ForbiddenError(f"You aren't assigned to {entity}.", code="entity_out_of_scope")
+
+
+def require_writer(actor: Actor) -> None:
+    """Auditors (and anyone without a workflow role) can see everything in scope but change nothing."""
+    if actor.rank < RANK["Analyst"]:
+        raise ForbiddenError(f"{actor.role} access is read-only.", code="read_only_role")
 
 
 def users(db: Session, tenant: Tenant) -> list[dict[str, Any]]:
@@ -176,8 +197,12 @@ def submit(
     return req
 
 
-def list_approvals(db: Session, tenant: Tenant, status: str | None = "open") -> list[ApprovalRequest]:
+def list_approvals(
+    db: Session, tenant: Tenant, status: str | None = "open", actor: Actor | None = None
+) -> list[ApprovalRequest]:
     q = select(ApprovalRequest).where(ApprovalRequest.tenant_id == tenant.id)
+    if (scope := entity_clause(actor, ApprovalRequest.entity_code)) is not None:
+        q = q.where(scope)
     if status == "open":
         q = q.where(ApprovalRequest.status.in_(("Pending", "Info requested")))
     elif status:
@@ -205,6 +230,7 @@ def decide_approval(
 ) -> ApprovalRequest:
     now = now or datetime.now(UTC)
     req = get_approval(db, tenant, code)
+    require_scope(actor, req.entity_code)
     if req.status not in ("Pending", "Info requested"):
         raise ConflictError(f"{code} is already {req.status.lower()}.", code="approval_closed")
 
@@ -303,6 +329,7 @@ def decide_approval(
 def manual_match(
     db: Session, tenant: Tenant, txn_codes: list[str], actor: Actor, rationale: str
 ) -> tuple[MatchGroup, ApprovalRequest]:
+    require_writer(actor)
     codes = sorted(set(txn_codes))
     if len(codes) < 2:
         raise PolicyViolation("Pick at least one item on each side.", code="too_few_items")
@@ -348,6 +375,7 @@ def manual_match(
             extra={"variance_usd": float(gap), "allowed_usd": float(allowed)},
         )
     pair = pairs.pop()
+    require_scope(actor, "-".join(pair))
     n = (
         db.scalar(select(func.count()).select_from(MatchGroup).where(MatchGroup.tenant_id == tenant.id)) or 0
     ) + 1
@@ -575,7 +603,9 @@ def sign(
     return readiness(db, tenant, entity, now)
 
 
-def unmatched(db: Session, tenant: Tenant, pair: str | None = None, limit: int = 40) -> dict[str, Any]:
+def unmatched(
+    db: Session, tenant: Tenant, pair: str | None = None, limit: int = 40, actor: Actor | None = None
+) -> dict[str, Any]:
     """Open items for Manual Match: both sides of one intercompany pair, largest first (USD, absolute)."""
     taken = (
         select(MatchMember.id)
@@ -589,13 +619,15 @@ def unmatched(db: Session, tenant: Tenant, pair: str | None = None, limit: int =
     base = select(LedgerTxn).where(
         LedgerTxn.tenant_id == tenant.id, LedgerTxn.amount_usd.is_not(None), ~taken.exists()
     )
+    if pair and actor is not None:
+        require_scope(actor, pair)
     if not pair:  # cheap default: the pair of the largest pending suggestion (an index-backed lookup)
-        pair = db.scalar(
-            select(MatchGroup.entity_pair)
-            .where(MatchGroup.tenant_id == tenant.id, MatchGroup.status == "proposed")
-            .order_by(MatchGroup.exposure_usd.desc())
-            .limit(1)
+        q = select(MatchGroup.entity_pair).where(
+            MatchGroup.tenant_id == tenant.id, MatchGroup.status == "proposed"
         )
+        if (scope := entity_clause(actor, MatchGroup.entity_pair)) is not None:
+            q = q.where(scope)
+        pair = db.scalar(q.order_by(MatchGroup.exposure_usd.desc()).limit(1))
     if pair:
         e1, _, e2 = pair.partition("-")
     else:
@@ -609,6 +641,8 @@ def unmatched(db: Session, tenant: Tenant, pair: str | None = None, limit: int =
         if top is None:
             return {"pair": None, "sideA": [], "sideB": []}
         e1, e2 = sorted((top[0], top[1]))
+        if actor is not None and not actor.covers(f"{e1}-{e2}"):
+            return {"pair": None, "sideA": [], "sideB": []}
 
     def side(entity: str, cp: str) -> list[dict[str, Any]]:
         rows = db.scalars(

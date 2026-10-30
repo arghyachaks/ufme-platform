@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Box, Button, Stack, Tab, Tabs, TextField, Typography } from "@mui/material";
-import { api } from "../../api/services";
+import { api, ApiError } from "../../api/services";
 import { useQuery } from "../../api/useQuery";
 import type { AuditEvent, ControlTest } from "../../api/types";
 import { Panel, StatusPill } from "../../components/common/Panel";
@@ -14,16 +14,38 @@ export function AuditPage() {
   const [tab, setTab] = useState(0);
   const [q, setQ] = useState("");
   const { toast, toastNode } = useToast();
+  const chain = useQuery(api.audit.verify);
+  const [exporting, setExporting] = useState(false);
+  const exportEvidence = async () => {
+    setExporting(true);
+    try {
+      const { blob, name } = await api.audit.evidence();
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement("a"), { href: url, download: name });
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("Evidence package downloaded: audit trail, controls, hashed manifest and signature");
+    } catch (e) {
+      toast(e instanceof ApiError ? e.message : String(e));
+    } finally {
+      setExporting(false);
+    }
+  };
   const filtered = events.filter((e) => !q || Object.values(e).join(" ").toLowerCase().includes(q.toLowerCase()));
 
   return (
     <Page title="Audit & SOX" description="Immutable audit trail of every match decision, override, and configuration change, plus SOX control testing and evidence export." loading={loading}
-      actions={<Button variant="contained" onClick={() => toast("Q3 2026 evidence package queued — PDF + CSV, signed hash")}>Export evidence package</Button>}>
+      actions={<Button variant="contained" disabled={exporting} onClick={() => void exportEvidence()}>{exporting ? "Preparing…" : "Export evidence package"}</Button>}>
       <StatGrid items={[
         { label: "Controls passing", value: `${controls.filter((c) => c.result === "Pass").length}/${controls.length}`, tone: controls.some((c) => c.result === "Fail") ? "warn" : "ok" },
         { label: "Failing controls", value: String(controls.filter((c) => c.result === "Fail").length), tone: "crit" },
-        { label: "Audit events (30d)", value: "184,220" },
-        { label: "Evidence retained", value: "7 yrs · WORM", tone: "ok" },
+        { label: "Audit events", value: chain.data ? chain.data.events.toLocaleString() : "—" },
+        {
+          label: "Tamper check",
+          value: chain.data ? (chain.data.ok ? "Chain intact" : `Broken at #${chain.data.brokenAt}`) : "—",
+          hint: chain.data?.ok ? "Every event re-hashed and linked" : chain.data?.reason,
+          tone: chain.data ? (chain.data.ok ? "ok" : "crit") : undefined,
+        },
       ]} />
       <Tabs value={tab} onChange={(_, v) => setTab(v)}>
         <Tab label="Audit trail" />

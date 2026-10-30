@@ -13,6 +13,12 @@ x-app-env: &app-env
   UPLOAD_DIR: /data/uploads
   OLLAMA_URL: http://host.docker.internal:11434  # Ollama runs on the host GPU
   ASSIST_MODEL: gemma4:e4b-it-qat
+  # Stage 5 sign-in: tokens from the local Keycloak (browser sees it on :8081, containers on keycloak:8080).
+  AUTH_MODE: oidc
+  OIDC_ISSUER: http://localhost:8081/realms/ufme
+  OIDC_JWKS_URL: http://keycloak:8080/realms/ufme/protocol/openid-connect/certs
+  OIDC_AUDIENCE: ufme-api
+  EVIDENCE_SIGNING_KEY: ${EVIDENCE_SIGNING_KEY:-}  # from your shell / .env; empty = development key
 
 services:
   postgres:
@@ -40,6 +46,20 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       retries: 12
+
+  keycloak:  # open-source OIDC identity provider (development mode; realm imported from infra/keycloak)
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}  # local only
+      KC_HOSTNAME: http://localhost:8081
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
+      KC_HTTP_ENABLED: "true"
+    ports: ["8081:8080"]
+    volumes:
+      - ../keycloak/ufme-realm.json:/opt/keycloak/data/import/ufme-realm.json:ro
+    restart: unless-stopped
 
   api:
     build: { context: ../../services/api, target: runtime }
@@ -70,6 +90,9 @@ services:
     build: { context: ../.., dockerfile: apps/web/Dockerfile }
     environment:
       API_PROXY_TARGET: http://api:8000
+      VITE_AUTH: oidc
+      VITE_OIDC_ISSUER: http://localhost:8081/realms/ufme
+      VITE_OIDC_CLIENT_ID: ufme-web
       VITE_POLL: "true"  # file watching over Windows bind mounts needs polling
     ports: ["5173:5173"]
     volumes:

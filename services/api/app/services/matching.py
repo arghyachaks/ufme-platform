@@ -296,6 +296,8 @@ def decide(
     group = db.scalar(select(MatchGroup).where(MatchGroup.tenant_id == tenant.id, MatchGroup.code == code))
     if group is None:
         raise NotFoundError(f"Proposal '{code}' not found.", code="proposal_not_found")
+    workflow.require_writer(actor)
+    workflow.require_scope(actor, group.entity_pair)
     if group.status != "proposed":
         raise ConflictError(
             f"{code} is already {group.status.replace('_', ' ')}.", code="proposal_not_pending"

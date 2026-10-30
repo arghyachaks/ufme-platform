@@ -172,13 +172,13 @@ def api(
 
 
 def _label(api: TestClient, accept: int, reject: int) -> None:
-    pending = api.get("/api/v1/recon/proposals?status=proposed&limit=5000").json()
+    pending = api.get("/api/v1/recon/proposals?status=proposed&limit=5000", headers=DIRECTOR).json()
     one_to_one = [p for p in pending if p["type"] == "1:1"]
     assert len(one_to_one) >= accept + reject
     for p in one_to_one[:accept]:
-        assert api.post(f"/api/v1/recon/proposals/{p['id']}/accept", headers=ANALYST).status_code == 200
+        assert api.post(f"/api/v1/recon/proposals/{p['id']}/accept", headers=DIRECTOR).status_code == 200
     for p in one_to_one[accept : accept + reject]:
-        assert api.post(f"/api/v1/recon/proposals/{p['id']}/reject", headers=ANALYST).status_code == 200
+        assert api.post(f"/api/v1/recon/proposals/{p['id']}/reject", headers=DIRECTOR).status_code == 200
 
 
 def test_reviewer_decisions_become_training_rows(api: TestClient, db: Session) -> None:
@@ -251,7 +251,9 @@ def test_gate_failure_blocks_promotion(api: TestClient, db: Session) -> None:
 
 
 def test_review_queue_can_serve_a_sample_for_learning(api: TestClient) -> None:
-    every = api.get("/api/v1/recon/proposals?status=proposed&limit=5000").json()
-    sample = api.get("/api/v1/recon/proposals?status=proposed&order=learning&limit=3").json()
+    every = api.get("/api/v1/recon/proposals?status=proposed&limit=5000", headers=DIRECTOR).json()
+    sample = api.get(
+        "/api/v1/recon/proposals?status=proposed&order=learning&limit=3", headers=DIRECTOR
+    ).json()
     ids = [r["id"] for r in sample]
     assert len(ids) == len(set(ids)) == min(3, len(every)) and set(ids) <= {r["id"] for r in every}

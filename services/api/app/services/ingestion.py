@@ -73,7 +73,9 @@ def bulk_insert(db: Session, model: type[Any], rows: list[dict[str, Any]]) -> No
     """COPY on Postgres (≈10x faster than INSERT for large loads); executemany elsewhere."""
     if not rows:
         return
-    if db.get_bind().dialect.name != "postgresql":
+    # Postgres refuses COPY into tables under row-level security, so sessions pinned to a tenant (API requests)
+    # use batched INSERTs; background jobs (workers, unpinned) keep COPY for large loads.
+    if db.get_bind().dialect.name != "postgresql" or db.info.get("tenant_id") is not None:
         db.execute(insert(model), rows)
         return
     table = model.__table__

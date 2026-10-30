@@ -3,10 +3,10 @@ from datetime import date
 from pathlib import Path
 from typing import Annotated, Any
 
-from fastapi import APIRouter, BackgroundTasks, File, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Query, Response, UploadFile
 from sqlalchemy import select
 
-from app.api.deps import CurrentTenant, DbSession
+from app.api.deps import CurrentActor, CurrentTenant, DbSession
 from app.api.pagination import Pagination
 from app.core.config import settings
 from app.core.errors import AppError, ConflictError, NotFoundError
@@ -21,7 +21,7 @@ from app.schemas.read import (
     SourceOut,
     TxnPage,
 )
-from app.services import audit, ingestion, ingestion_read, read
+from app.services import audit, evidence, ingestion, ingestion_read, read
 
 router = APIRouter()
 
@@ -190,6 +190,30 @@ def features(db: DbSession, tenant: CurrentTenant) -> Any:
 @router.get("/audit/events")
 def audit_events(db: DbSession, tenant: CurrentTenant) -> list[dict[str, Any]]:
     return [e.model_dump(by_alias=True) for e in read.audit_events(db, tenant)]
+
+
+@router.get("/audit/verify")
+def audit_verify(db: DbSession, tenant: CurrentTenant, actor: CurrentActor) -> dict[str, Any]:
+    """Recompute the tenant's audit hash chain (tamper evidence)."""
+    return audit.verify_report(db, tenant.id)
+
+
+@router.get("/audit/evidence")
+def audit_evidence(
+    db: DbSession,
+    tenant: CurrentTenant,
+    actor: CurrentActor,
+    start: date | None = Query(None, alias="from"),
+    end: date | None = Query(None, alias="to"),
+) -> Response:
+    """Evidence package: audit trail + control results as CSV, a hashed manifest, and its HMAC signature."""
+    data, manifest = evidence.build(db, tenant, actor, start, end)
+    name = f"ufme-evidence-{tenant.slug}-{manifest['generated_at'][:10]}.zip"
+    return Response(
+        data,
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{name}"'},
+    )
 
 
 @router.get("/audit/controls", response_model=list[ControlOut])

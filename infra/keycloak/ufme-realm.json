@@ -1,0 +1,181 @@
+{
+  "realm": "ufme",
+  "enabled": true,
+  "displayName": "ufme",
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "rememberMe": false,
+  "bruteForceProtected": true,
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 3600,
+  "ssoSessionMaxLifespan": 36000,
+  "passwordPolicy": "length(8)",
+  "clients": [
+    {
+      "clientId": "ufme-web",
+      "name": "ufme web app",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "frontchannelLogout": true,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost:8080"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:8080/*"
+      },
+      "protocol": "openid-connect",
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "basic"
+      ],
+      "protocolMappers": [
+        {
+          "name": "ufme-api audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.custom.audience": "ufme-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        },
+        {
+          "name": "ufme tenant",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "ufme_tenant",
+            "claim.value": "demo",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "priya.nair",
+      "email": "priya.nair@example.com",
+      "emailVerified": true,
+      "firstName": "Priya",
+      "lastName": "Nair",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "mei.chen",
+      "email": "mei.chen@example.com",
+      "emailVerified": true,
+      "firstName": "Mei",
+      "lastName": "Chen",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "daniel.ortiz",
+      "email": "daniel.ortiz@example.com",
+      "emailVerified": true,
+      "firstName": "Daniel",
+      "lastName": "Ortiz",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "arjun.rao",
+      "email": "arjun.rao@example.com",
+      "emailVerified": true,
+      "firstName": "Arjun",
+      "lastName": "Rao",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "sofia.rossi",
+      "email": "sofia.rossi@example.com",
+      "emailVerified": true,
+      "firstName": "Sofia",
+      "lastName": "Rossi",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "liam.walsh",
+      "email": "liam.walsh@example.com",
+      "emailVerified": true,
+      "firstName": "Liam",
+      "lastName": "Walsh",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "tom.becker",
+      "email": "tom.becker@example.com",
+      "emailVerified": true,
+      "firstName": "Tom",
+      "lastName": "Becker",
+      "enabled": false,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "ufme-demo",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

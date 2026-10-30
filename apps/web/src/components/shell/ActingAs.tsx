@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Avatar, Box, ListItemText, Menu, MenuItem, Stack, Typography } from "@mui/material";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { actingUser, api } from "../../api/services";
+import { AUTH_MODE, logout } from "../../auth/oidc";
 import type { Actor } from "../../api/types";
 
 const initials = (name: string) =>
@@ -18,10 +19,12 @@ export function ActingAs() {
   const [all, setAll] = useState<Actor[]>([]);
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
 
+  const oidc = AUTH_MODE === "oidc";
+
   useEffect(() => {
     api.workflow.me().then(setMe).catch(() => setMe(null));
-    api.workflow.actors().then(setAll).catch(() => setAll([]));
-  }, []);
+    if (!oidc) api.workflow.actors().then(setAll).catch(() => setAll([])); // switching users is dev-only
+  }, [oidc]);
 
   const pick = (a: Actor) => {
     setAnchor(null);
@@ -38,7 +41,7 @@ export function ActingAs() {
         spacing={1}
         onClick={(e) => setAnchor(e.currentTarget)}
         sx={{ cursor: "pointer", px: 0.75, py: 0.4, borderRadius: "8px", "&:hover": { bgcolor: "var(--bg-muted)" } }}
-        title="Switch the user you're acting as"
+        title={oidc ? "Your account" : "Switch the user you're acting as"}
       >
         <Avatar sx={{ width: 26, height: 26, bgcolor: "var(--bg-muted)", color: "text.primary", border: "1px solid var(--border-strong)", fontSize: 11, fontWeight: 600 }}>
           {me ? initials(me.name) : "··"}
@@ -50,7 +53,18 @@ export function ActingAs() {
         <ExpandMore sx={{ fontSize: 16, color: "text.secondary" }} />
       </Stack>
       <Menu anchorEl={anchor} open={Boolean(anchor)} onClose={() => setAnchor(null)} anchorOrigin={{ vertical: "bottom", horizontal: "right" }} transformOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Typography sx={{ px: 2, pt: 1, pb: 0.5, fontSize: 10.5, fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>ACT AS</Typography>
+        {oidc ? (
+          <Box sx={{ px: 2, py: 1, minWidth: 260 }}>
+            <Typography sx={{ fontSize: 13, fontWeight: 600 }}>{me?.name}</Typography>
+            <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{me?.email}</Typography>
+            <Typography sx={{ fontSize: 11, color: "text.secondary", mt: 0.5 }}>
+              {me ? `${me.role} · ${me.entities.join(", ")}` : ""}
+            </Typography>
+          </Box>
+        ) : (
+          <Typography sx={{ px: 2, pt: 1, pb: 0.5, fontSize: 10.5, fontFamily: "var(--font-mono)", color: "var(--text-muted)" }}>ACT AS</Typography>
+        )}
+        {oidc ? <MenuItem onClick={() => void logout()} sx={{ fontSize: 13 }}>Sign out</MenuItem> : null}
         {all.map((a) => (
           <MenuItem key={a.email} selected={a.email === me?.email} onClick={() => pick(a)} sx={{ gap: 1.25, minWidth: 260 }}>
             <Avatar sx={{ width: 24, height: 24, fontSize: 10, bgcolor: "var(--bg-muted)", color: "text.primary" }}>{initials(a.name)}</Avatar>

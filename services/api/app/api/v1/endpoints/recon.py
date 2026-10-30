@@ -42,13 +42,14 @@ def get_run(code: str, db: DbSession, tenant: CurrentTenant) -> RunOut:
 def list_proposals(
     db: DbSession,
     tenant: CurrentTenant,
+    actor: CurrentActor,
     run: str | None = None,
     status: str | None = None,
     decision: str | None = None,
     limit: Annotated[int, Query(ge=1, le=5000)] = 100,
     order: Literal["exposure", "learning"] = "exposure",
 ) -> list[ProposalOut]:
-    return matching_read.proposals(db, tenant, run, status, decision, limit, order=order)
+    return matching_read.proposals(db, tenant, run, status, decision, limit, order=order, actor=actor)
 
 
 @router.post("/proposals/{code}/{action}", response_model=ProposalOut)

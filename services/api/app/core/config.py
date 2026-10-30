@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     )
     learning_min_labels: int = 30  # reviewer decisions needed before a tenant model can be trained
     learning_gate_golden: str = "small,medium"  # unshifted holdouts a candidate must not regress on
+    # Stage 5 authentication. "dev": the X-Ufme-User header picks a seeded user (tests, quick demos).
+    # "oidc": a Bearer access token from the identity provider (Keycloak locally) is required on every call.
+    auth_mode: Literal["dev", "oidc"] = "dev"
+    oidc_issuer: str = "http://localhost:8081/realms/ufme"  # the `iss` the browser-facing IdP puts in tokens
+    oidc_jwks_url: str = ""  # where the API fetches signing keys (inside Docker: http://keycloak:8080/...)
+    oidc_audience: str = "ufme-api"
+    oidc_tenant_claim: str = "ufme_tenant"
+    # Signs evidence packages (HMAC-SHA256). Set from the environment / secret store; never committed.
+    evidence_signing_key: str = ""
+    rls_enabled: bool = True  # Postgres row-level security: every request is pinned to its tenant
     demo_user: str = "priya.nair@example.com"  # acting user until SSO (Stage 5); X-Ufme-User overrides
     default_tenant: str = "demo"  # until auth (Stage 5) resolves the tenant from the user
 

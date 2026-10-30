@@ -29,6 +29,10 @@ def engine():  # type: ignore[no-untyped-def]
     )
     eng = create_engine(DB_URL, **kwargs)
     Base.metadata.create_all(eng)
+    with eng.begin() as conn:  # Postgres runs get the same row-level security as production (no-op on SQLite)
+        from app.db import tenancy
+
+        tenancy.install(conn)
     yield eng
     Base.metadata.drop_all(eng)
 

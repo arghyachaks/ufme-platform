@@ -372,16 +372,16 @@ def shadow(
 def promote(db: Session, tenant: Tenant, version: str, actor: Any) -> ScorerModel:
     from app.services.workflow import RANK
 
-    model = db.scalar(
-        select(ScorerModel).where(ScorerModel.tenant_id == tenant.id, ScorerModel.version == version)
-    )
-    if model is None:
-        raise NotFoundError(f"Model '{version}' not found.", code="model_not_found")
     if actor.rank < RANK["Controller"]:
         raise ForbiddenError(
             f"Promoting a model needs a Controller or above; you are {actor.role}.",
             code="insufficient_authority",
         )
+    model = db.scalar(
+        select(ScorerModel).where(ScorerModel.tenant_id == tenant.id, ScorerModel.version == version)
+    )
+    if model is None:
+        raise NotFoundError(f"Model '{version}' not found.", code="model_not_found")
     if actor.email.lower() == model.trained_by.lower():
         raise ForbiddenError(
             "The person who requested the training can't also promote the model (four eyes on model changes).",

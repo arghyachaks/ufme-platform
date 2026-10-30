@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { Provider, useSelector } from "react-redux";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import App from "./app/App";
+import { initAuth } from "./auth/oidc";
 import { store, type RootState } from "./store";
 import { createAppTheme } from "./theme";
 import "./index.css";
@@ -22,10 +23,25 @@ function ThemedApp() {
   );
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <Provider store={store}>
-      <ThemedApp />
-    </Provider>
-  </StrictMode>,
-);
+const root = createRoot(document.getElementById("root")!);
+
+// Stage 5: finish or start OIDC sign-in before anything calls the API (no-op in dev mode).
+initAuth()
+  .then(() =>
+    root.render(
+      <StrictMode>
+        <Provider store={store}>
+          <ThemedApp />
+        </Provider>
+      </StrictMode>,
+    ),
+  )
+  .catch((err: unknown) =>
+    root.render(
+      <div style={{ fontFamily: "system-ui, sans-serif", padding: 32, maxWidth: 520 }}>
+        <h2 style={{ fontWeight: 600 }}>Sign-in didn't complete</h2>
+        <p>{err instanceof Error ? err.message : String(err)}</p>
+        <button onClick={() => window.location.assign("/")}>Try again</button>
+      </div>,
+    ),
+  );

@@ -20,6 +20,9 @@ def api(
     db: Session, client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> Iterator[TestClient]:
     seed_demo(db, now=NOW)
+    # These tests are about matching, not entity scope: act as a user who covers every entity (Stage 5 scoping
+    # is covered in test_security.py).
+    monkeypatch.setattr(settings, "demo_user", "liam.walsh@example.com")
     monkeypatch.setattr(settings, "ingest_inline", True)
     monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
     assert client.post("/api/v1/data/sources/SRC-01/sync?rows=3000").status_code == 202  # synthetic IC ledger

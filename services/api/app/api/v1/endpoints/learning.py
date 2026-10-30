@@ -6,7 +6,7 @@ from fastapi import APIRouter, BackgroundTasks
 
 from app.api.deps import CurrentActor, CurrentTenant, DbSession
 from app.core.config import settings
-from app.services import learning
+from app.services import learning, workflow
 
 router = APIRouter(prefix="/learning")
 
@@ -20,6 +20,7 @@ def status(db: DbSession, tenant: CurrentTenant) -> dict[str, Any]:
 def train(
     db: DbSession, tenant: CurrentTenant, actor: CurrentActor, background: BackgroundTasks
 ) -> dict[str, Any]:
+    workflow.require_writer(actor)  # Auditors can see the loop but not change the model
     model = learning.request_training(db, tenant, actor.email)
     if settings.ingest_inline:
         learning.train(db, model)

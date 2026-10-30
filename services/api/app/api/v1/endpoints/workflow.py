@@ -92,10 +92,10 @@ def _open_exception_entities(db: DbSession, tenant: CurrentTenant) -> set[str]:
 
 @router.get("/approvals", response_model=list[ApprovalOut])
 def list_approvals(
-    db: DbSession, tenant: CurrentTenant, status: Annotated[str | None, Query()] = "open"
+    db: DbSession, tenant: CurrentTenant, actor: CurrentActor, status: Annotated[str | None, Query()] = "open"
 ) -> list[ApprovalOut]:
     now, ex = datetime.now(UTC), _open_exception_entities(db, tenant)
-    return [_approval_out(r, ex, now) for r in workflow.list_approvals(db, tenant, status)]
+    return [_approval_out(r, ex, now) for r in workflow.list_approvals(db, tenant, status, actor)]
 
 
 @router.post("/approvals/{code}/{action}", response_model=ApprovalOut)
@@ -132,10 +132,11 @@ def create_manual_match(
 def unmatched(
     db: DbSession,
     tenant: CurrentTenant,
+    actor: CurrentActor,
     pair: str | None = None,
     limit: Annotated[int, Query(ge=1, le=200)] = 40,
 ) -> dict[str, Any]:
-    return workflow.unmatched(db, tenant, pair, limit)
+    return workflow.unmatched(db, tenant, pair, limit, actor)
 
 
 # ---------------------------------------------------------------- sign-off and controls
