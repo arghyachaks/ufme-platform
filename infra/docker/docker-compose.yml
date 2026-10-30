@@ -59,6 +59,7 @@ services:
     ports: ["8081:8080"]
     volumes:
       - ../keycloak/ufme-realm.json:/opt/keycloak/data/import/ufme-realm.json:ro
+      - ../keycloak/themes/ufme:/opt/keycloak/themes/ufme:ro  # ufme sign-in theme
     restart: unless-stopped
 
   api:

@@ -5,6 +5,7 @@ provider. `ufme-realm.json` is imported on first start:
 
 - realm `ufme`, browser client `ufme-web` (public, Authorization Code + PKCE S256)
 - access tokens carry audience `ufme-api` and claim `ufme_tenant=demo`
+- the sign-in pages use the `ufme` theme in `themes/ufme` (restyled keycloak.v2: same look as the app)
 - the seeded demo users (`priya.nair@example.com`, `daniel.ortiz@example.com`, ...), all with the
   development password `ufme-demo`; `tom.becker` is disabled
 

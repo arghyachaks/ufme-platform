@@ -1,0 +1,109 @@
+/* ufme sign-in: white canvas, navy ink, serif display, Campfire green action (matches apps/web). */
+@import url("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Geist:wght@400;500;600&display=swap");
+
+:root {
+  --ufme-ink: #00063d;
+  --ufme-ink-2: #3d4266;
+  --ufme-green: #0a4733;
+  --ufme-green-dark: #142d25;
+  --ufme-lime: #b3ed97;
+  --ufme-mint: #e6ffd9;
+  --pf-v5-global--FontFamily--text: "Geist", Arial, sans-serif;
+  --pf-v5-global--FontFamily--heading: "Newsreader", Georgia, serif;
+  --pf-v5-global--FontFamily--redhat-updated--heading--sans-serif: "Newsreader", Georgia, serif;
+  --pf-v5-global--FontFamily--redhat-updated--sans-serif: "Geist", Arial, sans-serif;
+  --pf-v5-global--primary-color--100: var(--ufme-green);
+  --pf-v5-global--primary-color--200: var(--ufme-green-dark);
+  --pf-v5-global--link--Color: var(--ufme-green);
+  --pf-v5-global--link--Color--hover: var(--ufme-green-dark);
+  --pf-v5-global--Color--100: var(--ufme-ink);
+  --pf-v5-global--Color--200: var(--ufme-ink-2);
+}
+
+html, body#keycloak-bg, .pf-v5-c-login {
+  background: #ffffff !important;
+  background-image: none !important;
+  color: var(--ufme-ink);
+  font-family: "Geist", Arial, sans-serif;
+}
+.pf-v5-c-login::before, .pf-v5-c-login::after { display: none !important; }
+
+.pf-v5-c-login__container { max-width: 440px; padding-top: 8vh; }
+
+/* Wordmark: lowercase serif "ufme" closed by the green square. */
+#kc-header-wrapper {
+  font-family: "Newsreader", Georgia, serif !important;
+  font-size: 44px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.03em !important;
+  text-transform: lowercase !important;
+  color: var(--ufme-ink) !important;
+  padding: 0 0 28px !important;
+  text-align: center;
+}
+#kc-header-wrapper::after {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-left: 4px;
+  background: var(--ufme-green);
+}
+
+.pf-v5-c-login__main {
+  background: #ffffff !important;
+  border: 1px solid var(--ufme-ink) !important;
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+.pf-v5-c-login__main-header { padding-top: 32px !important; }
+#kc-page-title {
+  font-family: "Newsreader", Georgia, serif !important;
+  font-weight: 400 !important;
+  font-size: 34px !important;
+  letter-spacing: -0.02em !important;
+  color: var(--ufme-ink) !important;
+}
+.pf-v5-c-form__label-text { font-weight: 500; font-size: 14px; color: var(--ufme-ink); }
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--BorderRadius: 4px;
+  --pf-v5-c-form-control--before--BorderColor: rgba(0, 6, 61, 0.45);
+  --pf-v5-c-form-control--after--BorderColor: transparent;
+  --pf-v5-c-form-control--hover--after--BorderColor: var(--ufme-ink);
+  --pf-v5-c-form-control--focus--after--BorderColor: var(--ufme-green);
+  border-radius: 4px !important;
+  min-height: 44px;
+}
+.pf-v5-c-form-control:focus-within { outline: 2px solid var(--ufme-green); outline-offset: 0; }
+
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--m-primary--BackgroundColor: var(--ufme-green);
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--ufme-green-dark);
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--ufme-green-dark);
+  --pf-v5-c-button--m-primary--active--BackgroundColor: var(--ufme-green-dark);
+  --pf-v5-c-button--BorderRadius: 4px;
+  min-height: 46px;
+  font-weight: 500;
+  font-size: 16px;
+}
+.pf-v5-c-button.pf-m-control { border-radius: 4px; }
+
+.pf-v5-c-login__main-footer, .pf-v5-c-login__footer { color: var(--ufme-ink-2); }
+
+.pf-v5-c-alert { border-radius: 2px; box-shadow: none; border: 1px solid var(--ufme-ink); }
+
+/* Always the light ufme look, whatever the operating system's colour scheme. */
+.pf-v5-c-form-control,
+.pf-v5-c-form-control > input,
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+  background: #ffffff !important;
+  color: var(--ufme-ink) !important;
+  --pf-v5-c-form-control--BackgroundColor: #ffffff;
+}
+.pf-v5-c-input-group .pf-v5-c-button.pf-m-control {
+  border: 1px solid rgba(0, 6, 61, 0.45) !important;
+  border-left: 0 !important;
+}
+.pf-v5-c-form-control::before { border-color: rgba(0, 6, 61, 0.45) !important; }
+input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #ffffff inset !important; -webkit-text-fill-color: #00063d !important; }
