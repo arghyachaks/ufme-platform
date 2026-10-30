@@ -14,7 +14,7 @@ from app.models.domain import (
 )
 from app.models.identity import AppUser, Role, UserRole
 from app.models.ingestion import FxRate, IngestionBatch, LedgerTxn, QuarantinedRow
-from app.models.matching import MatchGroup, MatchLabel, MatchMember, MatchRun
+from app.models.matching import MatchGroup, MatchLabel, MatchMember, MatchRun, ScorerModel
 from app.models.tenant import LegalEntity, Tenant
 from app.models.workflow import ApprovalRequest, PeriodSignoff
 
@@ -41,6 +41,7 @@ __all__ = [
     "QuarantinedRow",
     "ReconCase",
     "Role",
+    "ScorerModel",
     "Snapshot",
     "Tenant",
     "UserRole",

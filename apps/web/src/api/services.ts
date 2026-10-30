@@ -13,10 +13,12 @@ import type {
   ChatMessage,
   ExceptionItem,
   IngestionBatch,
+  LearningStatus,
   ManualMatchResult,
   MatchProposal,
   MatchRunInfo,
   MatchRule,
+  ScorerModelInfo,
   SignoffState,
   UnmatchedSet,
   UnmatchedTxn,
@@ -192,7 +194,7 @@ const mockApi = {
     startRun: (_entity?: string): Promise<MatchRunInfo> => delay(mockRun, 400),
     run: (_code: string): Promise<MatchRunInfo> => delay(mockRun),
     runs: (): Promise<MatchRunInfo[]> => delay([mockRun]),
-    proposals: (_params?: { run?: string; status?: string }): Promise<MatchProposal[]> => delay([]),
+    proposals: (_params?: { run?: string; status?: string; order?: "exposure" | "learning"; limit?: string }): Promise<MatchProposal[]> => delay([]),
     decide: (code: string, action: "accept" | "reject"): Promise<MatchProposal> =>
       delay({ id: code, status: action === "accept" ? "pending_approval" : "rejected" } as MatchProposal),
     unmatched: (_pair?: string): Promise<UnmatchedSet> =>
@@ -219,6 +221,23 @@ const mockApi = {
       Promise.reject(new ApiError(501, { detail: "Cases need the backend." })),
     setExceptionStatus: (_code: string, _status: string, _note?: string): Promise<ExceptionItem> =>
       Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
+  },
+  learning: {
+    status: (): Promise<LearningStatus> =>
+      delay({
+        active: "scorer-v2",
+        activeIsShipped: true,
+        labels: { total: 0, usable: 0, accepted: 0, rejected: 0, bySource: {}, sinceActive: 0, minimum: 30 },
+        canTrain: false,
+        models: [],
+        recent: [],
+        drift: { run: null, features: null, outcomes: { status: "unknown", decisions: 0 } },
+      }),
+    train: (): Promise<ScorerModelInfo> =>
+      Promise.reject(new ApiError(501, { detail: "Training needs the backend (demo mocks are read-only)." })),
+    promote: (_version: string): Promise<ScorerModelInfo> =>
+      Promise.reject(new ApiError(501, { detail: "Promotion needs the backend." })),
+    rollback: (): Promise<{ active: string }> => Promise.reject(new ApiError(501, { detail: "Rollback needs the backend." })),
   },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
@@ -276,7 +295,7 @@ const httpApi: Api = {
     startRun: (entity?: string) => post<MatchRunInfo>("/recon/runs", entity ? { entity } : undefined),
     run: (code: string) => http<MatchRunInfo>(`/recon/runs/${encodeURIComponent(code)}`),
     runs: () => http<MatchRunInfo[]>("/recon/runs"),
-    proposals: (params?: { run?: string; status?: string }) =>
+    proposals: (params?: { run?: string; status?: string; order?: "exposure" | "learning"; limit?: string }) =>
       http<MatchProposal[]>(`/recon/proposals?${new URLSearchParams(Object.entries(params ?? {}).filter(([, v]) => v) as [string, string][])}`),
     decide: (code: string, action: "accept" | "reject") =>
       post<MatchProposal>(`/recon/proposals/${encodeURIComponent(code)}/${action}`),
@@ -301,6 +320,12 @@ const httpApi: Api = {
     comment: (code: string, text: string) => post<CaseItem>(`/cases/${encodeURIComponent(code)}/comments`, { text }),
     setExceptionStatus: (code: string, status: string, note?: string) =>
       post<ExceptionItem>(`/exceptions/${encodeURIComponent(code)}/status`, { status, note }),
+  },
+  learning: {
+    status: () => http<LearningStatus>("/learning/status"),
+    train: () => post<ScorerModelInfo>("/learning/train"),
+    promote: (version: string) => post<ScorerModelInfo>(`/learning/models/${encodeURIComponent(version)}/promote`),
+    rollback: () => post<{ active: string }>("/learning/rollback"),
   },
   admin: { all: () => http("/admin") },
   ops: { all: () => http("/ops") },

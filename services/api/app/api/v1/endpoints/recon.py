@@ -46,8 +46,9 @@ def list_proposals(
     status: str | None = None,
     decision: str | None = None,
     limit: Annotated[int, Query(ge=1, le=5000)] = 100,
+    order: Literal["exposure", "learning"] = "exposure",
 ) -> list[ProposalOut]:
-    return matching_read.proposals(db, tenant, run, status, decision, limit)
+    return matching_read.proposals(db, tenant, run, status, decision, limit, order=order)
 
 
 @router.post("/proposals/{code}/{action}", response_model=ProposalOut)

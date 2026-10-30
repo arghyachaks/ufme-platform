@@ -142,11 +142,14 @@ class TreeModel:
         )
 
 
-@lru_cache(maxsize=1)
-def load() -> TreeModel | None:
-    if os.environ.get("UFME_SCORER", "learned") == "hand" or not ARTIFACT.exists():
+@lru_cache(maxsize=4)
+def load(path: str | None = None) -> TreeModel | None:
+    """The shipped scorer, or (3f) a tenant's promoted model at `path`. Cached per path: a model file is
+    immutable once written (its name carries its version), so a cached copy never goes stale."""
+    artifact = Path(path) if path else ARTIFACT
+    if os.environ.get("UFME_SCORER", "learned") == "hand" or not artifact.exists():
         return None
-    data = json.loads(ARTIFACT.read_text())
+    data = json.loads(artifact.read_text())
     if data.get("features") != FEATURE_NAMES:
         return None  # artifact from another feature layout: never score with mismatched columns
     return TreeModel.from_json(data)

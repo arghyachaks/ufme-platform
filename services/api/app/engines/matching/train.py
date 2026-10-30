@@ -108,6 +108,77 @@ def clopper_pearson_upper(errors: int, n: int, conf: float = CONFIDENCE) -> floa
     return 1.0 if n == 0 else (1.0 if errors >= n else float(beta.ppf(conf, errors + 1, n - errors)))
 
 
+def calibration_ece(p: np.ndarray, y: np.ndarray, n_bins: int = 10) -> float:
+    bins = np.minimum((p * n_bins).astype(int), n_bins - 1)
+    return float(
+        sum(
+            abs(p[bins == k].mean() - y[bins == k].mean()) * (bins == k).mean()
+            for k in range(n_bins)
+            if (bins == k).any()
+        )
+    )
+
+
+def fit_isotonic(
+    raw: np.ndarray, y: np.ndarray, weight: np.ndarray | None = None
+) -> tuple[np.ndarray, np.ndarray]:
+    """Monotone map raw score -> probability, thinned to <= 400 knots to keep the artifact small."""
+    from sklearn.isotonic import IsotonicRegression
+
+    iso = IsotonicRegression(out_of_bounds="clip", y_min=1e-6, y_max=1 - 1e-6).fit(
+        raw, y, sample_weight=weight
+    )
+    cal_x = np.asarray(iso.X_thresholds_, dtype=float)
+    cal_y = np.asarray(iso.y_thresholds_, dtype=float)
+    if len(cal_x) > 400:  # piecewise-linear interpolation between kept knots
+        keep = np.unique(np.linspace(0, len(cal_x) - 1, 400).astype(int))
+        cal_x, cal_y = cal_x[keep], cal_y[keep]
+    return cal_x, cal_y
+
+
+def risk_threshold(
+    calib_ds: Dataset, artifact: dict[str, Any], path: Path
+) -> tuple[tuple[float, int, int, float], int, dict[str, Any]]:
+    """The conformal auto threshold for `artifact`, measured on what the engine would really auto-match
+    (assigned, within policy, clear margin) on a ledger with known truth. Writes a measurement copy of the
+    artifact to `path` (auto threshold 1.01: nothing auto, so groups claim lines exactly as in production).
+
+    Returns ((threshold, covered, errors, upper_bound), eligible_count, reference_profile) — the profile of the
+    pairs the model decided on, which drift monitoring compares each production run with."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({**artifact, "auto_threshold": 1.01}))
+    learned.load.cache_clear()
+    result = engine.run(calib_ds.lines, keep_candidates=False, scorer=str(path))  # parallel = same result
+    learned.load.cache_clear()
+    from app.engines.matching import drift
+
+    reference = drift.profile(*drift.of_result(result))
+    eligible = []
+    for p in result.predictions:
+        d = result.details[p.line_ids]
+        if len(p.line_ids) != 2 or not isinstance(d, engine.PairResult):
+            continue
+        within_policy = d.features["amount_gap"] <= engine.POLICY_TOLERANCE
+        twins = set(d.features.get("duplicate_postings", []))  # same rule as the engine: twins aren't rivals
+        alts = [x for x in result.alternatives.get(p.line_ids, []) if x[0] not in twins]
+        margin_ok = (
+            not alts or d.log_odds - math.log(max(alts[0][1], 1e-9) / max(1 - alts[0][1], 1e-9)) >= 1.0
+        )
+        if within_policy and margin_ok:  # the engine's other auto conditions, independent of the threshold
+            eligible.append(p)
+    preds = _canonical(calib_ds, eligible)
+    truth = positives(calib_ds)
+    scored = sorted(((p.confidence, p.line_ids in truth) for p in preds), reverse=True)
+    errors = 0
+    best = (1.0, 0, 0, 0.0)
+    for covered, (conf, ok) in enumerate(scored, start=1):
+        errors += 0 if ok else 1
+        ub = clopper_pearson_upper(errors, covered)
+        if ub <= ALPHA:
+            best = (conf, covered, errors, ub)
+    return best, len(scored), reference
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--size", type=int, default=SIZE)
@@ -115,7 +186,6 @@ def main() -> int:
     args = parser.parse_args()
 
     from sklearn.ensemble import HistGradientBoostingClassifier
-    from sklearn.isotonic import IsotonicRegression
 
     started = time.time()
     xs, ys = [], []
@@ -153,12 +223,7 @@ def main() -> int:
     )
     raw_cal = draft.raw(x_cal)
     exported_ok = np.allclose(raw_cal, est.decision_function(x_cal), atol=1e-6)
-    iso = IsotonicRegression(out_of_bounds="clip", y_min=1e-6, y_max=1 - 1e-6).fit(raw_cal, y_cal)
-    cal_x = np.asarray(iso.X_thresholds_, dtype=float)
-    cal_y = np.asarray(iso.y_thresholds_, dtype=float)
-    if len(cal_x) > 400:  # keep the artifact small; piecewise-linear interpolation between kept knots
-        keep = np.unique(np.linspace(0, len(cal_x) - 1, 400).astype(int))
-        cal_x, cal_y = cal_x[keep], cal_y[keep]
+    cal_x, cal_y = fit_isotonic(raw_cal, y_cal.astype(float))
 
     # Risk-controlled auto threshold on the calibration ledger, measured on what the engine would really
     # auto-match (assigned, within policy, clear margin), not on raw candidates.
@@ -172,46 +237,13 @@ def main() -> int:
         "calibration": {"x": cal_x.tolist(), "y": cal_y.tolist()},
         "auto_threshold": 1.01,  # measurement pass: nothing auto, so groups claim their lines exactly as in production
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(artifact))
-    learned.load.cache_clear()
-    result = engine.run(calib_ds.lines, workers=1)
-    eligible = []
-    for p in result.predictions:
-        d = result.details[p.line_ids]
-        if len(p.line_ids) != 2 or not isinstance(d, engine.PairResult):
-            continue
-        within_policy = d.features["amount_gap"] <= engine.POLICY_TOLERANCE
-        twins = set(d.features.get("duplicate_postings", []))  # same rule as the engine: twins aren't rivals
-        alts = [x for x in result.alternatives.get(p.line_ids, []) if x[0] not in twins]
-        margin_ok = (
-            not alts or d.log_odds - math.log(max(alts[0][1], 1e-9) / max(1 - alts[0][1], 1e-9)) >= 1.0
-        )
-        if within_policy and margin_ok:  # the engine's other auto conditions, independent of the threshold
-            eligible.append(p)
-    preds = _canonical(calib_ds, eligible)
-    truth2 = positives(calib_ds)
-    scored = sorted(((p.confidence, p.line_ids in truth2) for p in preds), reverse=True)
-    threshold, errors = 1.0, 0
-    best = (1.0, 0, 0, 0.0)
-    for covered, (conf, ok) in enumerate(scored, start=1):
-        errors += 0 if ok else 1
-        ub = clopper_pearson_upper(errors, covered)
-        if ub <= ALPHA:
-            best = (conf, covered, errors, ub)
+    best, n_scored, reference = risk_threshold(calib_ds, artifact, args.out)
     threshold = max(best[0], PROBABILITY_FLOOR)  # proven bound AND a confidence a reviewer would accept
     artifact["auto_threshold"] = threshold
 
     # Calibration quality on the calibration ledger's candidate pairs (10-bin ECE).
     p_cal = np.interp(raw_cal, cal_x, cal_y)
-    bins = np.minimum((p_cal * 10).astype(int), 9)
-    ece = float(
-        sum(
-            abs(p_cal[bins == k].mean() - y_cal[bins == k].mean()) * (bins == k).mean()
-            for k in range(10)
-            if (bins == k).any()
-        )
-    )
+    ece = calibration_ece(p_cal, y_cal)
     artifact["meta"] = {
         "train_seeds": list(TRAIN_SEEDS),
         "calibration_seed": CALIBRATION_SEED,
@@ -223,13 +255,14 @@ def main() -> int:
         "probability_floor": PROBABILITY_FLOOR,
         "conformal_threshold": round(best[0], 6),
         "confidence": CONFIDENCE,
-        "auto_eligible_calibration": len(scored),
+        "auto_eligible_calibration": n_scored,
         "auto_covered_calibration": best[1],
         "auto_errors_calibration": best[2],
         "auto_error_upper_bound": round(best[3], 6),
         "candidate_ece": round(ece, 5),
         "export_matches_sklearn": bool(exported_ok),
         "trained_seconds": round(time.time() - started, 1),
+        "reference_profile": reference,
     }
     args.out.write_text(json.dumps(artifact, separators=(",", ":")))
     learned.load.cache_clear()

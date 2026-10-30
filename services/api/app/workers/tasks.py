@@ -57,3 +57,17 @@ def judge_suggestions(run_id: str) -> dict[str, int]:
 
     with SessionLocal() as db:
         return judge_run(db, uuid.UUID(run_id))
+
+
+@celery_app.task(name="ufme.train_scorer")
+def train_scorer(model_id: str) -> dict[str, object]:
+    """3f: train a tenant adapter from reviewer decisions and evaluate its promotion gate (never promotes)."""
+    from app.models import ScorerModel
+    from app.services import learning
+
+    with SessionLocal.begin() as db:
+        model = db.get(ScorerModel, uuid.UUID(model_id))
+        if model is None:
+            return {"error": f"model {model_id} not found"}
+        learning.train(db, model)
+        return {"version": model.version, "status": model.status, "gate": (model.gate or {}).get("passed")}

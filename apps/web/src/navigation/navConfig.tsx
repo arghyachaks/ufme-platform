@@ -134,12 +134,12 @@ export const navItems: NavItem[] = [
       {
         label: "Models",
         to: "/ai/models",
-        description: "Ranking model versions, precision/recall, drift, and deployment.",
+        description: "Which model scores your matches, the evidence for each candidate, drift, and rollback.",
       },
       {
         label: "Learning",
         to: "/ai/learning",
-        description: "Capture accept/reject outcomes for active learning loops.",
+        description: "Review decisions become training data; a sample to review teaches the next model.",
       },
     ],
   },

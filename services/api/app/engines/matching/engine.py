@@ -161,6 +161,7 @@ def run(
     rules: list[Rule] | None = None,
     workers: int | None = None,
     keep_candidates: bool = True,
+    scorer: str | None = None,
 ) -> EngineResult:
     """Entity pairs are independent, so large runs fan out across processes; results are merged in pair
     order, so output is identical to a serial run."""
@@ -168,7 +169,7 @@ def run(
     by_pair: dict[tuple[str, str], tuple[list[Line], list[Line]]] = defaultdict(lambda: ([], []))
     for line in lines:
         by_pair[line.pair][0 if line.side == "A" else 1].append(line)
-    jobs = [(by_pair[k][0], by_pair[k][1], rules, keep_candidates) for k in sorted(by_pair)]
+    jobs = [(by_pair[k][0], by_pair[k][1], rules, keep_candidates, scorer) for k in sorted(by_pair)]
     if workers is None:
         workers = min(len(jobs), os.cpu_count() or 1, MAX_WORKERS) if len(lines) >= PARALLEL_MIN else 1
     if workers > 1:
@@ -196,9 +197,9 @@ def run(
     return out
 
 
-def _run_pair_job(job: tuple[list[Line], list[Line], list[Rule], bool]) -> EngineResult:
-    a, b, rules, keep_candidates = job
-    out = _run_pair([cand.prepare(x) for x in a], [cand.prepare(x) for x in b], rules)
+def _run_pair_job(job: tuple[list[Line], list[Line], list[Rule], bool, str | None]) -> EngineResult:
+    a, b, rules, keep_candidates, scorer = job
+    out = _run_pair([cand.prepare(x) for x in a], [cand.prepare(x) for x in b], rules, scorer)
     if not keep_candidates:  # ~8.6M frozensets at full scale: never ship them back unless a benchmark asks
         out.candidate_pairs = set()
     return out
@@ -250,7 +251,9 @@ def candidates_with_features(
     return prep, blocks, entries
 
 
-def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: list[Rule]) -> EngineResult:
+def _run_pair(
+    side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: list[Rule], scorer: str | None = None
+) -> EngineResult:
     predictions: list[Prediction] = []
     candidate_pairs: set[frozenset[str]] = set()
     details: dict[frozenset[str], PairResult | grp.GroupResult] = {}
@@ -260,7 +263,7 @@ def _run_pair(side_a: list[cand.Prepared], side_b: list[cand.Prepared], rules: l
     candidate_pairs.update(frozenset(k) for k in blocks)
     n_candidates = len(blocks)
     del blocks
-    model = learned.load()
+    model = learned.load(scorer)
     # One float64 matrix per entity pair (~140 B/pair) instead of Python lists (~1 KB/pair): at 8.6M candidate
     # pairs across parallel workers that is the difference between fitting in memory and an OOM kill.
     features_x: np.ndarray | None = None
@@ -421,9 +424,9 @@ def _twin_of(other: "PairResult", chosen: "PairResult") -> str | None:
     return None
 
 
-def version_label() -> str:
+def version_label(scorer: str | None = None) -> str:
     """What scored a run, for the audit record: engine version + learned model (or the hand-set fallback)."""
-    model = learned.load()
+    model = learned.load(scorer)
     scorer = model.meta.get("version", "scorer") if model is not None else "hand-scorer"
     return f"{ENGINE_VERSION} ({scorer} + 3c groups)"[:64]
 
@@ -435,3 +438,14 @@ def learned_row(a: cand.Prepared, b: cand.Prepared, f: dict[str, Any]) -> list[f
 def cand_key(line: Line) -> tuple[float, str, str, str]:
     """Content-based ordering so results never depend on input order (ids only break exact clones)."""
     return (-abs(line.amount_usd), line.value_date.isoformat(), line.reference_norm or "", line.id)
+
+
+def features_for(a: Line, b: Line) -> dict[str, Any]:
+    """Features for one arbitrary pair (e.g. a manual match the engine never proposed), as the engine would
+    compute them if these were the only two open items: ambiguity 1, blocking from the real candidate keys."""
+    pa, pb = cand.prepare(a), cand.prepare(b)
+    if pa.line.side == "B":
+        pa, pb = pb, pa
+    sources = cand.generate([pa], [pb]).get((pa.line.id, pb.line.id), set())
+    f = pair_features(pa, pb, set(sources), 1, jaccard(pa.words, pb.words), 1)
+    return f

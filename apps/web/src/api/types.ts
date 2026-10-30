@@ -271,3 +271,81 @@ export type UnmatchedTxn = {
   description?: string;
 };
 export type UnmatchedSet = { pair: string | null; sideA: UnmatchedTxn[]; sideB: UnmatchedTxn[] };
+
+/* ---------------- Stage 3f: learning loop ---------------- */
+
+export type GateCheck = { name: string; ok: boolean; detail: string };
+export type HoldoutMetrics = {
+  labels: number;
+  positives?: number;
+  log_loss?: number;
+  accuracy?: number;
+  would_auto_correct?: number;
+  would_auto_wrong?: number;
+};
+export type GoldenDelta = {
+  before: { auto_rate: number; precision: number; ece: number | null };
+  after: { auto_rate: number; precision: number; ece: number | null };
+};
+export type ScorerModelInfo = {
+  version: string;
+  status: "training" | "candidate" | "active" | "retired" | "rejected" | "failed" | "rolled_back";
+  base: string;
+  labels: number;
+  trainedBy: string;
+  trainedAt: string | null;
+  promotedBy: string | null;
+  promotedAt: string | null;
+  autoThreshold: number | null;
+  seconds: number | null;
+  holdout: HoldoutMetrics | null;
+  gate: {
+    passed?: boolean;
+    checks?: GateCheck[];
+    holdout?: { candidate: HoldoutMetrics; active: HoldoutMetrics | null };
+    golden?: Record<string, GoldenDelta>;
+    shadow?: { run: string | null; suggestions?: number; would_auto_match?: number; would_auto_match_active?: number };
+  };
+  error: string | null;
+};
+export type DriftReport = {
+  status: "ok" | "watch" | "alert" | "unknown";
+  max_psi?: number;
+  feature?: string;
+  top?: Record<string, number>;
+  pairs?: number;
+  reason?: string;
+};
+export type OutcomeDrift = {
+  status: "ok" | "watch" | "alert" | "unknown";
+  decisions: number;
+  expected_accept_rate?: number;
+  actual_accept_rate?: number;
+  gap?: number;
+};
+export type LearningDecision = {
+  at: string | null;
+  match: string;
+  actor: string;
+  outcome: "Accepted" | "Rejected";
+  source: string | null;
+  modelScore: number;
+  reason: string | null;
+};
+export type LearningStatus = {
+  active: string;
+  activeIsShipped: boolean;
+  labels: {
+    total: number;
+    usable: number;
+    accepted: number;
+    rejected: number;
+    bySource: Record<string, number>;
+    sinceActive: number;
+    minimum: number;
+  };
+  canTrain: boolean;
+  models: ScorerModelInfo[];
+  recent: LearningDecision[];
+  drift: { run: string | null; features: DriftReport | null; outcomes: OutcomeDrift };
+};

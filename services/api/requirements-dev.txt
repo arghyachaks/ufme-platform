@@ -4,4 +4,3 @@ pytest>=8.3.0
 pytest-cov>=6.0.0
 ruff>=0.8.0
 mypy>=1.13.0
-scikit-learn>=1.5  # train the 3d scorer (python -m app.engines.matching.train); not needed at runtime

@@ -15,8 +15,8 @@ from app.core.errors import ConflictError, NotFoundError
 from app.engines.benchmark.model import Line
 from app.engines.matching import engine
 from app.engines.matching.rules import Rule
-from app.models import LedgerTxn, MatchGroup, MatchLabel, MatchMember, MatchRule, MatchRun, Tenant
-from app.services import audit, workflow
+from app.models import LedgerTxn, MatchGroup, MatchMember, MatchRule, MatchRun, Tenant
+from app.services import audit, learning, workflow
 from app.services.ingestion import bulk_insert
 from app.services.workflow import Actor
 
@@ -146,7 +146,7 @@ def create_run(db: Session, tenant: Tenant, entity: str | None = None, actor: st
         code=f"RUN-{n:05d}",
         status="Queued",
         scope={"entity": entity},
-        engine_version=engine.version_label(),
+        engine_version=engine.version_label(learning.scorer_path(db, tenant)),
         rules=[],
         metrics={},
         requested_by=actor,
@@ -174,7 +174,10 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                 .values(status="superseded")
             )
             t1 = time.perf_counter()
-            result = engine.run(lines, rules, keep_candidates=False)
+            scorer = learning.scorer_path(db, tenant)  # 3f: the tenant's promoted model, else the shipped one
+            run.engine_version = engine.version_label(scorer)
+            result = engine.run(lines, rules, keep_candidates=False, scorer=scorer)
+            drift_report = learning.run_drift(result, scorer)
             t2 = time.perf_counter()
             base = _next_code(db, MatchGroup, tenant, "MT")
             auto = suggested = 0
@@ -254,6 +257,7 @@ def execute_run(db: Session, run: MatchRun) -> MatchRun:
                 },
                 "entities": sorted({x.entity for x in lines}),
                 "period": _period(lines),
+                "drift": drift_report,  # 3f: inputs vs the scoring model's reference profile (PSI)
             }
             run.status = "Completed"
     except Exception as exc:
@@ -297,16 +301,14 @@ def decide(
             f"{code} is already {group.status.replace('_', ' ')}.", code="proposal_not_pending"
         )
     before = group.status
-    db.add(
-        MatchLabel(
-            tenant_id=tenant.id,
-            group_id=group.id,
-            action=action,
-            actor=actor.email,
-            reason=reason,
-            model_confidence=group.confidence,
-            features=group.explanation.get("features", {}),
-        )
+    learning.record(  # 3f: training data for the tenant model, with the scorer row as it was
+        db,
+        tenant,
+        group,
+        outcome=int(action == "accept"),
+        source=f"review_{action}",
+        actor=actor.email,
+        reason=reason,
     )
     if action == "accept":
         workflow.submit(db, tenant, group, actor, "review", reason or "Reviewed and accepted from the queue.")

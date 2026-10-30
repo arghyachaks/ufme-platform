@@ -5,7 +5,19 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Any
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Index, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    SmallInteger,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base, Timestamps, UUIDPk
@@ -74,3 +86,33 @@ class MatchLabel(UUIDPk, Timestamps, Base):
     reason: Mapped[str | None] = mapped_column(Text)
     model_confidence: Mapped[float] = mapped_column(Float)
     features: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    # 3f: what the learning loop trains on. `label` is the outcome (1 same transaction, 0 not), `vector` the
+    # scorer's feature row when the decision was made, `source` which workflow step produced it.
+    label: Mapped[int | None] = mapped_column(SmallInteger)
+    source: Mapped[str | None] = mapped_column(String(24))
+    vector: Mapped[list[float] | None] = mapped_column(JSON)
+    within_policy: Mapped[bool | None] = mapped_column(Boolean)
+    model_version: Mapped[str | None] = mapped_column(String(64))
+
+
+class ScorerModel(UUIDPk, Timestamps, Base):
+    """Model registry (3f): every tenant model the learning loop trains, with its evidence. At most one is
+    `active` per tenant; none means the shipped scorer. Promotion and rollback are audited (control MDL-01)."""
+
+    __tablename__ = "scorer_model"
+    __table_args__ = (UniqueConstraint("tenant_id", "version", name="uq_scorer_model_tenant_version"),)
+
+    tenant_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tenant.id", ondelete="CASCADE"), index=True)
+    version: Mapped[str] = mapped_column(String(64))
+    status: Mapped[str] = mapped_column(
+        String(16)
+    )  # training | candidate | active | retired | rejected | failed
+    base_version: Mapped[str] = mapped_column(String(64))
+    artifact: Mapped[dict[str, Any] | None] = mapped_column(JSON)
+    metrics: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)
+    gate: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict)  # promotion checks and their results
+    label_count: Mapped[int] = mapped_column(Integer, default=0)
+    trained_by: Mapped[str] = mapped_column(String(120))
+    promoted_by: Mapped[str | None] = mapped_column(String(120))
+    promoted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error: Mapped[str | None] = mapped_column(Text)

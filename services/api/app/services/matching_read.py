@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.errors import NotFoundError
@@ -57,6 +57,7 @@ def proposals(
     decision: str | None = None,
     limit: int = 100,
     code: str | None = None,
+    order: str = "exposure",
 ) -> list[s.ProposalOut]:
     q = (
         select(MatchGroup, MatchRun.code)
@@ -71,7 +72,15 @@ def proposals(
         q = q.where(MatchGroup.decision == decision)
     if code:
         q = q.where(MatchGroup.code == code)
-    rows = db.execute(q.order_by(MatchGroup.exposure_usd.desc(), MatchGroup.code).limit(limit)).all()
+    # "learning" (3f): a random sample of open suggestions. Measured on the settlement-lag benchmark with 300
+    # reviewer answers: random +7.1 pp auto rate, closest-to-50% +3.0, closest-to-threshold +2.1. Borderline
+    # items resemble each other; a representative mix teaches the model more. Default: largest exposure first.
+    ordering = (
+        (func.random(), MatchGroup.code)
+        if order == "learning"
+        else (MatchGroup.exposure_usd.desc(), MatchGroup.code)
+    )
+    rows = db.execute(q.order_by(*ordering).limit(limit)).all()
     members = group_lines(db, [g for g, _ in rows])
     out = []
     for g, run_code_ in rows:

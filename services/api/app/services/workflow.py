@@ -25,7 +25,6 @@ from app.models import (
     ExceptionItem,
     LedgerTxn,
     MatchGroup,
-    MatchLabel,
     MatchMember,
     MatchRun,
     PeriodSignoff,
@@ -33,7 +32,7 @@ from app.models import (
     Tenant,
     UserRole,
 )
-from app.services import audit
+from app.services import audit, learning
 
 RANK = {"Analyst": 0, "Manager": 1, "Controller": 2, "Finance Director": 3}
 HIERARCHY = ["Manager", "Controller", "Finance Director"]
@@ -259,6 +258,9 @@ def decide_approval(
             req.trail = [*req.trail, _stamp(now, f"approved by {actor.name}")]
             if group is not None:
                 group.status, group.decided_by, group.decided_at = "accepted", actor.email, now
+                learning.record(
+                    db, tenant, group, outcome=1, source="approved", actor=actor.email, reason=comment
+                )
         else:
             req.trail = [*req.trail, _stamp(now, f"first approval by {actor.name}; awaiting second approver")]
     elif action == "reject":
@@ -269,16 +271,8 @@ def decide_approval(
         ]
         if group is not None:
             group.status, group.decided_by, group.decided_at = "rejected", actor.email, now
-            db.add(
-                MatchLabel(
-                    tenant_id=tenant.id,
-                    group_id=group.id,
-                    action="reject",
-                    actor=actor.email,
-                    reason=comment,
-                    model_confidence=group.confidence,
-                    features=(group.explanation or {}).get("features", {}),
-                )
+            learning.record(
+                db, tenant, group, outcome=0, source="approval_reject", actor=actor.email, reason=comment
             )
     else:  # request-info
         req.status = "Info requested"
