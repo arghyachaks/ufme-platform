@@ -9,9 +9,9 @@ on this repository (Security tab → "Report a vulnerability").
 Include what you found, how to reproduce it, and the impact you expect. You'll get an acknowledgement within
 7 days. Please give a reasonable time to fix before disclosing publicly.
 
-## Scope and status
+## Scope
 
-ufme is pre-production software. The local Docker stack is configured for development: the Keycloak realm,
+The local Docker stack is configured for development: the Keycloak realm,
 demo users and passwords, and the default evidence-signing key are **for local use only** and must be replaced
 before any real deployment (see `infra/keycloak/README.md`).
 

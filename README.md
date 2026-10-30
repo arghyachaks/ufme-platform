@@ -7,9 +7,6 @@ auditor can verify.
 Built and maintained by **[Arghya Chakraborty](https://github.com/arghyachaks)**. Licensed under
 [Apache 2.0](LICENSE); please keep the [NOTICE](NOTICE) when you redistribute it.
 
-> Status: feature-complete for a self-hosted pilot. Runs locally in Docker. Cloud deployment, backups and load
-> testing (Stage 7) are next, so treat it as pre-production.
-
 ---
 
 ## What it does

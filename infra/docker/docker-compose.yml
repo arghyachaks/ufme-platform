@@ -13,7 +13,7 @@ x-app-env: &app-env
   UPLOAD_DIR: /data/uploads
   OLLAMA_URL: http://host.docker.internal:11434  # Ollama runs on the host GPU
   ASSIST_MODEL: gemma4:e4b-it-qat
-  # Stage 5 sign-in: tokens from the local Keycloak (browser sees it on :8081, containers on keycloak:8080).
+  # Sign-in: tokens from the local Keycloak (browser sees it on :8081, containers on keycloak:8080).
   AUTH_MODE: oidc
   OIDC_ISSUER: http://localhost:8081/realms/ufme
   OIDC_JWKS_URL: http://keycloak:8080/realms/ufme/protocol/openid-connect/certs
