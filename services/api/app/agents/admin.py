@@ -29,6 +29,7 @@ PROVIDERS = {
     "anthropic",
     "azure_openai",
     "bedrock_converse",
+    "google_genai",
     "google_vertexai",
     "mistralai",
     "openai-compatible-local",

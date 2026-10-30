@@ -6,7 +6,7 @@ import type { AgentModel, NewAgentModel } from "../../api/types";
 import { Panel, StatusPill } from "../../components/common/Panel";
 import { DataTable, mono, useToast } from "../../components/common/Blocks";
 
-const PROVIDERS = ["ollama", "openai", "anthropic", "azure_openai", "bedrock_converse", "google_vertexai", "mistralai", "openai-compatible-local"];
+const PROVIDERS = ["ollama", "openai", "anthropic", "azure_openai", "bedrock_converse", "google_genai", "google_vertexai", "mistralai", "openai-compatible-local"];
 const ROLE_LABEL: Record<string, string> = { default: "All agents (default)", assist: "ufme Assist", investigator: "Recon Investigator", researcher: "Research sub-agents" };
 const TONE = { approved: "ok", pending: "warn", blocked: "crit" } as const;
 

@@ -127,16 +127,28 @@ def candidates(role: str, db: Session | None = None, tenant_id: uuid.UUID | None
 
 
 def chat_model(spec: ModelSpec) -> Any:
-    """Build the LangChain chat model for a spec (lazy import: the harness is optional at runtime)."""
+    """Build the LangChain chat model for a spec (lazy import: the harness is optional at runtime).
+
+    Provider notes: azure_openai uses base_url as the Azure endpoint, the model id as the deployment name, and
+    OPENAI_API_VERSION (or params.api_version); google_genai is Gemini through Google AI Studio."""
     from langchain.chat_models import init_chat_model
 
     kwargs: dict[str, Any] = dict(spec.params)
-    if spec.base_url:
-        kwargs["base_url"] = spec.base_url
+    key = None
     if spec.api_key_env:
         key = os.environ.get(spec.api_key_env)
         if not key:
             raise RuntimeError(f"API key {spec.api_key_env} is not configured")
-        kwargs["api_key"] = key
     provider = "openai" if spec.provider == "openai-compatible-local" else spec.provider
+    if provider == "azure_openai":
+        if spec.base_url:
+            kwargs.setdefault("azure_endpoint", spec.base_url)
+        kwargs.setdefault("azure_deployment", spec.model)
+        kwargs.setdefault("api_version", os.environ.get("OPENAI_API_VERSION", "2024-10-21"))
+    elif spec.base_url:
+        kwargs["base_url"] = spec.base_url
+    if key:
+        kwargs["google_api_key" if provider == "google_genai" else "api_key"] = key
+    elif provider == "openai" and spec.provider == "openai-compatible-local":
+        kwargs.setdefault("api_key", "not-needed")  # local servers ignore it, the client requires one
     return init_chat_model(spec.model, model_provider=provider, **kwargs)

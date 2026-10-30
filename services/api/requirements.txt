@@ -17,3 +17,7 @@ PyJWT[crypto]>=2.9  # Stage 5: OIDC access-token validation (RS256/ES256 via the
 deepagents>=0.7,<0.8
 langchain-ollama>=1.1,<2
 langgraph-checkpoint-postgres>=2  # agent conversation memory (LangGraph checkpointer on our Postgres)
+# Hosted LLM providers for agents (optional at runtime; used only when an approved model is bound to an agent)
+langchain-openai>=1.0,<2  # OpenAI, Azure OpenAI, and OpenAI-compatible servers (vLLM, LM Studio)
+langchain-anthropic>=1.0,<2
+langchain-google-genai>=4.0,<5  # Gemini via Google AI Studio

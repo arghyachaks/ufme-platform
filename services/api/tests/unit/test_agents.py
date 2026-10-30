@@ -561,3 +561,30 @@ def test_investigator_reject_means_the_tool_never_runs(
     )
     assert {"type": "answer", "text": "Understood, no match proposed."} in _lines(d.text)
     assert db.scalar(select(func.count()).select_from(ApprovalRequest)) == before
+
+
+@pytest.mark.parametrize(
+    ("provider", "model", "base_url", "cls"),
+    [
+        ("openai", "gpt-4o", None, "ChatOpenAI"),
+        ("azure_openai", "my-deployment", "https://r.openai.azure.com/", "AzureChatOpenAI"),
+        ("anthropic", "claude-x", None, "ChatAnthropic"),
+        ("google_genai", "gemini-2.5-flash", None, "ChatGoogleGenerativeAI"),
+        ("openai-compatible-local", "local", "http://host.docker.internal:1234/v1", "ChatOpenAI"),
+        ("ollama", "qwen3:8b", "http://host.docker.internal:11434", "ChatOllama"),
+    ],
+)
+def test_hosted_providers_build_without_network(
+    provider: str, model: str, base_url: str | None, cls: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("UFME_TEST_KEY", "test-key-not-real")
+    key = None if provider in ("ollama", "openai-compatible-local") else "UFME_TEST_KEY"
+    spec = registry.ModelSpec(name="x", provider=provider, model=model, base_url=base_url, api_key_env=key)
+    assert type(registry.chat_model(spec)).__name__ == cls
+
+
+def test_missing_key_is_a_clear_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("UFME_NOPE", raising=False)
+    spec = registry.ModelSpec(name="x", provider="openai", model="gpt-4o", api_key_env="UFME_NOPE")
+    with pytest.raises(RuntimeError, match="UFME_NOPE is not configured"):
+        registry.chat_model(spec)

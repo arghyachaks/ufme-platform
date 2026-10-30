@@ -19,6 +19,14 @@ x-app-env: &app-env
   OIDC_JWKS_URL: http://keycloak:8080/realms/ufme/protocol/openid-connect/certs
   OIDC_AUDIENCE: ufme-api
   EVIDENCE_SIGNING_KEY: ${EVIDENCE_SIGNING_KEY:-}  # from your shell / .env; empty = development key
+  # Agents on any LLM (see README "Connect an LLM"). Values come from infra/docker/.env (never committed).
+  AGENT_MODELS: ${AGENT_MODELS:-}
+  AGENT_BINDINGS: ${AGENT_BINDINGS:-}
+  OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+  AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+  OPENAI_API_VERSION: ${OPENAI_API_VERSION:-2024-10-21}
+  ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+  GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
 
 services:
   postgres:
