@@ -9,7 +9,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.agents import harness, registry, tools
+from app.agents import harness, memory, registry, tools
 from app.core.config import settings
 from app.models.tenant import Tenant
 from app.services.workflow import Actor
@@ -45,6 +45,7 @@ def stream(
     history: list[dict[str, str]],
     page: str | None,
     legacy: Any,
+    thread: str | None = None,
 ) -> Iterator[str]:
     rec = harness.Recorder(db, tenant.id, "assist", actor.email, prompt, page)
     read_tools = tools.build(db, tenant, actor)
@@ -69,14 +70,26 @@ def stream(
                     "model": model,
                 }
             ],
+            middleware=[harness.subagent_cap(settings.agent_max_subagents)],
+            checkpointer=saver if tid else None,
             name="ufme-assist",
         )
 
-    messages = [m for m in history[-8:] if m.get("role") in ("user", "assistant")]
+    saver = memory.checkpointer() if thread else None
+    tid = memory.thread_id(tenant.id, actor.email, thread) if saver is not None else None
+    # With memory, the thread already holds the conversation (including what the agent looked up); without it,
+    # the browser's recent history stands in.
+    known = tid is not None and memory.has_history(saver, tid)
+    messages = [] if known else [m for m in history[-8:] if m.get("role") in ("user", "assistant")]
     messages.append({"role": "user", "content": prompt})
     try:
         yield from harness.run_graph(
-            build, registry.candidates("assist"), {"messages": messages}, rec, settings.agent_max_steps
+            build,
+            registry.candidates("assist", db, tenant.id),
+            {"messages": messages},
+            rec,
+            settings.agent_max_steps,
+            {"thread_id": tid} if tid else None,
         )
     except Exception as exc:
         text = ""

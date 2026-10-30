@@ -9,12 +9,17 @@ from __future__ import annotations
 
 import json
 import os
+import uuid
 from dataclasses import dataclass, field
 from decimal import Decimal
 from functools import lru_cache
 from typing import Any
 
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from app.core.config import settings
+from app.models.agents import AgentBinding, AgentModel
 
 LOCAL_PROVIDERS = {"ollama", "openai-compatible-local"}
 
@@ -68,8 +73,31 @@ def _default() -> ModelSpec:
     )
 
 
+def models(db: Session | None = None, tenant_id: uuid.UUID | None = None) -> dict[str, ModelSpec]:
+    """Configured models plus the tenant's own registered ones (which take precedence by name)."""
+    out = dict(configured())
+    if db is not None and tenant_id is not None:
+        for m in db.scalars(select(AgentModel).where(AgentModel.tenant_id == tenant_id)):
+            out[m.name] = spec_of(m)
+    return out
+
+
+def spec_of(m: AgentModel) -> ModelSpec:
+    return ModelSpec(
+        name=m.name,
+        provider=m.provider,
+        model=m.model,
+        status=m.status,
+        base_url=m.base_url,
+        api_key_env=m.api_key_env,
+        price_in=Decimal(m.price_in or 0),
+        price_out=Decimal(m.price_out or 0),
+        allows_confidential=m.allows_confidential,
+    )
+
+
 @lru_cache
-def models() -> dict[str, ModelSpec]:
+def configured() -> dict[str, ModelSpec]:
     out = {"local-default": _default()}
     for raw in json.loads(settings.agent_models or "[]"):
         raw = dict(raw)
@@ -81,16 +109,20 @@ def models() -> dict[str, ModelSpec]:
     return out
 
 
-def bindings() -> dict[str, list[str]]:
+def bindings(db: Session | None = None, tenant_id: uuid.UUID | None = None) -> dict[str, list[str]]:
     b: dict[str, list[str]] = json.loads(settings.agent_bindings or "{}")
     b.setdefault("default", ["local-default"])
+    if db is not None and tenant_id is not None:
+        for row in db.scalars(select(AgentBinding).where(AgentBinding.tenant_id == tenant_id)):
+            b[row.role] = list(row.models)
     return b
 
 
-def candidates(role: str) -> list[ModelSpec]:
+def candidates(role: str, db: Session | None = None, tenant_id: uuid.UUID | None = None) -> list[ModelSpec]:
     """Approved models for a role, in fallback order."""
-    names = bindings().get(role) or bindings()["default"]
-    reg = models()
+    bound = bindings(db, tenant_id)
+    names = bound.get(role) or bound["default"]
+    reg = models(db, tenant_id)
     return [reg[n] for n in names if n in reg and reg[n].status == "approved"]
 
 

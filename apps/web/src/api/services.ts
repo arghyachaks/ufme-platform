@@ -9,8 +9,13 @@ import * as dashboardMock from "./mock/dashboard";
 import type {
   Actor,
   AgentEvent,
+  AgentModel,
+  AgentModelAdmin,
   AgentOverview,
+  NewAgentModel,
   AgentRunDetail,
+  InvestigatorPair,
+  InvestigatorRun,
   Approval,
   BatchDetail,
   CaseItem,
@@ -96,6 +101,7 @@ async function http<T>(path: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 const post = <T,>(path: string, body?: unknown) => http<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) });
+const put = <T,>(path: string, body: unknown) => http<T>(path, { method: "PUT", body: JSON.stringify(body) });
 const patch = <T,>(path: string, body: unknown) => http<T>(path, { method: "PATCH", body: JSON.stringify(body) });
 
 const delay = <T,>(value: T, ms = 250) => new Promise<T>((resolve) => setTimeout(() => resolve(structuredClone(value)), ms));
@@ -119,7 +125,7 @@ const mockRun: MatchRunInfo = {
 
 export type AssistTurn = { role: "user" | "assistant"; content: string };
 export type AssistStatus = { online: boolean; model: string };
-type AssistArgs = { prompt: string; history: AssistTurn[]; page?: string; onDelta: (text: string) => void; onEvent?: (e: AgentEvent) => void; signal?: AbortSignal };
+type AssistArgs = { prompt: string; history: AssistTurn[]; page?: string; onDelta: (text: string) => void; onEvent?: (e: AgentEvent) => void; signal?: AbortSignal; thread?: string };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -158,11 +164,11 @@ async function mockAssist({ prompt, onDelta, onEvent, signal }: AssistArgs): Pro
 }
 
 /** Streams ufme Assist's answer (NDJSON from the API, which proxies the local model). Resolves with the source. */
-async function httpAssist({ prompt, history, page, onDelta, onEvent, signal }: AssistArgs): Promise<string> {
+async function httpAssist({ prompt, history, page, onDelta, onEvent, signal, thread }: AssistArgs): Promise<string> {
   const res = await fetch(`${BASE}/ai/assist/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeaders()) },
-    body: JSON.stringify({ prompt, history, page }),
+    body: JSON.stringify({ prompt, history, page, thread }),
     signal,
   });
   if (!res.ok || !res.body) throw new ApiError(res.status, { title: "Assist unavailable" });
@@ -195,6 +201,36 @@ async function httpAssist({ prompt, history, page, onDelta, onEvent, signal }: A
     }
   }
   return source;
+}
+
+/** Streams an agent endpoint's NDJSON events (investigator runs and decisions). */
+async function agentStream(path: string, body: unknown, onEvent: (e: AgentEvent) => void, signal?: AbortSignal) {
+  const res = await fetch(`${BASE}${path}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await authHeaders()) },
+    body: JSON.stringify(body),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    const problem = await res.json().catch(() => ({}));
+    throw new ApiError(res.status, problem);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let nl: number;
+    while ((nl = buf.indexOf("\n")) >= 0) {
+      const line = buf.slice(0, nl).trim();
+      buf = buf.slice(nl + 1);
+      if (!line) continue;
+      const msg = JSON.parse(line) as { type?: string };
+      if (msg.type) onEvent(msg as AgentEvent);
+    }
+  }
 }
 
 const DEMO_ACTORS: Actor[] = [
@@ -306,6 +342,17 @@ const mockApi = {
         recent: [],
       }),
     run: (_id: string): Promise<AgentRunDetail> => Promise.reject(new ApiError(501, { detail: "Run replay needs the backend." })),
+    models: (): Promise<AgentModelAdmin> => delay({ models: [], bindings: { default: ["local-default"] }, roles: ["assist", "default"] }),
+    propose: (_m: Partial<NewAgentModel>): Promise<AgentModel> => Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
+    approve: (_n: string): Promise<AgentModel> => Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
+    block: (_n: string): Promise<AgentModel> => Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
+    bind: (_role: string, _models: string[]): Promise<Record<string, string[]>> => Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
+    pairs: (): Promise<InvestigatorPair[]> => delay([{ pair: "DE03-IN04", open: 42, exposureUsd: 12_400_000 }]),
+    investigations: (): Promise<InvestigatorRun[]> => delay([]),
+    investigate: (_pair: string, _question: string | undefined, _onEvent: (e: AgentEvent) => void, _signal?: AbortSignal): Promise<void> =>
+      Promise.reject(new ApiError(501, { detail: "The Recon Investigator needs the backend." })),
+    decide: (_run: string, _decision: "approve" | "edit" | "reject", _onEvent: (e: AgentEvent) => void, _extra?: { args?: Record<string, unknown>; comment?: string }): Promise<void> =>
+      Promise.reject(new ApiError(501, { detail: "Needs the backend." })),
   },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
@@ -408,6 +455,17 @@ const httpApi: Api = {
   agents: {
     overview: (days = 7) => http<AgentOverview>(`/agents/overview?days=${days}`),
     run: (id: string) => http<AgentRunDetail>(`/agents/runs/${encodeURIComponent(id)}`),
+    models: () => http<AgentModelAdmin>("/agents/models"),
+    propose: (m: Partial<NewAgentModel>) => post<AgentModel>("/agents/models", m),
+    approve: (n: string) => post<AgentModel>(`/agents/models/${encodeURIComponent(n)}/approve`),
+    block: (n: string) => post<AgentModel>(`/agents/models/${encodeURIComponent(n)}/block`),
+    bind: (role: string, models: string[]) => put<Record<string, string[]>>(`/agents/bindings/${encodeURIComponent(role)}`, { models }),
+    pairs: () => http<InvestigatorPair[]>("/agents/investigator/pairs"),
+    investigations: () => http<InvestigatorRun[]>("/agents/investigator/runs"),
+    investigate: (pair: string, question: string | undefined, onEvent: (e: AgentEvent) => void, signal?: AbortSignal) =>
+      agentStream("/agents/investigator/runs", { pair, question }, onEvent, signal),
+    decide: (run: string, decision: "approve" | "edit" | "reject", onEvent: (e: AgentEvent) => void, extra?: { args?: Record<string, unknown>; comment?: string }) =>
+      agentStream(`/agents/runs/${encodeURIComponent(run)}/decide`, { decision, ...extra }, onEvent),
   },
   admin: { all: () => http("/admin") },
   ops: { all: () => http("/ops") },

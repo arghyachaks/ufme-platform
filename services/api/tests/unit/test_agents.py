@@ -8,11 +8,11 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 from langchain_core.messages import AIMessage, AIMessageChunk, ToolMessage
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from app.agents import harness, ops, registry, tools
 from app.core.config import settings
-from app.models import AgentEvent, AgentRun
+from app.models import AgentEvent, AgentRun, AuditEvent
 from app.seed import seed_demo
 from app.services.workflow import resolve_actor
 
@@ -249,14 +249,14 @@ def test_registry_blocks_unapproved_models_and_never_exposes_keys(monkeypatch: p
         settings, "agent_bindings", json.dumps({"assist": ["claude", "gpt", "local-default"]})
     )
     monkeypatch.setenv("UFME_TEST_KEY", "secret-value")
-    registry.models.cache_clear()
+    registry.configured.cache_clear()
     try:
         assert [s.name for s in registry.candidates("assist")] == ["gpt", "local-default"]
         assert [s.name for s in registry.candidates("other")] == ["local-default"]
         pub = json.dumps([m.public() for m in registry.models().values()])
         assert "secret-value" not in pub and '"keyConfigured": true' in pub
     finally:
-        registry.models.cache_clear()
+        registry.configured.cache_clear()
 
 
 def test_tools_are_read_only_and_entity_scoped(db: Any) -> None:
@@ -277,7 +277,7 @@ def test_assist_endpoint_falls_back_and_operations_views(
 ) -> None:
     seed_demo(db)
     monkeypatch.setattr(settings, "ollama_url", "http://127.0.0.1:9")
-    registry.models.cache_clear()
+    registry.configured.cache_clear()
     try:
         r = client.post("/api/v1/ai/assist/stream", json={"prompt": "Summarize CS-1042"}, headers=ANALYST)
         lines = _lines(r.text)
@@ -285,7 +285,7 @@ def test_assist_endpoint_falls_back_and_operations_views(
         assert {"done": True, "source": "fallback"} in lines and lines[-1]["type"] == "usage"
         client.post("/api/v1/ai/assist/stream", json={"prompt": "hello"}, headers=DIRECTOR)
     finally:
-        registry.models.cache_clear()
+        registry.configured.cache_clear()
 
     mine = client.get("/api/v1/agents/overview", headers=ANALYST).json()
     assert mine["scope"] == "mine" and mine["totals"]["runs"] == 1 and mine["totals"]["fallback"] == 1
@@ -338,3 +338,226 @@ def test_anomalies_flag_failures_egress_and_unknown_models() -> None:
     ]
     kinds = {a["kind"] for a in ops.anomalies(runs, now)}
     assert {"Failure rate", "Unregistered model", "Data egress"} <= kinds
+
+
+CONTROLLER = {"X-Ufme-User": "daniel.ortiz@example.com"}
+MANAGER = {"X-Ufme-User": "arjun.rao@example.com"}
+
+
+def test_model_admin_four_eyes_and_bindings(db: Any, client: TestClient) -> None:
+    seed_demo(db)
+    new = {
+        "name": "claude-sonnet",
+        "provider": "anthropic",
+        "model": "claude-x",
+        "apiKeyEnv": "ANTHROPIC_API_KEY",
+        "priceIn": 0.003,
+        "priceOut": 0.015,
+        "note": "stronger planning",
+    }
+    assert client.post("/api/v1/agents/models", json=new, headers=MANAGER).status_code == 403
+    bad = client.post("/api/v1/agents/models", json=new | {"apiKeyEnv": "sk-live-123"}, headers=CONTROLLER)
+    assert bad.status_code == 422 or bad.json()["code"] == "bad_key_ref"
+    r = client.post("/api/v1/agents/models", json=new, headers=CONTROLLER)
+    assert r.status_code == 201 and r.json()["status"] == "pending" and r.json()["local"] is False
+    # not usable until approved
+    put = client.put("/api/v1/agents/bindings/assist", json={"models": ["claude-sonnet"]}, headers=CONTROLLER)
+    assert put.status_code >= 400
+    assert client.post("/api/v1/agents/models/claude-sonnet/approve", headers=CONTROLLER).status_code == 403
+    ok = client.post("/api/v1/agents/models/claude-sonnet/approve", headers=DIRECTOR)
+    assert ok.status_code == 200 and ok.json()["approvedBy"] == "liam.walsh@example.com"
+    b = client.put(
+        "/api/v1/agents/bindings/assist",
+        json={"models": ["claude-sonnet", "local-default"]},
+        headers=CONTROLLER,
+    ).json()
+    assert b["assist"] == ["claude-sonnet", "local-default"]
+    listing = client.get("/api/v1/agents/models", headers=ANALYST).json()
+    assert {m["name"] for m in listing["models"]} >= {"local-default", "claude-sonnet"}
+    assert "sk-" not in json.dumps(listing)
+    client.post("/api/v1/agents/models/claude-sonnet/block", headers=CONTROLLER)
+    tenant = seed_demo(db)
+    assert [s.name for s in registry.candidates("assist", db, tenant.id)] == ["local-default"]
+    acts = {e.action for e in db.scalars(select(AuditEvent).where(AuditEvent.object_type.like("agent_%")))}
+    assert {
+        "agent_model.proposed",
+        "agent_model.approved",
+        "agent_binding.changed",
+        "agent_model.blocked",
+    } <= acts
+
+
+def test_requester_cannot_approve_own_model(db: Any, client: TestClient) -> None:
+    seed_demo(db)
+    m = {"name": "gpt-mini", "provider": "openai", "model": "gpt-x", "apiKeyEnv": "OPENAI_API_KEY"}
+    assert client.post("/api/v1/agents/models", json=m, headers=DIRECTOR).status_code == 201
+    r = client.post("/api/v1/agents/models/gpt-mini/approve", headers=DIRECTOR)
+    assert r.status_code == 403 and r.json()["code"] == "sod_violation"
+
+
+def test_subagent_cap_trims_parallel_fan_out() -> None:
+    cap = harness.subagent_cap(2)
+    calls = [{"id": f"t{i}", "name": "task", "args": {}} for i in range(4)] + [
+        {"id": "x", "name": "close_overview", "args": {}}
+    ]
+    out = cap.after_model({"messages": [AIMessage(content="", id="m", tool_calls=calls)]}, None)
+    assert [c["id"] for c in out["messages"][0].tool_calls] == ["t0", "t1", "x"]
+    assert out["messages"][0].id == "m"  # replaces the model's message instead of adding one
+    assert cap.after_model({"messages": [AIMessage(content="hi", id="n")]}, None) is None
+
+
+def test_stop_records_a_cancelled_run(db: Any) -> None:
+    tenant = seed_demo(db)
+    rec = harness.Recorder(db, tenant.id, "assist", "a@b", "q", None)
+    spec = registry.ModelSpec(name="local-default", provider="ollama", model="x")
+    gen = harness.run_graph(lambda s: _Agent(_script()), [spec], {}, rec, 20)
+    next(gen)
+    next(gen)
+    gen.close()  # what Starlette does when the browser disconnects
+    assert db.scalar(select(AgentRun)).status == "cancelled"
+
+
+def test_memory_threads_are_namespaced_per_tenant_and_person() -> None:
+    import uuid
+
+    from app.agents import memory
+
+    t = uuid.uuid4()
+    tid = memory.thread_id(t, "a@b", "8c5b6a3e-2f7e-4f43-9e1c-1d2a3b4c5d6e")
+    assert tid == f"{t}:a@b:8c5b6a3e-2f7e-4f43-9e1c-1d2a3b4c5d6e"
+    assert memory.thread_id(t, "a@b", "../other") is None and memory.thread_id(t, "a@b", None) is None
+
+
+# ---------------------------------------------------------------- Recon Investigator: pause, decide, resume
+
+
+def _scripted(script: list[AIMessage]) -> Any:
+    """A chat model that replays a script (drives the real Deep Agents graph without an LLM)."""
+    from langchain_core.language_models.chat_models import BaseChatModel
+    from langchain_core.outputs import ChatGeneration, ChatResult
+
+    class Scripted(BaseChatModel):
+        @property
+        def _llm_type(self) -> str:
+            return "scripted"
+
+        def bind_tools(self, tools: Any, **kw: Any) -> Any:
+            return self
+
+        def _generate(
+            self, messages: Any, stop: Any = None, run_manager: Any = None, **kw: Any
+        ) -> ChatResult:
+            msg = script.pop(0) if script else AIMessage(content="Done.")
+            return ChatResult(generations=[ChatGeneration(message=msg)])
+
+    return Scripted()
+
+
+def _investigation(items: list[str]) -> list[AIMessage]:
+    return [
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "id": "i0",
+                    "name": "share_thinking",
+                    "args": {
+                        "summary": "Look at the open items, then propose what agrees.",
+                        "plan": "Read items | Propose | Summarise",
+                    },
+                }
+            ],
+        ),
+        AIMessage(content="", tool_calls=[{"id": "i1", "name": "unmatched_items", "args": {"limit": 5}}]),
+        AIMessage(
+            content="",
+            tool_calls=[
+                {
+                    "id": "i2",
+                    "name": "propose_match",
+                    "args": {"item_ids": items, "rationale": "Same reference and amount"},
+                }
+            ],
+        ),
+    ]
+
+
+@pytest.fixture
+def ledger(db: Any, client: TestClient, tmp_path: Any, monkeypatch: pytest.MonkeyPatch) -> TestClient:
+    from datetime import UTC, datetime
+
+    seed_demo(db, now=datetime(2026, 10, 18, 12, 0, tzinfo=UTC))
+    monkeypatch.setattr(settings, "ingest_inline", True)
+    monkeypatch.setattr(settings, "upload_dir", str(tmp_path))
+    monkeypatch.setattr(settings, "agent_memory", False)  # in-process checkpointer for the pause/resume
+    assert client.post("/api/v1/data/sources/SRC-01/sync?rows=3000").status_code == 202
+    assert client.post("/api/v1/recon/runs", headers=ANALYST).status_code == 202
+    return client
+
+
+def _pair_items(client: TestClient) -> tuple[str, list[str]]:
+    assert client.get("/api/v1/agents/investigator/pairs", headers=DIRECTOR).json()
+    data = client.get("/api/v1/recon/unmatched", headers=DIRECTOR).json()
+    assert data["pair"] and data["sideA"] and data["sideB"]
+    return data["pair"], [data["sideA"][0]["id"], data["sideB"][0]["id"]]
+
+
+def test_investigator_pauses_for_a_person_and_resumes_on_their_decision(
+    db: Any, ledger: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.models import ApprovalRequest
+
+    client = ledger
+    pair, items = _pair_items(client)
+    scripts = [_investigation(items), [AIMessage(content="I proposed one match for review.")]]
+    monkeypatch.setattr(registry, "chat_model", lambda spec: _scripted(scripts.pop(0)))
+    before = db.scalar(select(func.count()).select_from(ApprovalRequest))
+
+    analyst = client.post("/api/v1/agents/investigator/runs", json={"pair": "IN04-DE03"}, headers=ANALYST)
+    assert analyst.status_code == 403  # out of the analyst's entity scope
+
+    r = client.post("/api/v1/agents/investigator/runs", json={"pair": pair}, headers=DIRECTOR)
+    ev = _lines(r.text)
+    kinds = [e.get("type") for e in ev]
+    assert "todos" in kinds and "approval" in kinds and ev[-1]["type"] == "paused"
+    appr = next(e for e in ev if e.get("type") == "approval")
+    assert appr["name"] == "propose_match" and appr["args"]["item_ids"] == items
+    assert db.scalar(select(func.count()).select_from(ApprovalRequest)) == before  # nothing happened yet
+    run_id = ev[-1]["run"]
+    listed = client.get("/api/v1/agents/investigator/runs", headers=DIRECTOR).json()
+    assert listed[0]["status"] == "awaiting_approval" and listed[0]["pending"]["name"] == "propose_match"
+
+    d = client.post(f"/api/v1/agents/runs/{run_id}/decide", json={"decision": "approve"}, headers=DIRECTOR)
+    out = _lines(d.text)
+    assert out[0] == {"type": "decision", "decision": "approve", "by": "liam.walsh@example.com"}
+    done = [e for e in out if e.get("type") == "task" and e.get("status") in ("done", "error")]
+    assert done and ("Submitted" in done[0]["summary"] or "Not submitted" in done[0]["summary"])
+    assert {"type": "answer", "text": "I proposed one match for review."} in out
+    again = client.post(
+        f"/api/v1/agents/runs/{run_id}/decide", json={"decision": "approve"}, headers=DIRECTOR
+    )
+    assert again.status_code == 409
+    detail = client.get(f"/api/v1/agents/runs/{run_id}", headers=DIRECTOR).json()
+    assert detail["status"] == "completed"
+    assert [e["type"] for e in detail["events"]].count("approval") == 1
+    assert any(e["type"] == "decision" for e in detail["events"])
+
+
+def test_investigator_reject_means_the_tool_never_runs(
+    db: Any, ledger: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from app.models import ApprovalRequest
+
+    client = ledger
+    pair, items = _pair_items(client)
+    scripts = [_investigation(items), [AIMessage(content="Understood, no match proposed.")]]
+    monkeypatch.setattr(registry, "chat_model", lambda spec: _scripted(scripts.pop(0)))
+    before = db.scalar(select(func.count()).select_from(ApprovalRequest))
+    ev = _lines(client.post("/api/v1/agents/investigator/runs", json={"pair": pair}, headers=DIRECTOR).text)
+    d = client.post(
+        f"/api/v1/agents/runs/{ev[-1]['run']}/decide",
+        json={"decision": "reject", "comment": "Different invoices"},
+        headers=DIRECTOR,
+    )
+    assert {"type": "answer", "text": "Understood, no match proposed."} in _lines(d.text)
+    assert db.scalar(select(func.count()).select_from(ApprovalRequest)) == before

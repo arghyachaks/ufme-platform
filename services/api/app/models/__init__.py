@@ -1,6 +1,6 @@
 """Import every model here so Alembic and Base.metadata see them."""
 
-from app.models.agents import AgentEvent, AgentRun
+from app.models.agents import AgentBinding, AgentEvent, AgentModel, AgentRun
 from app.models.audit import AuditEvent
 from app.models.domain import (
     CaseComment,
@@ -20,7 +20,9 @@ from app.models.tenant import LegalEntity, Tenant
 from app.models.workflow import ApprovalRequest, PeriodSignoff
 
 __all__ = [
+    "AgentBinding",
     "AgentEvent",
+    "AgentModel",
     "AgentRun",
     "AppUser",
     "ApprovalRequest",

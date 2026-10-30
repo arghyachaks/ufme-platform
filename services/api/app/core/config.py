@@ -27,6 +27,8 @@ class Settings(BaseSettings):
     agent_bindings: str = "{}"
     agent_max_subagents: int = 4  # parallel sub-agents per run
     agent_max_steps: int = 40  # graph recursion limit per run
+    agent_max_proposals: int = 5  # matches the Recon Investigator may propose in one run
+    agent_memory: bool = True  # Assist remembers each conversation (LangGraph checkpointer on Postgres)
     agent_harness: bool = True  # False: Assist answers with the single-call model (no plan / tools)
     judge_enabled: bool = True  # 3e: advisory LLM second opinion on suggestions after each run
     judge_max: int = 200  # largest-exposure suggestions judged per run (about 1 s each on a laptop GPU)

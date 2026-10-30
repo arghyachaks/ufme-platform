@@ -137,6 +137,11 @@ export const navItems: NavItem[] = [
         description: "Which model scores your matches, the evidence for each candidate, drift, and rollback.",
       },
       {
+        label: "Recon Investigator",
+        to: "/ai/investigator",
+        description: "An agent that investigates a pair's breaks and proposes matches for your approval.",
+      },
+      {
         label: "Agent operations",
         to: "/ai/agents",
         description: "Agent usage, models in use, anomalies, and security and model-risk evidence.",

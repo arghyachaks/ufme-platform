@@ -53,7 +53,7 @@ def run_row(r: AgentRun) -> dict[str, Any]:
     }
 
 
-def anomalies(runs: list[AgentRun], now: datetime) -> list[dict[str, Any]]:
+def anomalies(runs: list[AgentRun], now: datetime, known: set[str] | None = None) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
     if not runs:
         return out
@@ -91,7 +91,7 @@ def anomalies(runs: list[AgentRun], now: datetime) -> list[dict[str, Any]]:
                         "detail": f"{r.tokens_in + r.tokens_out:,} tokens (median {int(med):,}) by {r.actor}",
                     }
                 )
-    known = set(registry.models())
+    known = known if known is not None else set(registry.configured())
     for r in runs:
         if r.model not in known and r.model != "-":
             out.append(
@@ -136,6 +136,8 @@ def anomalies(runs: list[AgentRun], now: datetime) -> list[dict[str, Any]]:
 def overview(db: Session, tenant: Tenant, actor: Actor, days: int = 7) -> dict[str, Any]:
     now = datetime.now(UTC)
     runs = _runs(db, tenant, actor, now - timedelta(days=days))
+    reg = registry.models(db, tenant.id)
+    bound = registry.bindings(db, tenant.id)
     by_model: dict[str, dict[str, Any]] = defaultdict(lambda: {"runs": 0, "tokens": 0, "costUsd": 0.0})
     by_user: dict[str, dict[str, Any]] = defaultdict(lambda: {"runs": 0, "tokens": 0, "costUsd": 0.0})
     by_day: dict[str, dict[str, Any]] = defaultdict(lambda: {"runs": 0, "tokens": 0})
@@ -173,19 +175,16 @@ def overview(db: Session, tenant: Tenant, actor: Actor, days: int = 7) -> dict[s
         "byModel": [{"model": k, **v} for k, v in sorted(by_model.items(), key=lambda x: -x[1]["runs"])],
         "byUser": [{"actor": k, **v} for k, v in sorted(by_user.items(), key=lambda x: -x[1]["runs"])][:20],
         "byDay": [{"day": k, **v} for k, v in sorted(by_day.items())],
-        "anomalies": anomalies(runs, now),
+        "anomalies": anomalies(runs, now, set(reg)),
         "infosec": {
             "egressByProvider": dict(egress),
             "localOnly": not egress,
-            "hostedModelsApproved": [
-                m.name for m in registry.models().values() if not m.local and m.status == "approved"
-            ],
+            "hostedModelsApproved": [m.name for m in reg.values() if not m.local and m.status == "approved"],
             "writeTools": 0,  # agents have no write tools: every change goes through the approval flow
             "autonomousActions": 0,
         },
         "models": [
-            m.public() | {"bindings": [r for r, ns in registry.bindings().items() if m.name in ns]}
-            for m in registry.models().values()
+            m.public() | {"bindings": [r for r, ns in bound.items() if m.name in ns]} for m in reg.values()
         ],
         "recent": [run_row(r) for r in runs[:50]],
     }

@@ -60,6 +60,7 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
   const abort = useRef<AbortController | null>(null);
+  const thread = useRef<string>(crypto.randomUUID()); // the agent remembers this conversation server-side
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,7 +87,7 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
           const last = m[m.length - 1];
           return [...m.slice(0, -1), { ...last, work: applyEvent(last.work ?? emptyWork(), e) }];
         });
-      await api.ai.assist({ prompt, history, page, onDelta: append, onEvent, signal: ctrl.signal });
+      await api.ai.assist({ prompt, history, page, onDelta: append, onEvent, signal: ctrl.signal, thread: thread.current });
     } catch {
       if (!ctrl.signal.aborted) append("Sorry, I couldn't reach the assistant just now. Please try again.");
     } finally {
@@ -168,6 +169,22 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
         </Stack>
         <Typography sx={{ fontSize: 10, color: "var(--text-muted)", mt: 0.75, textAlign: "center" }}>
           Suggestions only. Every action still goes through approval.
+          {msgs.length > seed.length && !busy && (
+            <>
+              {" · "}
+              <Box
+                component="button"
+                type="button"
+                onClick={() => {
+                  thread.current = crypto.randomUUID();
+                  setMsgs(seed);
+                }}
+                sx={{ all: "unset", cursor: "pointer", textDecoration: "underline", color: "inherit" }}
+              >
+                New conversation
+              </Box>
+            </>
+          )}
         </Typography>
       </Box>
     </>

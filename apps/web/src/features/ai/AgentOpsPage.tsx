@@ -7,12 +7,13 @@ import type { AgentOverview, AgentRunDetail, AgentRunRow } from "../../api/types
 import { Panel, StatusPill } from "../../components/common/Panel";
 import { DataTable, KeyValue, Page, PageSkeleton, StatGrid, mono } from "../../components/common/Blocks";
 import { AgentWork, answerText, applyEvent, emptyWork } from "../../components/shell/AgentWork";
+import { ModelAdmin } from "./ModelAdmin";
 
 const n = (v: number) => v.toLocaleString();
 const usd = (v: number) => (v ? `$${v.toFixed(v < 1 ? 4 : 2)}` : "$0");
 const secs = (ms: number | null) => (ms == null ? "—" : `${(ms / 1000).toFixed(1)}s`);
 const when = (iso: string) => new Date(iso).toLocaleString(undefined, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
-const STATUS_TONE: Record<AgentRunRow["status"], "ok" | "warn" | "crit"> = { completed: "ok", running: "warn", fallback: "warn", cancelled: "warn", failed: "crit" };
+const STATUS_TONE: Record<AgentRunRow["status"], "ok" | "warn" | "crit"> = { completed: "ok", running: "warn", fallback: "warn", cancelled: "warn", failed: "crit", awaiting_approval: "warn" };
 const SEV_TONE = { High: "crit", Medium: "warn", Low: "ok" } as const;
 
 export function AgentOpsPage() {
@@ -113,21 +114,7 @@ function OpsView({ o }: { o: AgentOverview }) {
         </Panel>
       </Box>
 
-      <Panel title="Model inventory">
-        <DataTable
-          rows={o.models}
-          rowKey={(r) => r.name}
-          columns={[
-            { key: "n", header: "Name", render: (r) => <span style={mono}>{r.name}</span> },
-            { key: "p", header: "Provider · model", render: (r) => `${r.provider} · ${r.model}` },
-            { key: "w", header: "Runs where", render: (r) => (r.local ? "On-premise" : "Hosted (data leaves network)") },
-            { key: "s", header: "Status", render: (r) => <StatusPill label={r.status === "approved" ? "Approved" : "Blocked"} tone={r.status === "approved" ? "ok" : "warn"} /> },
-            { key: "b", header: "Used by", render: (r) => (r.bindings?.length ? r.bindings.join(", ") : "—") },
-            { key: "c", header: "Price / 1K tokens", align: "right", render: (r) => (r.priceIn || r.priceOut ? `$${r.priceIn} in · $${r.priceOut} out` : "Free (local)") },
-            { key: "k", header: "Key", render: (r) => (r.keyConfigured == null ? "Not needed" : r.keyConfigured ? "Configured" : "Missing") },
-          ]}
-        />
-      </Panel>
+      <ModelAdmin />
 
       <Panel title="Recent runs">
         <DataTable

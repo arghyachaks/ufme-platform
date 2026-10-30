@@ -162,6 +162,7 @@ class AssistIn(CamelModel):
     prompt: str
     history: list[dict[str, str]] = []
     page: str | None = None
+    thread: str | None = None  # conversation id (uuid) for agent memory
 
 
 class ChatMessageOut(CamelModel):

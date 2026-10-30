@@ -363,17 +363,24 @@ export type AgentEvent =
   | { type: "answer"; text: string }
   | { type: "usage"; tokensIn: number; tokensOut: number; costUsd: number; toolCalls: number; subagents: number; ms: number; model: string }
   | { type: "error"; message: string }
-  | { type: "done"; source: string };
+  | { type: "done"; source: string }
+  | { type: "resume"; id: string; agent: string; model: string; provider: string; local: boolean }
+  | { type: "approval"; id: string; name: string; args: Record<string, unknown>; description?: string; allowed: string[] }
+  | { type: "paused"; run: string }
+  | { type: "decision"; decision: "approve" | "edit" | "reject"; by: string; comment?: string | null };
 
 export type AgentRunRow = {
   id: string; agent: string; actor: string; question: string; model: string; provider: string;
-  status: "running" | "completed" | "failed" | "fallback" | "cancelled"; startedAt: string; ms: number | null;
+  status: "running" | "completed" | "failed" | "fallback" | "cancelled" | "awaiting_approval"; startedAt: string; ms: number | null;
   tokensIn: number; tokensOut: number; costUsd: number; toolCalls: number; subagents: number; egress: boolean; error: string | null;
 };
 export type AgentModel = {
   name: string; provider: string; model: string; status: string; local: boolean; priceIn: number; priceOut: number;
   allowsConfidential: boolean; keyConfigured: boolean | null; bindings?: string[];
+  requestedBy?: string; approvedBy?: string | null; registered?: boolean; note?: string | null;
 };
+export type AgentModelAdmin = { models: AgentModel[]; bindings: Record<string, string[]>; roles: string[] };
+export type NewAgentModel = { name: string; provider: string; model: string; baseUrl?: string; apiKeyEnv?: string; priceIn?: number; priceOut?: number; allowsConfidential?: boolean; note?: string };
 export type AgentAnomaly = { kind: string; severity: "High" | "Medium" | "Low"; detail: string; run?: string };
 export type AgentOverview = {
   scope: "tenant" | "mine";
@@ -388,3 +395,5 @@ export type AgentOverview = {
   recent: AgentRunRow[];
 };
 export type AgentRunDetail = AgentRunRow & { events: AgentEvent[] };
+export type InvestigatorPair = { pair: string; open: number; exposureUsd: number };
+export type InvestigatorRun = AgentRunRow & { pair: string; pending: { name: string; args: Record<string, unknown>; description?: string } | null };

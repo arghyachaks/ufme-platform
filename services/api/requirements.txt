@@ -16,3 +16,4 @@ PyJWT[crypto]>=2.9  # Stage 5: OIDC access-token validation (RS256/ES256 via the
 # Agent harness: LangChain Deep Agents (MIT) on any LLM via init_chat_model; Ollama is the local default
 deepagents>=0.7,<0.8
 langchain-ollama>=1.1,<2
+langgraph-checkpoint-postgres>=2  # agent conversation memory (LangGraph checkpointer on our Postgres)

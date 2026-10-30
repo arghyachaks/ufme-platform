@@ -20,6 +20,7 @@ Stream protocol (NDJSON, one object per line). Every event has a `type`:
 from __future__ import annotations
 
 import json
+import logging
 import re
 import time
 import uuid
@@ -29,11 +30,13 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.agents.registry import ModelSpec
 from app.models.agents import AgentEvent, AgentRun
 
+log = logging.getLogger(__name__)
 PUBLIC_TOOLS = {"write_todos", "task", "share_thinking"}
 
 
@@ -42,6 +45,34 @@ def share_thinking(summary: str, plan: str = "") -> str:
     you will answer it. plan: 2 to 5 short steps separated by ' | ', e.g.
     "Read the close overview | Check critical exceptions | Summarise what needs attention"."""
     return "noted. Now carry out the plan with the ufme tools."
+
+
+def subagent_cap(limit: int) -> Any:
+    """Middleware: at most `limit` sub-agents started in one step (parallel fan-out cap). Extra `task` calls in
+    the same model turn are dropped before they run; the agent can start them in a later step."""
+    from langchain.agents.middleware import AgentMiddleware
+    from langchain_core.messages import AIMessage
+
+    class SubagentCap(AgentMiddleware):  # type: ignore[misc]
+        name = "ufme_subagent_cap"
+
+        def after_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
+            msgs = state.get("messages") or []
+            last = msgs[-1] if msgs else None
+            if not isinstance(last, AIMessage) or not last.tool_calls:
+                return None
+            kept, started = [], 0
+            for c in last.tool_calls:
+                if c.get("name") == "task":
+                    started += 1
+                    if started > limit:
+                        continue
+                kept.append(c)
+            if len(kept) == len(last.tool_calls):
+                return None
+            return {"messages": [last.model_copy(update={"tool_calls": kept})]}
+
+    return SubagentCap()
 
 
 def line(obj: dict[str, Any]) -> str:
@@ -76,6 +107,7 @@ class Mapper:
     own_todos: bool = False  # the agent maintains its to-do list with write_todos
     plan: list[str] = field(default_factory=list)  # the plan it shared up front
     answer: str = ""
+    interrupted: dict[str, Any] | None = None  # the action waiting for a person
     tokens_in: int = 0
     tokens_out: int = 0
     tool_calls: int = 0
@@ -93,11 +125,37 @@ class Mapper:
             return out
         if mode != "updates" or not isinstance(data, dict):
             return out
-        for update in data.values():
+        if top and "__interrupt__" in data:
+            out += self._interrupt(data["__interrupt__"])
+        for key, update in data.items():
+            if key == "__interrupt__":
+                continue
             if isinstance(update, dict) and "todos" in update:
                 out += self._todos(update.get("todos"))
             for m in _messages(update):
                 out += self._message(m, top, who)
+        return out
+
+    def _interrupt(self, items: Any) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for it in items or ():
+            value = getattr(it, "value", it)
+            reqs = (value or {}).get("action_requests") or [] if isinstance(value, dict) else []
+            for r in reqs:
+                pending = {
+                    "name": r.get("name"),
+                    "args": r.get("args") or {},
+                    "description": r.get("description"),
+                }
+                self.interrupted = pending
+                out.append(
+                    {
+                        "type": "approval",
+                        "id": str(getattr(it, "id", "")),
+                        **pending,
+                        "allowed": ["approve", "edit", "reject"],
+                    }
+                )
         return out
 
     def progress(self, done: int) -> list[dict[str, Any]]:
@@ -239,6 +297,37 @@ class Recorder:
             egress=False,
             summary={},
         )
+        self.base_seq = 0
+        self.base = (0, 0, 0, 0, Decimal(0), 0)  # tokens in/out, tool calls, sub-agents, cost, ms so far
+        self.seed_calls: dict[str, str] = {}  # tool calls started before a pause, finished after it
+
+    @classmethod
+    def resume(cls, db: Session, run: AgentRun, actor: str) -> Recorder:
+        """Continue a paused run: same run row, events appended after the ones already recorded."""
+        rec = cls.__new__(cls)
+        rec.db, rec.events, rec.started, rec.run = db, [], time.monotonic(), run
+        prior = list(
+            db.scalars(select(AgentEvent).where(AgentEvent.run_id == run.id).order_by(AgentEvent.seq))
+        )
+        rec.base_seq = len(prior)
+        rec.base = (
+            run.tokens_in,
+            run.tokens_out,
+            run.tool_calls,
+            run.subagents,
+            Decimal(run.cost_usd),
+            int((run.summary or {}).get("ms", 0)),
+        )
+        rec.seed_calls = {}
+        for e in prior:
+            p = e.payload
+            if p.get("type") == "task" and p.get("name"):
+                rec.seed_calls[p["id"]] = p["name"]
+            if p.get("type") == "task" and p.get("status") in ("done", "error"):
+                rec.seed_calls.pop(p["id"], None)
+        run.status = "running"  # claim it: a second decision on the same pause is refused
+        db.commit()
+        return rec
 
     def emit(self, event: dict[str, Any]) -> str:
         if event.get("type") != "token":  # tokens are re-derivable from the answer; keep the log compact
@@ -251,25 +340,43 @@ class Recorder:
     def finish(
         self, status: str, mapper: Mapper | None, spec: ModelSpec | None, error: str | None = None
     ) -> dict:
-        ms = int((time.monotonic() - self.started) * 1000)
+        b_in, b_out, b_tools, b_subs, b_cost, b_ms = self.base
+        ms = b_ms + int((time.monotonic() - self.started) * 1000)
         r = self.run
         r.status, r.error, r.finished_at = status, error, datetime.now(UTC)
+        r.tokens_in, r.tokens_out, r.tool_calls, r.subagents, r.cost_usd = (
+            b_in,
+            b_out,
+            b_tools,
+            b_subs,
+            b_cost,
+        )
         if mapper is not None:
-            r.tokens_in, r.tokens_out = mapper.tokens_in, mapper.tokens_out
-            r.tool_calls, r.subagents = mapper.tool_calls, mapper.subagents
+            r.tokens_in, r.tokens_out = b_in + mapper.tokens_in, b_out + mapper.tokens_out
+            r.tool_calls, r.subagents = b_tools + mapper.tool_calls, b_subs + mapper.subagents
             if spec is not None:
-                r.cost_usd = spec.cost(mapper.tokens_in, mapper.tokens_out)
-        r.summary = {"ms": ms, "events": len(self.events)}
+                r.cost_usd = b_cost + spec.cost(mapper.tokens_in, mapper.tokens_out)
+        r.summary = {**(r.summary or {}), "ms": ms, "events": self.base_seq + len(self.events)}
+        if status != "awaiting_approval":
+            r.summary.pop("pending", None)
         try:
             self.db.add(r)
             self.db.flush()
             now = datetime.now(UTC)
             for i, e in enumerate(self.events):
                 self.db.add(
-                    AgentEvent(tenant_id=r.tenant_id, run_id=r.id, seq=i, type=e["type"], payload=e, at=now)
+                    AgentEvent(
+                        tenant_id=r.tenant_id,
+                        run_id=r.id,
+                        seq=self.base_seq + i,
+                        type=e["type"],
+                        payload=e,
+                        at=now,
+                    )
                 )
             self.db.commit()
-        except Exception:  # telemetry must never break an answer
+        except Exception:  # telemetry must never break an answer, but it must be visible when it fails
+            log.warning("could not record agent run %s", r.id, exc_info=True)
             self.db.rollback()
         return {
             "type": "usage",
@@ -286,9 +393,10 @@ class Recorder:
 def run_graph(
     build: Callable[[ModelSpec], Any],
     specs: list[ModelSpec],
-    inputs: dict[str, Any],
+    inputs: Any,  # initial state, or a langgraph Command(resume=...) after a pause
     rec: Recorder,
     max_steps: int,
+    configurable: dict[str, Any] | None = None,
 ) -> Iterator[str]:
     """Runs the agent on the first model that answers (fallback order). Yields NDJSON event lines.
 
@@ -296,18 +404,23 @@ def run_graph(
     last_error = "no approved model is bound to this agent"
     for spec in specs:
         mapper = Mapper()
+        mapper.call_names.update(rec.seed_calls)
+        mapper.seen_calls.update(rec.seed_calls)
         started = False
         try:
             agent = build(spec)
             for ns, mode, data in agent.stream(
-                inputs, {"recursion_limit": max_steps}, stream_mode=["updates", "messages"], subgraphs=True
+                inputs,
+                {"recursion_limit": max_steps, "configurable": configurable or {}},
+                stream_mode=["updates", "messages"],
+                subgraphs=True,
             ):
                 if not started:
                     started = True
                     rec.model(spec)
                     yield rec.emit(
                         {
-                            "type": "run",
+                            "type": "resume" if rec.base_seq else "run",
                             "id": str(rec.run.id),
                             "agent": rec.run.agent,
                             "model": spec.model,
@@ -319,6 +432,11 @@ def run_graph(
                     yield rec.emit(ev)
                     if ev["type"] == "token":
                         yield line({"delta": ev["text"]})
+            if mapper.interrupted is not None:  # paused: a person decides; nothing has been changed
+                rec.run.summary = {**(rec.run.summary or {}), "pending": mapper.interrupted}
+                yield line(rec.finish("awaiting_approval", mapper, spec))
+                yield line({"type": "paused", "run": str(rec.run.id), "done": True})
+                return
             if not mapper.answer:
                 raise RuntimeError("the agent finished without an answer")
             if re.match(
@@ -329,7 +447,10 @@ def run_graph(
             yield line(rec.finish("completed", mapper, spec))
             yield line({"type": "done", "source": "agent", "done": True})
             return
-        except Exception as exc:
+        except GeneratorExit:  # the person pressed Stop (client disconnected): record what happened so far
+            rec.finish("cancelled", mapper, spec)
+            raise
+        except Exception as exc:  # any provider error: try the next model
             last_error = f"{type(exc).__name__}: {exc}"[:500]
             if started:
                 yield rec.emit({"type": "error", "message": "The agent stopped unexpectedly: " + last_error})

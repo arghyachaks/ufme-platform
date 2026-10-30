@@ -19,6 +19,7 @@ import { CopilotPage } from "../features/ai/CopilotPage";
 import { ExplainabilityPage } from "../features/ai/ExplainabilityPage";
 import { ModelsPage } from "../features/ai/ModelsPage";
 import { AgentOpsPage } from "../features/ai/AgentOpsPage";
+import { InvestigatorPage } from "../features/ai/InvestigatorPage";
 import { LearningPage } from "../features/ai/LearningPage";
 import { SourcesPage } from "../features/data/SourcesPage";
 import { QualityPage } from "../features/data/QualityPage";
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="/ai/explainability" element={<ExplainabilityPage />} />
           <Route path="/ai/models" element={<ModelsPage />} />
           <Route path="/ai/agents" element={<AgentOpsPage />} />
+          <Route path="/ai/investigator" element={<InvestigatorPage />} />
           <Route path="/ai/learning" element={<LearningPage />} />
           <Route path="/data/sources" element={<SourcesPage />} />
           <Route path="/data/quality" element={<QualityPage />} />

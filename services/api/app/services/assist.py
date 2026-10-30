@@ -91,6 +91,7 @@ def stream(
     history: list[dict[str, str]],
     page: str | None,
     actor: Actor | None = None,
+    thread: str | None = None,
 ) -> Iterator[str]:
     """The harness agent when enabled (plan, to-dos, tools, sub-agents; see app/agents/harness.py for the
     protocol); otherwise, or when no model can run it, a single grounded model call."""
@@ -98,7 +99,14 @@ def stream(
         from app.agents import assist as agent
 
         return agent.stream(
-            db, tenant, actor, prompt, history, page, lambda: simple_stream(db, tenant, prompt, history, page)
+            db,
+            tenant,
+            actor,
+            prompt,
+            history,
+            page,
+            lambda: simple_stream(db, tenant, prompt, history, page),
+            thread,
         )
     return simple_stream(db, tenant, prompt, history, page)
 

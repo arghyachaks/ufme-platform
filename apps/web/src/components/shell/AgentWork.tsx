@@ -19,10 +19,13 @@ export type Work = {
   usage?: Extract<AgentEvent, { type: "usage" }>;
   error?: string;
   finished?: boolean;
+  pending?: { id: string; name: string; args: Record<string, unknown>; description?: string };
+  paused?: string; // run id waiting for a person's decision
+  decisions: { decision: string; by: string; comment?: string | null }[];
 };
 type Step = { id: string; kind: "task" | "subagent"; label: string; detail?: string; agent?: string; status: "running" | "done" | "error"; summary?: string };
 
-export const emptyWork = (): Work => ({ thinking: [], todos: [], steps: [], drafts: [], working: [] });
+export const emptyWork = (): Work => ({ thinking: [], todos: [], steps: [], drafts: [], working: [], decisions: [] });
 
 const TOOL_LABEL: Record<string, string> = {
   close_overview: "Reading the close overview",
@@ -32,6 +35,8 @@ const TOOL_LABEL: Record<string, string> = {
   review_queue: "Reading the review queue",
   open_approvals: "Checking open approvals",
   close_readiness: "Checking sign-off readiness",
+  unmatched_items: "Reading the unmatched items",
+  propose_match: "Proposing a match (needs your decision)",
 };
 
 function argText(args?: Record<string, unknown>) {
@@ -76,6 +81,14 @@ export function applyEvent(w: Work, e: AgentEvent): Work {
       return { ...w, error: e.message };
     case "done":
       return { ...w, finished: true };
+    case "resume":
+      return { ...w, model: e.model, local: e.local, finished: false, paused: undefined };
+    case "approval":
+      return { ...w, pending: { id: e.id, name: e.name, args: e.args, description: e.description } };
+    case "paused":
+      return { ...w, paused: e.run, finished: true };
+    case "decision":
+      return { ...w, pending: undefined, decisions: [...w.decisions, { decision: e.decision, by: e.by, comment: e.comment }] };
   }
   return w;
 }
@@ -104,7 +117,7 @@ const small = { fontSize: 11.5, lineHeight: 1.45 } as const;
 const mono = { fontFamily: "var(--font-mono)", fontSize: 10.5, color: "var(--text-muted)" } as const;
 
 export function AgentWork({ w }: { w: Work }) {
-  const done = Boolean(w.answer || w.finished);
+  const done = Boolean(w.answer || w.finished) && !w.pending;
   const [open, setOpen] = useState<boolean | null>(null); // null: follow the run (open while working)
   const expanded = open ?? !done;
   const t = thoughts(w);
@@ -172,6 +185,11 @@ export function AgentWork({ w }: { w: Work }) {
               </Stack>
             </Box>
           )}
+          {w.decisions.map((d, i) => (
+            <Typography key={i} sx={{ ...small, fontWeight: 600 }}>
+              {d.decision === "approve" ? "Approved" : d.decision === "edit" ? "Edited and approved" : "Rejected"} by {d.by}{d.comment ? `: ${d.comment}` : ""}
+            </Typography>
+          ))}
           {w.error && <Typography sx={{ ...small, color: "var(--brand-crimson, #b3261e)" }}>{w.error} Answering without the agent instead.</Typography>}
           {w.usage && (
             <Typography sx={mono}>
