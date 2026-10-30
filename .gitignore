@@ -41,6 +41,8 @@ temp/
 # Local-only docs (do not publish except README.md)
 *.md
 !README.md
+!SECURITY.md
+!CONTRIBUTING.md
 
 
 start-dev.bat

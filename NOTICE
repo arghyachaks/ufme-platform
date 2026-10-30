@@ -1,0 +1,16 @@
+ufme — intercompany reconciliation platform
+Copyright 2026 Arghya Chakraborty
+
+This product was created by Arghya Chakraborty (https://github.com/arghyachaks).
+
+Licensed under the Apache License, Version 2.0 (see LICENSE). Under section 4(d) of that
+license, any redistribution of this software, modified or not, and any derivative work
+distributed or offered for sale, must include this NOTICE file (or its attribution text)
+in a readable place, such as the documentation or an "About" / third-party notices page.
+
+"ufme" and the ufme logo are trademarks of Arghya Chakraborty. The Apache License does not
+grant permission to use them (section 6): a modified version must use a different name,
+although it may state truthfully that it is "based on ufme by Arghya Chakraborty".
+
+This product includes third-party open-source software (Python, Node.js and container
+dependencies) under their own licenses; see each package's license files.
