@@ -13,6 +13,8 @@ export const AUTH_MODE: "oidc" | "dev" = env.VITE_AUTH === "oidc" ? "oidc" : "de
 const ISSUER = (env.VITE_OIDC_ISSUER ?? "http://localhost:8081/realms/ufme").replace(/\/$/, "");
 const CLIENT_ID = env.VITE_OIDC_CLIENT_ID ?? "ufme-web";
 const CALLBACK = "/auth/callback";
+// Same-origin proxy of ISSUER (see vite.config.ts); "" = call the provider directly (e.g. behind one domain).
+const PROXY = env.VITE_OIDC_PROXY ?? "/idp";
 const KEY = "ufme.auth";
 const PENDING = "ufme.auth.pending";
 
@@ -44,10 +46,14 @@ function restore(): Tokens | null {
   }
 }
 
+const viaProxy = (url: string) => (PROXY && url.startsWith(ISSUER) ? PROXY + url.slice(ISSUER.length) : url);
+
 function config(): Promise<Discovery> {
-  discovery ??= fetch(`${ISSUER}/.well-known/openid-configuration`).then((r) => {
+  discovery ??= fetch(viaProxy(`${ISSUER}/.well-known/openid-configuration`)).then(async (r) => {
     if (!r.ok) throw new Error("The sign-in service isn't reachable.");
-    return r.json() as Promise<Discovery>;
+    const d = (await r.json()) as Discovery;
+    // Browser navigations (sign-in, sign-out) go to the provider; background token calls stay same-origin.
+    return { ...d, token_endpoint: viaProxy(d.token_endpoint) };
   });
   return discovery;
 }
