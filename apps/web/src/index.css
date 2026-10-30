@@ -161,7 +161,7 @@ body {
   height: 100vh;
   display: grid;
   grid-template-rows: 64px minmax(0, 1fr) 32px;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 420px;
   grid-template-areas:
     "header header"
     "main copilot"
