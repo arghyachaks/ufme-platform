@@ -349,3 +349,42 @@ export type LearningStatus = {
   recent: LearningDecision[];
   drift: { run: string | null; features: DriftReport | null; outcomes: OutcomeDrift };
 };
+
+// ---- Agent harness (ufme Assist and future agents): the live event stream and the operations views
+export type AgentTodo = { content: string; status: "pending" | "in_progress" | "completed" };
+export type AgentEvent =
+  | { type: "run"; id: string; agent: string; model: string; provider: string; local: boolean }
+  | { type: "thinking"; text: string; agent?: string }
+  | { type: "todos"; items: AgentTodo[] }
+  | { type: "task"; id: string; name?: string; args?: Record<string, unknown>; agent?: string; status: "running" | "done" | "error"; summary?: string }
+  | { type: "subagent"; id: string; kind?: string; brief?: string; status: "running" | "done" | "error"; summary?: string }
+  | { type: "token"; msg: string | null; text: string }
+  | { type: "step"; msg: string | null }
+  | { type: "answer"; text: string }
+  | { type: "usage"; tokensIn: number; tokensOut: number; costUsd: number; toolCalls: number; subagents: number; ms: number; model: string }
+  | { type: "error"; message: string }
+  | { type: "done"; source: string };
+
+export type AgentRunRow = {
+  id: string; agent: string; actor: string; question: string; model: string; provider: string;
+  status: "running" | "completed" | "failed" | "fallback" | "cancelled"; startedAt: string; ms: number | null;
+  tokensIn: number; tokensOut: number; costUsd: number; toolCalls: number; subagents: number; egress: boolean; error: string | null;
+};
+export type AgentModel = {
+  name: string; provider: string; model: string; status: string; local: boolean; priceIn: number; priceOut: number;
+  allowsConfidential: boolean; keyConfigured: boolean | null; bindings?: string[];
+};
+export type AgentAnomaly = { kind: string; severity: "High" | "Medium" | "Low"; detail: string; run?: string };
+export type AgentOverview = {
+  scope: "tenant" | "mine";
+  days: number;
+  totals: { runs: number; completed: number; fallback: number; failed: number; tokensIn: number; tokensOut: number; costUsd: number; toolCalls: number; subagents: number; avgMs: number | null; egressRuns: number };
+  byModel: { model: string; provider: string; runs: number; tokens: number; costUsd: number }[];
+  byUser: { actor: string; runs: number; tokens: number; costUsd: number }[];
+  byDay: { day: string; runs: number; tokens: number }[];
+  anomalies: AgentAnomaly[];
+  infosec: { egressByProvider: Record<string, number>; localOnly: boolean; hostedModelsApproved: string[]; writeTools: number; autonomousActions: number };
+  models: AgentModel[];
+  recent: AgentRunRow[];
+};
+export type AgentRunDetail = AgentRunRow & { events: AgentEvent[] };

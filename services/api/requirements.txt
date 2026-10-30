@@ -13,3 +13,6 @@ numpy>=1.26.0
 scikit-learn>=1.5  # 3f: the worker trains tenant adapters (scoring itself needs only numpy)
 httpx>=0.28.0
 PyJWT[crypto]>=2.9  # Stage 5: OIDC access-token validation (RS256/ES256 via the provider's JWKS)
+# Agent harness: LangChain Deep Agents (MIT) on any LLM via init_chat_model; Ollama is the local default
+deepagents>=0.7,<0.8
+langchain-ollama>=1.1,<2

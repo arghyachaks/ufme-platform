@@ -21,6 +21,13 @@ class Settings(BaseSettings):
     max_upload_mb: int = 200
     ollama_url: str = "http://localhost:11434"  # Docker: http://host.docker.internal:11434
     assist_model: str = "gemma4:e4b-it-qat"
+    # Agent harness: any LLM by configuration. JSON list of model specs (see app/agents/registry.py) and role ->
+    # ordered fallback list. The local Ollama model is always registered as "local-default".
+    agent_models: str = "[]"
+    agent_bindings: str = "{}"
+    agent_max_subagents: int = 4  # parallel sub-agents per run
+    agent_max_steps: int = 40  # graph recursion limit per run
+    agent_harness: bool = True  # False: Assist answers with the single-call model (no plan / tools)
     judge_enabled: bool = True  # 3e: advisory LLM second opinion on suggestions after each run
     judge_max: int = 200  # largest-exposure suggestions judged per run (about 1 s each on a laptop GPU)
     model_dir: str = (

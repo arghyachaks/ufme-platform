@@ -8,6 +8,9 @@ import * as reconMock from "./mock/recon";
 import * as dashboardMock from "./mock/dashboard";
 import type {
   Actor,
+  AgentEvent,
+  AgentOverview,
+  AgentRunDetail,
   Approval,
   BatchDetail,
   CaseItem,
@@ -116,20 +119,46 @@ const mockRun: MatchRunInfo = {
 
 export type AssistTurn = { role: "user" | "assistant"; content: string };
 export type AssistStatus = { online: boolean; model: string };
-type AssistArgs = { prompt: string; history: AssistTurn[]; page?: string; onDelta: (text: string) => void; signal?: AbortSignal };
+type AssistArgs = { prompt: string; history: AssistTurn[]; page?: string; onDelta: (text: string) => void; onEvent?: (e: AgentEvent) => void; signal?: AbortSignal };
 
-async function mockAssist({ prompt, onDelta, signal }: AssistArgs): Promise<"fallback"> {
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Demo mode: replays what the harness agent streams (thinking, plan, tasks, a sub-agent) before the answer. */
+async function mockAssist({ prompt, onDelta, onEvent, signal }: AssistArgs): Promise<"fallback"> {
+  if (onEvent) {
+    const todos = ["Read the close overview", "Check open exceptions", "Summarise what needs attention"];
+    const plan = (done: number) => todos.map((content, i) => ({ content, status: i < done ? "completed" : i === done ? "in_progress" : "pending" }) as const);
+    const script: AgentEvent[] = [
+      { type: "run", id: "demo", agent: "assist", model: "demo", provider: "ollama", local: true },
+      { type: "thinking", text: "You want a status read-out, so I'll start from the close overview and then look at the open breaks." },
+      { type: "todos", items: plan(0) },
+      { type: "task", id: "t1", name: "close_overview", args: {}, agent: "supervisor", status: "running" },
+      { type: "task", id: "t1", status: "done", summary: "Close 72% complete" },
+      { type: "todos", items: plan(1) },
+      { type: "task", id: "t2", name: "list_exceptions", args: { severity: "Critical" }, agent: "supervisor", status: "running" },
+      { type: "subagent", id: "s1", kind: "researcher", brief: "Explain the DE03 to IN04 breaks", status: "running" },
+      { type: "task", id: "t2", status: "done", summary: "3 critical exceptions" },
+      { type: "subagent", id: "s1", status: "done", summary: "Withholding tax on royalties" },
+      { type: "todos", items: plan(2) },
+    ];
+    for (const e of script) {
+      if (signal?.aborted) return "fallback";
+      await wait(260);
+      onEvent(e);
+    }
+  }
   const words = db.copilotAnswer(prompt).text.split(/(\s+)/);
   for (const w of words) {
     if (signal?.aborted) break;
     await new Promise((r) => setTimeout(r, 18));
     onDelta(w);
   }
+  onEvent?.({ type: "done", source: "demo" });
   return "fallback";
 }
 
 /** Streams ufme Assist's answer (NDJSON from the API, which proxies the local model). Resolves with the source. */
-async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs): Promise<string> {
+async function httpAssist({ prompt, history, page, onDelta, onEvent, signal }: AssistArgs): Promise<string> {
   const res = await fetch(`${BASE}/ai/assist/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json", ...(await authHeaders()) },
@@ -141,6 +170,9 @@ async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs
   const decoder = new TextDecoder();
   let buf = "";
   let source = "local-llm";
+  let sawAgent = false;
+  // After an agent error the server answers the simple way: its text arrives as plain deltas again.
+  const seen = (e: { type?: string }) => { if (e.type === "run") sawAgent = true; if (e.type === "error") sawAgent = false; };
   for (;;) {
     const { done, value } = await reader.read();
     if (done) break;
@@ -150,8 +182,15 @@ async function httpAssist({ prompt, history, page, onDelta, signal }: AssistArgs
       const line = buf.slice(0, nl).trim();
       buf = buf.slice(nl + 1);
       if (!line) continue;
-      const msg = JSON.parse(line) as { delta?: string; done?: boolean; source?: string };
-      if (msg.delta) onDelta(msg.delta);
+      const msg = JSON.parse(line) as { delta?: string; done?: boolean; source?: string; type?: string };
+      if (msg.type) {
+        seen(msg);
+        if (onEvent) onEvent(msg as AgentEvent);
+        else if (msg.type === "answer") onDelta((msg as { text: string }).text); // plain callers get the answer only
+        if (msg.type === "done" && msg.source) source = msg.source;
+        continue;
+      }
+      if (msg.delta && !sawAgent) onDelta(msg.delta); // agent runs stream text as token events instead
       if (msg.done && msg.source) source = msg.source;
     }
   }
@@ -256,6 +295,18 @@ const mockApi = {
       Promise.reject(new ApiError(501, { detail: "Promotion needs the backend." })),
     rollback: (): Promise<{ active: string }> => Promise.reject(new ApiError(501, { detail: "Rollback needs the backend." })),
   },
+  agents: {
+    overview: (_days = 7): Promise<AgentOverview> =>
+      delay({
+        scope: "tenant", days: 7,
+        totals: { runs: 0, completed: 0, fallback: 0, failed: 0, tokensIn: 0, tokensOut: 0, costUsd: 0, toolCalls: 0, subagents: 0, avgMs: null, egressRuns: 0 },
+        byModel: [], byUser: [], byDay: [], anomalies: [],
+        infosec: { egressByProvider: {}, localOnly: true, hostedModelsApproved: [], writeTools: 0, autonomousActions: 0 },
+        models: [{ name: "local-default", provider: "ollama", model: "demo", status: "approved", local: true, priceIn: 0, priceOut: 0, allowsConfidential: true, keyConfigured: null, bindings: ["default"] }],
+        recent: [],
+      }),
+    run: (_id: string): Promise<AgentRunDetail> => Promise.reject(new ApiError(501, { detail: "Run replay needs the backend." })),
+  },
   admin: { all: () => delay({ users: db.users, roles: db.roles, entities: db.legalEntities }) },
   ops: { all: () => delay({ services: db.services, jobs: db.jobs }) },
   graph: { get: () => delay({ nodes: db.graphNodes, edges: db.graphEdges }) },
@@ -353,6 +404,10 @@ const httpApi: Api = {
     train: () => post<ScorerModelInfo>("/learning/train"),
     promote: (version: string) => post<ScorerModelInfo>(`/learning/models/${encodeURIComponent(version)}/promote`),
     rollback: () => post<{ active: string }>("/learning/rollback"),
+  },
+  agents: {
+    overview: (days = 7) => http<AgentOverview>(`/agents/overview?days=${days}`),
+    run: (id: string) => http<AgentRunDetail>(`/agents/runs/${encodeURIComponent(id)}`),
   },
   admin: { all: () => http("/admin") },
   ops: { all: () => http("/ops") },

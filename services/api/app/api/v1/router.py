@@ -1,6 +1,17 @@
 from fastapi import APIRouter
 
-from app.api.v1.endpoints import ai, data, exceptions, health, learning, platform, recon, rules, workflow
+from app.api.v1.endpoints import (
+    agents,
+    ai,
+    data,
+    exceptions,
+    health,
+    learning,
+    platform,
+    recon,
+    rules,
+    workflow,
+)
 
 api_router = APIRouter()
 api_router.include_router(health.router, tags=["health"])
@@ -12,3 +23,4 @@ api_router.include_router(platform.router, tags=["platform"])
 api_router.include_router(recon.router, tags=["reconciliation"])
 api_router.include_router(workflow.router, tags=["workflow"])
 api_router.include_router(learning.router, tags=["learning"])
+api_router.include_router(agents.router, tags=["agents"])

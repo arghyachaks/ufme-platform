@@ -3,6 +3,7 @@ import { Box, IconButton, InputBase, Stack, Typography } from "@mui/material";
 import ArrowUpwardRoundedIcon from "@mui/icons-material/ArrowUpwardRounded";
 import StopRoundedIcon from "@mui/icons-material/StopRounded";
 import { api, type AssistStatus, type AssistTurn } from "../../api/services";
+import { AgentWork, answerText, applyEvent, emptyWork, type Work } from "./AgentWork";
 
 /** Small models sometimes slip into markdown/LaTeX; show clean business text regardless. */
 function tidy(t: string) {
@@ -13,7 +14,7 @@ function tidy(t: string) {
     .replace(/^\s*[*-]\s+/gm, "• ");
 }
 
-type Msg = { role: "user" | "assistant"; text: string; pending?: boolean };
+type Msg = { role: "user" | "assistant"; text: string; pending?: boolean; work?: Work };
 
 /** Live status chip: green when the private on-premise model is loaded, amber when using standard answers. */
 export function AssistStatusChip() {
@@ -51,6 +52,9 @@ export function AssistStatusChip() {
   );
 }
 
+/** An assistant message shows the agent's answer when it ran as an agent, else the streamed text. */
+const shown = (m: Msg) => (m.work && answerText(m.work) ? answerText(m.work) : m.text);
+
 export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: string; placeholder: string }) {
   const [msgs, setMsgs] = useState<Msg[]>(seed);
   const [input, setInput] = useState("");
@@ -65,7 +69,7 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
   async function send() {
     const prompt = input.trim();
     if (!prompt || busy) return;
-    const history: AssistTurn[] = msgs.filter((m) => !m.pending).map((m) => ({ role: m.role, content: m.text }));
+    const history: AssistTurn[] = msgs.filter((m) => !m.pending).map((m) => ({ role: m.role, content: shown(m) }));
     setInput("");
     setBusy(true);
     setMsgs((m) => [...m, { role: "user", text: prompt }, { role: "assistant", text: "", pending: true }]);
@@ -77,7 +81,12 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
         return [...m.slice(0, -1), { ...last, text: last.text + t }];
       });
     try {
-      await api.ai.assist({ prompt, history, page, onDelta: append, signal: ctrl.signal });
+      const onEvent = (e: Parameters<typeof applyEvent>[1]) =>
+        setMsgs((m) => {
+          const last = m[m.length - 1];
+          return [...m.slice(0, -1), { ...last, work: applyEvent(last.work ?? emptyWork(), e) }];
+        });
+      await api.ai.assist({ prompt, history, page, onDelta: append, onEvent, signal: ctrl.signal });
     } catch {
       if (!ctrl.signal.aborted) append("Sorry, I couldn't reach the assistant just now. Please try again.");
     } finally {
@@ -107,11 +116,12 @@ export function AssistChat({ seed, page, placeholder }: { seed: Msg[]; page: str
               color: "text.primary",
             }}
           >
-            {message.role === "assistant" ? tidy(message.text) : message.text}
-            {message.pending && !message.text && (
+            {message.work && <AgentWork w={message.work} />}
+            {message.role === "assistant" ? tidy(shown(message)) : message.text}
+            {message.pending && !shown(message) && !message.work && (
               <Box component="span" className="typing"><i /><i /><i /></Box>
             )}
-            {message.pending && message.text && <Box component="span" className="caret" />}
+            {message.pending && shown(message) && <Box component="span" className="caret" />}
           </Box>
         ))}
         <div ref={end} />

@@ -13,6 +13,12 @@ from app.seed import seed_demo
 from app.services import assist
 
 
+@pytest.fixture(autouse=True)
+def simple_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    """These tests cover the single-call path; the harness agent has its own tests (test_agents.py)."""
+    monkeypatch.setattr(settings, "agent_harness", False)
+
+
 @pytest.fixture
 def seeded(db: Any, client: TestClient) -> TestClient:
     seed_demo(db)

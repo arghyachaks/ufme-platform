@@ -137,6 +137,11 @@ export const navItems: NavItem[] = [
         description: "Which model scores your matches, the evidence for each candidate, drift, and rollback.",
       },
       {
+        label: "Agent operations",
+        to: "/ai/agents",
+        description: "Agent usage, models in use, anomalies, and security and model-risk evidence.",
+      },
+      {
         label: "Learning",
         to: "/ai/learning",
         description: "Review decisions become training data; a sample to review teaches the next model.",

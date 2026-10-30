@@ -55,7 +55,7 @@ def assist_stream(
     )
     db.commit()  # the stream outlives the request transaction
     return StreamingResponse(
-        assist.stream(db, tenant, body.prompt, body.history, body.page),
+        assist.stream(db, tenant, body.prompt, body.history, body.page, actor),
         media_type="application/x-ndjson",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )

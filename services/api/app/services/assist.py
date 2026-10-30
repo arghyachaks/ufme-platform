@@ -19,6 +19,7 @@ from app.core.config import settings
 from app.models.matching import MatchRun
 from app.models.tenant import Tenant
 from app.services import copilot, read
+from app.services.workflow import Actor
 
 SYSTEM = """You are ufme Assist, the assistant inside ufme, an intercompany and financial reconciliation platform.
 You help controllers, accountants and finance managers understand matches, exceptions and close readiness.
@@ -84,6 +85,25 @@ def status() -> dict[str, Any]:
 
 
 def stream(
+    db: Session,
+    tenant: Tenant,
+    prompt: str,
+    history: list[dict[str, str]],
+    page: str | None,
+    actor: Actor | None = None,
+) -> Iterator[str]:
+    """The harness agent when enabled (plan, to-dos, tools, sub-agents; see app/agents/harness.py for the
+    protocol); otherwise, or when no model can run it, a single grounded model call."""
+    if settings.agent_harness and actor is not None:
+        from app.agents import assist as agent
+
+        return agent.stream(
+            db, tenant, actor, prompt, history, page, lambda: simple_stream(db, tenant, prompt, history, page)
+        )
+    return simple_stream(db, tenant, prompt, history, page)
+
+
+def simple_stream(
     db: Session, tenant: Tenant, prompt: str, history: list[dict[str, str]], page: str | None
 ) -> Iterator[str]:
     """Yields NDJSON lines: {"delta": "..."} chunks, then {"done": true, "source": "local-llm" | "fallback"}."""
