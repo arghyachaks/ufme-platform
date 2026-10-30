@@ -135,7 +135,7 @@ function ManualMatchPageView({ d, reload }: { d: UnmatchedSet; reload: () => voi
           onPreview={(row) => setPreview({ title: row.invoice, files: row.attachments })}
         />
 
-        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }}>
             <Typography variant="h6">Match builder</Typography>
             <Box
@@ -156,7 +156,7 @@ function ManualMatchPageView({ d, reload }: { d: UnmatchedSet; reload: () => voi
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mb: 2 }}>
             <PolicyStat label="Allowed variance" value={`${allowedUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} USD`} />
             <PolicyStat label="Current variance" value={`${(variance * 100).toFixed(2)}%`} />
-            <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+            <Box sx={{ p: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
               <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>Status</Typography>
               <Box sx={{ mt: 0.5 }}>
                 <StatusPill label={policyReady ? "Within Policy" : "Out of Policy"} tone={policyReady ? "ok" : "warn"} />
@@ -248,7 +248,7 @@ function ManualMatchPageView({ d, reload }: { d: UnmatchedSet; reload: () => voi
             Documents · {preview?.title}
           </Typography>
           {preview?.files.map((file) => (
-            <Box key={file} sx={{ p: 1.25, mb: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+            <Box key={file} sx={{ p: 1.25, mb: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
               <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{file}</Typography>
               <Typography sx={{ fontSize: 11, color: "text.secondary" }}>Preview stub · invoice / GL / journal</Typography>
             </Box>
@@ -261,7 +261,7 @@ function ManualMatchPageView({ d, reload }: { d: UnmatchedSet; reload: () => voi
 
 function PolicyStat({ label, value }: { label: string; value: string }) {
   return (
-    <Box sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+    <Box sx={{ p: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
       <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>{label}</Typography>
       <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: 16 }}>{value}</Typography>
     </Box>
@@ -295,7 +295,7 @@ function TxnPicker({
   onPreview: (row: Txn) => void;
 }) {
   return (
-    <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+    <Box sx={{ bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1.5, pb: 1 }}>
         <Typography variant="h6">{title}</Typography>
         <Typography sx={{ fontSize: 12, fontWeight: 700 }}>{selected.length} · {runningTotal.toLocaleString()}</Typography>

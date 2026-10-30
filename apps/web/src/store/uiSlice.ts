@@ -7,7 +7,7 @@ type UiState = {
 };
 
 const initialState: UiState = {
-  colorMode: "dark",
+  colorMode: "light",
 };
 
 const uiSlice = createSlice({

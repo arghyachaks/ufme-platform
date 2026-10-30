@@ -118,7 +118,7 @@ export function InvestigationsPage() {
               <Divider sx={{ mb: 1.5 }} />
               <Stack direction="row" spacing={1}>
                 <Box component="input" value={note} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNote(e.target.value)} placeholder="Add an investigation note…"
-                  sx={{ flex: 1, px: 1.5, py: 1, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "transparent", color: "text.primary", font: "inherit", fontSize: 13 }} />
+                  sx={{ flex: 1, px: 1.5, py: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px", bgcolor: "transparent", color: "text.primary", font: "inherit", fontSize: 13 }} />
                 <Button variant="contained" disabled={!note} onClick={() => void addNote(current.id, current.status)}>Add</Button>
               </Stack>
             </Panel>

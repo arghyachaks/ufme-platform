@@ -140,7 +140,7 @@ function RunsPageView({ d }: { d: ReconData }) {
         </Button>
       </Stack>
 
-      <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto" }}>
+      <Box sx={{ bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px", overflow: "auto" }}>
         <Table size="small">
           <TableHead>
             <TableRow>
@@ -434,8 +434,7 @@ function TrendCard({
       }}
       sx={{
         p: 2,
-        bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)",
-        border: "1px solid",
+        bgcolor: "var(--glass-bg)",         border: "1px solid",
         borderColor: "divider",
         borderRadius: 1,
         cursor: "pointer",

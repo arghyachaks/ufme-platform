@@ -126,7 +126,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
         justifyContent="space-between"
         alignItems={{ md: "center" }}
         gap={1.5}
-        sx={{ p: 1.5, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: selectedCount ? "primary.main" : "divider", borderRadius: 1 }}
+        sx={{ p: 1.5, bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: selectedCount ? "primary.main" : "divider", borderRadius: 1 }}
       >
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
           <Typography sx={{ fontSize: 13, fontWeight: 700 }}>{selectedCount} selected</Typography>
@@ -164,7 +164,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
           }}
         />
 
-        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+        <Box sx={{ p: 2, bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
             <Typography variant="h6">Suggested match</Typography>
             <StatusPill label={`SLA: ${suggestedMatch.slaRemaining}`} tone="warn" />
@@ -210,7 +210,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
 
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.25, mb: 2 }}>
             <Metric label="Amount impact" value={suggestedMatch.amountImpact} emphasis />
-            <Box sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+            <Box sx={{ p: 1.25, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
               <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>Materiality</Typography>
               <Box sx={{ mt: 0.5 }}>
                 <StatusPill label={suggestedMatch.materiality} tone={materialityTone[suggestedMatch.materiality]} />
@@ -247,7 +247,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
           <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5 }}>Similar match analytics</Typography>
           <Stack direction="row" spacing={1} sx={{ mb: 1.25 }}>
             {suggestedMatch.similarAnalytics.map((item) => (
-              <Box key={item.label} sx={{ flex: 1, p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+              <Box key={item.label} sx={{ flex: 1, p: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
                 <Typography sx={{ fontSize: 10, color: "text.secondary" }}>{item.label}</Typography>
                 <Typography sx={{ fontFamily: 'var(--font-mono)', fontWeight: 800 }}>{item.value}</Typography>
               </Box>
@@ -353,7 +353,7 @@ function ReviewPageView({ d }: { d: ReconData }) {
 
 function Metric({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
   return (
-    <Box sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+    <Box sx={{ p: 1.25, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
       <Typography sx={{ fontSize: 10, color: "text.secondary", textTransform: "uppercase" }}>{label}</Typography>
       <Typography sx={{ fontFamily: 'var(--font-mono)', fontSize: 18, fontWeight: 800, color: emphasis ? "primary.main" : "text.primary" }}>
         {value}
@@ -398,7 +398,7 @@ function TxnList({
   onToggle?: (id: string) => void;
 }) {
   return (
-    <Box sx={{ bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)", border: "1px solid", borderColor: "divider", borderRadius: 1, overflow: "auto", maxHeight: 760 }}>
+    <Box sx={{ bgcolor: "var(--glass-bg)", border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px", overflow: "auto", maxHeight: 760 }}>
       <Typography variant="h6" sx={{ p: 1.5, pb: 1 }}>
         {title}
       </Typography>

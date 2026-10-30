@@ -26,7 +26,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
             <CountUp value={`${closeCompletion}%`} />
           </Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>Close completion</Typography>
-          <LinearProgress variant="determinate" value={closeCompletion} sx={{ height: 6, borderRadius: 99, mb: 1.5, mt: 1.5, "& .MuiLinearProgress-bar": { background: "linear-gradient(90deg, var(--brand-blue), var(--brand-indigo))" } }} />
+          <LinearProgress variant="determinate" value={closeCompletion} sx={{ height: 6, borderRadius: 99, mb: 1.5, mt: 1.5, "& .MuiLinearProgress-bar": { background: "var(--brand-indigo)" } }} />
           <Stack direction="row" spacing={1}>
             {closeDays.map((day) => (
               <Box
@@ -258,7 +258,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
         <Panel title="Controls at Risk">
           <Stack spacing={1}>
             {controlsAtRisk.map((item) => (
-              <Stack key={item.label} direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1, border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
+              <Stack key={item.label} direction="row" justifyContent="space-between" alignItems="center" sx={{ p: 1, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px" }}>
                 <Typography sx={{ fontSize: 13 }}>{item.label}</Typography>
                 <StatusPill label={String(item.count)} tone={item.tone} />
               </Stack>
@@ -281,7 +281,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
           </Stack>
           <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 2 }}>
             {agents.map((agent) => (
-              <Box key={agent.name} sx={{ p: 1.25, border: "1px solid", borderColor: "divider", borderRadius: 1, bgcolor: "var(--bg-muted)" }}>
+              <Box key={agent.name} sx={{ p: 1.25, border: "1px solid", borderColor: "var(--glass-border)", borderRadius: "2px", bgcolor: "var(--bg-muted)" }}>
                 <Typography sx={{ fontSize: 12, fontWeight: 700, color: "primary.main", mb: 0.75 }}>{agent.name}</Typography>
                 <Metric label="Workload" value={agent.workload} />
                 <Metric label="Precision" value={agent.precision} />

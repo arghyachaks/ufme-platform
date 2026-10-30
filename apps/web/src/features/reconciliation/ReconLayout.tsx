@@ -33,8 +33,7 @@ function ReconLayoutView({ d }: { d: ReconData }) {
         gap={2}
         sx={{
           p: 2,
-          bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)",
-          border: "1px solid",
+          bgcolor: "var(--glass-bg)",           border: "1px solid",
           borderColor: "divider",
           borderRadius: 1,
         }}
@@ -92,8 +91,7 @@ function ReconRecoBarView({ d }: { d: ReconData }) {
       sx={{
         p: 2.25,
         borderRadius: 1,
-        bgcolor: "var(--glass-bg)", backdropFilter: "blur(18px) saturate(150%)",
-        border: "1px solid",
+        bgcolor: "var(--glass-bg)",         border: "1px solid",
         borderColor: "primary.main",
         boxShadow: "0 0 0 3px var(--indigo-soft)",
       }}

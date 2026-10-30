@@ -9,10 +9,9 @@ import { PageHeader } from "./PageHeader";
 export const mono = { fontFamily: 'var(--font-mono)' } as const;
 export const glass = {
   bgcolor: "var(--glass-bg)",
-  backdropFilter: "blur(18px) saturate(150%)",
-  border: "1px solid",
-  borderColor: "divider",
-  borderRadius: 1,
+    border: "1px solid",
+  borderColor: "var(--glass-border)",
+  borderRadius: "2px",
 } as const;
 
 export const severityTone: Record<Severity, Tone> = { Critical: "crit", High: "crit", Medium: "warn", Low: "ok" };
@@ -42,20 +41,27 @@ export function Page({ title, description, actions, loading, children }: {
   );
 }
 
-const toneColor: Record<Tone, string> = { ok: "success.main", warn: "warning.main", crit: "error.main" };
+/** Flat pastel fills (the editorial system's cards): status tones keep their meaning, neutral cards rotate. */
+const toneFill: Record<Tone, string> = { ok: "var(--emerald-soft)", warn: "var(--amber-soft)", crit: "var(--crimson-soft)" };
+const neutralFills = ["var(--blue-soft)", "var(--lavender-soft)", "var(--bg-muted)", "var(--indigo-soft)"];
 
 export function StatGrid({ items }: { items: Kpi[] }) {
   return (
-    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", lg: `repeat(${Math.min(items.length, 5)}, 1fr)` }, gap: 2 }}>
-      {items.map((kpi) => (
-        <Box key={kpi.label} className="glass card-enter" sx={{ p: 1.75, borderRadius: 2 }}>
-          <Typography sx={{ fontSize: 11, color: "text.secondary", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 600 }}>
-            {kpi.label}
-          </Typography>
-          <Typography sx={{ ...mono, fontSize: 22, fontWeight: 700, color: kpi.tone ? toneColor[kpi.tone] : "text.primary" }}>
+    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr", lg: `repeat(${Math.min(items.length, 5)}, minmax(0, 1fr))` }, gap: 2 }}>
+      {items.map((kpi, i) => (
+        <Box
+          key={kpi.label}
+          className="card-enter"
+          sx={{ p: 3, borderRadius: "2px", bgcolor: kpi.tone ? toneFill[kpi.tone] : neutralFills[i % neutralFills.length], display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}
+        >
+          <Typography sx={{ fontSize: 14, color: "text.primary" }}>{kpi.label}</Typography>
+          <Typography
+            className="display"
+            sx={{ fontSize: "clamp(30px, 3vw, 46px)", lineHeight: 1, color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+          >
             {kpi.value}
           </Typography>
-          {kpi.hint ? <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{kpi.hint}</Typography> : null}
+          {kpi.hint ? <Typography sx={{ ...mono, fontSize: 12.5, color: "text.secondary" }}>{kpi.hint}</Typography> : null}
         </Box>
       ))}
     </Box>
