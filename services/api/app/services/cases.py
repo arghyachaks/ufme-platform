@@ -1,4 +1,4 @@
-"""Stage 4: case management and exception resolution. Every change is audited with before/after state."""
+"""Case management and exception resolution. Every change is audited with before/after state."""
 
 from __future__ import annotations
 

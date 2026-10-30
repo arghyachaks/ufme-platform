@@ -26,7 +26,7 @@ def graph(db: DbSession, tenant: CurrentTenant) -> Any:
 
 @router.get("/workspace/recon")
 def workspace_recon(db: DbSession, tenant: CurrentTenant) -> Any:
-    """Dashboard/Reconciliation screens' combined payload until Stage 3-4 split it into runs, proposals, approvals."""
+    """Dashboard/Reconciliation screens' combined payload."""
     return matching_read.workspace(db, tenant, read.snapshot(db, tenant, "workspace.recon"))
 
 

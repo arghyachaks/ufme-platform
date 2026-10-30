@@ -1,4 +1,4 @@
-"""Tenant adaptation (Stage 3f): learn from reviewer decisions without retraining from scratch.
+"""Tenant adaptation: learn from reviewer decisions without retraining from scratch.
 
 A full retrain takes ~25 minutes and needs the synthetic corpus. A tenant's labels say something narrower: "on
 our ledgers, pairs like this are (not) the same transaction". So the shipped scorer is kept as it is and a small

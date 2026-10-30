@@ -1,4 +1,4 @@
-"""Stage 4 endpoints: approvals, manual matches, sign-off, cases, exception status and acting user."""
+"""Workflow endpoints: approvals, manual matches, sign-off, cases, exception status and acting user."""
 
 from datetime import UTC, datetime
 from typing import Annotated, Any, Literal

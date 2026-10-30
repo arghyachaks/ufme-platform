@@ -1,4 +1,4 @@
-"""Stage 2 ingestion: fx_rate, ingestion_batch, ledger_txn, quarantined_row; dq_issue status + batch
+"""Ingestion: fx_rate, ingestion_batch, ledger_txn, quarantined_row; dq_issue status + batch
 
 Revision ID: 0003
 Revises: 0002

@@ -1,10 +1,10 @@
-"""Train the learned pair scorer (Stage 3d) and write app/engines/matching/models/scorer.json.
+"""Train the learned pair scorer and write app/engines/matching/models/scorer.json.
 
     python -m app.engines.matching.train            # needs scikit-learn (dev only); runtime needs only numpy
 
 Data: synthetic ledgers from the scenario generator with their own seeds. The golden benchmark sets
 (seeds 101/202/303) are never used for training or calibration, so the gate stays an honest holdout.
-Later (Stage 3f) reviewer labels from match_label join the same pipeline.
+Reviewer labels from match_label join the same pipeline (see adapt.py).
 
 Steps: features for every candidate pair → monotonic gradient-boosted trees → isotonic calibration on a separate
 ledger → risk-controlled auto threshold: the lowest probability at which the 95% upper bound of the error rate

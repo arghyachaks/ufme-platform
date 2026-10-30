@@ -1,4 +1,4 @@
-"""Stage 4 workflow: approval_request, period_signoff
+"""Workflow: approval_request, period_signoff
 
 Revision ID: 0005
 Revises: 0004

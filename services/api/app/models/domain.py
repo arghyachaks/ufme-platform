@@ -1,4 +1,4 @@
-"""Stage 1 domain tables: exceptions, cases, rules, policies, data sources, DQ issues, controls, snapshots."""
+"""Domain tables: exceptions, cases, rules, policies, data sources, DQ issues, controls, snapshots."""
 
 import uuid
 from datetime import date, datetime

@@ -2,7 +2,7 @@
 
 The model never touches the database. We build a compact, read-only fact sheet from the tenant's current data,
 put it in the system prompt, and stream the model's answer back. If Ollama is unreachable the deterministic
-Stage 1 answers are used, so demos never break.
+built-in standard answers are used, so demos never break.
 """
 
 from __future__ import annotations

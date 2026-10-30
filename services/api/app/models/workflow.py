@@ -1,4 +1,4 @@
-"""Stage 4: human-in-the-loop workflow — approval requests and period sign-off."""
+"""Human-in-the-loop workflow — approval requests and period sign-off."""
 
 import uuid
 from datetime import datetime

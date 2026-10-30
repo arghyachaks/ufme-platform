@@ -65,7 +65,7 @@ def snapshot_payloads(fx: dict[str, Any]) -> dict[str, Any]:
 
 
 def sync_rule_definitions(db: Session, tid: Any, core: dict[str, Any]) -> None:
-    """Engine-executable rule definitions (Stage 3b), also for tenants seeded before they existed."""
+    """Engine-executable rule definitions, also for tenants seeded before they existed."""
     db.flush()
     for rule in db.scalars(
         select(MatchRule).where(MatchRule.tenant_id == tid, MatchRule.definition.is_(None))

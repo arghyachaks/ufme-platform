@@ -1,4 +1,4 @@
-"""Tenant isolation in the database (Stage 5): Postgres row-level security.
+"""Tenant isolation in the database: Postgres row-level security.
 
 Every table with a `tenant_id` column gets a policy: a row is visible (and writable) only when its tenant_id equals
 the transaction's `app.tenant_id` setting. API requests run their transactions as the restricted role `ufme_app`
@@ -7,7 +7,7 @@ other tenants instead of leaking them. Background jobs, seeding and migrations k
 across tenants by design and are not reachable by users.
 
 Locally the database user is a superuser (superusers bypass RLS), which is exactly why requests switch role.
-In the cloud the owner should be a plain role and the same policies apply (Stage 7).
+In the cloud the owner should be a plain role and the same policies apply.
 """
 
 from __future__ import annotations

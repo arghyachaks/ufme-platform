@@ -1,4 +1,4 @@
-"""Learning loop (Stage 3f): reviewer decisions -> tenant model -> gated promotion -> drift."""
+"""Learning loop: reviewer decisions -> tenant model -> gated promotion -> drift."""
 
 from typing import Any
 

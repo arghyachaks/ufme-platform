@@ -1,4 +1,4 @@
-"""Stage 2: ingestion batches, ledger transactions, quarantined rows and FX rates."""
+"""Ingestion batches, ledger transactions, quarantined rows and FX rates."""
 
 import uuid
 from datetime import date, datetime
@@ -52,7 +52,7 @@ class IngestionBatch(TenantScoped, Base):
 
 
 class LedgerTxn(UUIDPk, Timestamps, Base):
-    """A normalized ledger line. Immutable once loaded; matching (Stage 3) references it."""
+    """A normalized ledger line. Immutable once loaded; matching references it."""
 
     __tablename__ = "ledger_txn"
     __table_args__ = (

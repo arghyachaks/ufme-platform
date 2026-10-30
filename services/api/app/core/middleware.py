@@ -55,7 +55,7 @@ SECURITY_HEADERS = {
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
-    """Conservative response headers for an API that carries financial data (Stage 5)."""
+    """Conservative response headers for an API that carries financial data."""
 
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         response = await call_next(request)

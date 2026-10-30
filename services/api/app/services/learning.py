@@ -1,4 +1,4 @@
-"""Learning loop (Stage 3f): reviewer decisions -> tenant model -> gated, audited promotion -> drift watch.
+"""Learning loop: reviewer decisions -> tenant model -> gated, audited promotion -> drift watch.
 
 1. Labels. Every decision on a proposal (review accept/reject, approval, approval rejection, manual match)
    is stored with the scorer's feature row at that moment, so training never depends on re-running a ledger.

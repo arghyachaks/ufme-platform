@@ -272,7 +272,7 @@ class DecisionIn(CamelModel):
     reason: str | None = None
 
 
-# ---------------------------------------------------------------- Stage 4 workflow
+# ---------------------------------------------------------------- workflow
 
 
 class ActorOut(CamelModel):

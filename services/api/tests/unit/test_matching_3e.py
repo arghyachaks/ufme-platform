@@ -1,4 +1,4 @@
-"""Stage 3e: text evidence, duplicate-twin resolution, residual causes, and the advisory local LLM judge."""
+"""Text evidence, duplicate-twin resolution, residual causes, and the advisory local LLM judge."""
 
 import json
 from datetime import date

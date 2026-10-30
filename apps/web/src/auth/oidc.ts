@@ -1,5 +1,5 @@
 /**
- * Sign-in (Stage 5): OpenID Connect Authorization Code flow with PKCE (S256), against any standard provider
+ * Sign-in: OpenID Connect Authorization Code flow with PKCE (S256), against any standard provider
  * (Keycloak locally). No client secret in the browser; tokens live in memory and sessionStorage (cleared when
  * the tab closes), never localStorage. VITE_AUTH=dev keeps the demo "acting as" switcher instead.
  */

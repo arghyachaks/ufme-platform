@@ -25,7 +25,7 @@ function ThemedApp() {
 
 const root = createRoot(document.getElementById("root")!);
 
-// Stage 5: finish or start OIDC sign-in before anything calls the API (no-op in dev mode).
+// Finish or start OIDC sign-in before anything calls the API (no-op in dev mode).
 initAuth()
   .then(() =>
     root.render(

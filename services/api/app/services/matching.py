@@ -291,7 +291,7 @@ def _period(lines: list[Line]) -> str:
 def decide(
     db: Session, tenant: Tenant, code: str, action: str, actor: Actor, reason: str | None = None
 ) -> MatchGroup:
-    """Reject closes the proposal. Accept submits it for approval under the matrix (Stage 4): the lines stay
+    """Reject closes the proposal. Accept submits it for approval under the matrix: the lines stay
     locked while it waits, and the group becomes `accepted` only when the approval completes."""
     group = db.scalar(select(MatchGroup).where(MatchGroup.tenant_id == tenant.id, MatchGroup.code == code))
     if group is None:

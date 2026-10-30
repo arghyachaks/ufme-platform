@@ -1,4 +1,4 @@
-"""Stage 3f learning loop: label outcomes + feature vectors on match_label, scorer_model registry
+"""Learning loop: label outcomes + feature vectors on match_label, scorer_model registry
 
 Revision ID: 0006
 Revises: 0005

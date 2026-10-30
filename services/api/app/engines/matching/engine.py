@@ -1,7 +1,7 @@
-"""Matching engine v1 (Stage 3b): candidates → pair features → rules + interpretable scorer → global 1:1 assignment.
+"""Matching engine v1: candidates → pair features → rules + interpretable scorer → global 1:1 assignment.
 
-Scoring is an explicit log-odds model so every point of confidence is explainable. Stage 3d replaces the
-hand-set weights with a calibrated, monotonic GBDT trained on labels; the interface stays the same.
+Scoring is an explicit log-odds model so every point of confidence is explainable. The learned scorer
+(learned.py) replaces the hand-set weights with a calibrated, monotonic GBDT; the interface stays the same.
 """
 
 import math
@@ -366,7 +366,7 @@ def _run_pair(
                 (o.b.id if o.a.id == pr.a.id else o.a.id, round(o.probability, 4)) for o in runner_up[:3]
             ]
 
-    # Stage 3c: groups (1:M, M:1, M:M, reversals) over everything not auto-matched 1:1.
+    # Groups (1:M, M:1, M:M, reversals) over everything not auto-matched 1:1.
     auto_ids = {i for p in predictions[pair_start:] if p.decision == "auto" for i in p.line_ids}
     open_lines = [x.line for x in (*side_a, *side_b) if x.line.id not in auto_ids]
     built = grp.build(open_lines)

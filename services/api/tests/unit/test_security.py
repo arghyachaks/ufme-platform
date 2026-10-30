@@ -1,4 +1,4 @@
-"""Stage 5: OIDC token validation, authorization matrix (role x endpoint x entity), tenant isolation (Postgres RLS),
+"""Security: OIDC token validation, authorization matrix (role x endpoint x entity), tenant isolation (Postgres RLS),
 tamper-evident audit chain, signed evidence packages, security headers."""
 
 import io

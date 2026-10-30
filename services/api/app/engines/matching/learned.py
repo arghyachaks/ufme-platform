@@ -1,4 +1,4 @@
-"""Learned pair scorer (Stage 3d): monotonic gradient-boosted trees + isotonic calibration + a risk-controlled
+"""Learned pair scorer: monotonic gradient-boosted trees + isotonic calibration + a risk-controlled
 auto-match threshold.
 
 The model is trained offline (`python -m app.engines.matching.train`) and shipped as plain JSON arrays, so the

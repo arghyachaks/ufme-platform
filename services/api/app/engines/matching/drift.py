@@ -1,4 +1,4 @@
-"""Drift monitoring (Stage 3f): is the model still seeing the kind of pairs it was calibrated on?
+"""Drift monitoring: is the model still seeing the kind of pairs it was calibrated on?
 
 Each model carries a reference profile of the pairs it scored on its calibration ledger (decile edges and the
 share in each bin, per feature and on the score). Each run is compared with it by the population stability

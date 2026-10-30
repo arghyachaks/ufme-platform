@@ -1,4 +1,4 @@
-"""Evidence package (Stage 5, control AUD-02): what an auditor takes away, provably unaltered.
+"""Evidence package (control AUD-02): what an auditor takes away, provably unaltered.
 
 A zip with the audit trail and control results as CSV, plus `manifest.json` (tenant, period, who generated it,
 the SHA-256 of every file, and the audit chain's verification result and head hash) and `manifest.sig`, an

@@ -31,7 +31,7 @@ def list_scenarios(db: DbSession, tenant: CurrentTenant) -> list[ScenarioOut]:
 
 @router.post("/rules/simulations/{key}/run")
 def run_simulation(key: str, db: DbSession, tenant: CurrentTenant) -> Any:
-    """Stage 1 returns the recorded result; Stage 3 runs the matching engine against the dataset."""
+    """Runs the matching engine against the dataset when available, else returns the recorded result."""
     results: dict[str, Any] = read.snapshot(db, tenant, "simulation.results")
     if key not in results:
         raise NotFoundError(f"Unknown simulation scenario '{key}'.", code="scenario_not_found")

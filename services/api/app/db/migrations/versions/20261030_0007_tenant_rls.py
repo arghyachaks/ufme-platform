@@ -1,4 +1,4 @@
-"""Stage 5 tenant isolation: restricted app role + row-level security on every tenant table
+"""Tenant isolation: restricted app role + row-level security on every tenant table
 
 Revision ID: 0007
 Revises: 0006

@@ -1,4 +1,4 @@
-"""Stage 3a: the benchmark itself must be trustworthy before it judges any engine."""
+"""The benchmark itself must be trustworthy before it judges any engine."""
 
 import json
 import random

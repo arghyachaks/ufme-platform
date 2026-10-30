@@ -20,7 +20,7 @@ def api(
     db: Session, client: TestClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> Iterator[TestClient]:
     seed_demo(db, now=NOW)
-    # These tests are about matching, not entity scope: act as a user who covers every entity (Stage 5 scoping
+    # These tests are about matching, not entity scope: act as a user who covers every entity (entity scoping
     # is covered in test_security.py).
     monkeypatch.setattr(settings, "demo_user", "liam.walsh@example.com")
     monkeypatch.setattr(settings, "ingest_inline", True)
@@ -65,7 +65,7 @@ def test_accept_and_reject_become_labels(api: TestClient, db: Session) -> None:
         api.post(f"/api/v1/recon/proposals/{a}/accept", json={"reason": "confirmed with UK02"}).json()[
             "status"
         ]
-        == "pending_approval"  # accepted suggestions go to the approval queue (Stage 4)
+        == "pending_approval"  # accepted suggestions go to the approval queue
     )
     assert api.post(f"/api/v1/recon/proposals/{b}/reject").json()["status"] == "rejected"
     again = api.post(f"/api/v1/recon/proposals/{a}/reject")

@@ -1,4 +1,4 @@
-"""Stage 4 end to end: ingest → run → review → approve (matrix, SoD, dual control) → controls → sign-off."""
+"""Workflow end to end: ingest → run → review → approve (matrix, SoD, dual control) → controls → sign-off."""
 
 from collections.abc import Iterator
 from datetime import UTC, datetime

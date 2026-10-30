@@ -1,4 +1,4 @@
-"""Stage 3c: 1:M, M:1 and M:M groups from reference families, same-side reversals, and their precedence."""
+"""Groups: 1:M, M:1 and M:M groups from reference families, same-side reversals, and their precedence."""
 
 from datetime import date
 

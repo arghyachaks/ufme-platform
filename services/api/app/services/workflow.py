@@ -1,4 +1,4 @@
-"""Stage 4 workflow: approval matrix, segregation of duties, manual matches, sign-off and data-driven controls.
+"""Workflow: approval matrix, segregation of duties, manual matches, sign-off and data-driven controls.
 
 Policy (seeded P-01..P-03, enforced here on the server, never only in the UI):
 - Approval matrix: < 50K Manager, 50K to 1M Controller, > 1M Finance Director.
@@ -67,7 +67,7 @@ class Actor:
 
 
 def resolve_actor(db: Session, tenant: Tenant, email: str | None) -> Actor:
-    """Until SSO (Stage 5) the acting user comes from the X-Ufme-User header, defaulting to the demo analyst."""
+    """Until SSO the acting user comes from the X-Ufme-User header, defaulting to the demo analyst."""
     email = (email or settings.demo_user).strip().lower()
     row = db.execute(
         select(AppUser, Role.name, UserRole.entity_codes)
@@ -81,7 +81,7 @@ def resolve_actor(db: Session, tenant: Tenant, email: str | None) -> Actor:
     return Actor(email=user.email, name=user.display_name, role=role, entities=list(entities or []))
 
 
-# ---------------------------------------------------------------- authorization (Stage 5)
+# ---------------------------------------------------------------- authorization
 
 
 def entity_clause(actor: Actor | None, column: Any) -> ColumnElement[bool] | None:

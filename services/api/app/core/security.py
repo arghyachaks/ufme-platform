@@ -1,4 +1,4 @@
-"""Authentication (Stage 5): who is calling, and for which tenant.
+"""Authentication: who is calling, and for which tenant.
 
 Two modes, chosen by `settings.auth_mode`:
 - oidc: every call carries `Authorization: Bearer <access token>` issued by the identity provider (Keycloak in

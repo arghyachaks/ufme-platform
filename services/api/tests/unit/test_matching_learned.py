@@ -1,4 +1,4 @@
-"""Stage 3d: learned scorer artifact, monotonic guarantees, risk-controlled threshold, explanations, fallback."""
+"""Learned scorer artifact, monotonic guarantees, risk-controlled threshold, explanations, fallback."""
 
 import json
 

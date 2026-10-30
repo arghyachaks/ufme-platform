@@ -1,4 +1,4 @@
-"""Does the learning loop learn? (Stage 3f)
+"""Does the learning loop learn?
 
     python -m app.engines.benchmark.learning_eval --budget 300 --out tmp/learning_eval.json
 

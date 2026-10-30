@@ -34,5 +34,5 @@ def get_db() -> Iterator[Session]:
         db.close()
 
 
-# Registers the row-level-security hook on every session (Stage 5); see app/db/tenancy.py.
+# Registers the row-level-security hook on every session; see app/db/tenancy.py.
 from app.db import tenancy as _tenancy  # noqa: E402,F401

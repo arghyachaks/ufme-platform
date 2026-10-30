@@ -1,4 +1,4 @@
-"""Stage 3f: reviewer labels, tenant adapter, promotion gate (four eyes, MDL-01), rollback, drift, active learning."""
+"""Reviewer labels, tenant adapter, promotion gate (four eyes, MDL-01), rollback, drift, active learning."""
 
 import json
 from collections.abc import Iterator

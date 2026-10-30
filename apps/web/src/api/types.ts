@@ -211,7 +211,7 @@ export type MatchProposal = {
   lines: { id: string; side: "A" | "B"; entity: string; counterparty: string; amount: number; currency: string; amountUsd: number | null; valueDate: string; reference: string | null; description: string | null }[];
 };
 
-// ---------------------------------------------------------------- Stage 4 workflow
+// ---------------------------------------------------------------- workflow
 
 export type Actor = { email: string; name: string; role: string; entities: string[] };
 
@@ -272,7 +272,7 @@ export type UnmatchedTxn = {
 };
 export type UnmatchedSet = { pair: string | null; sideA: UnmatchedTxn[]; sideB: UnmatchedTxn[] };
 
-/* ---------------- Stage 3f: learning loop ---------------- */
+/* ---------------- learning loop ---------------- */
 
 export type GateCheck = { name: string; ok: boolean; detail: string };
 export type HoldoutMetrics = {

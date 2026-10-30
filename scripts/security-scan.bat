@@ -1,5 +1,5 @@
 @echo off
-rem Stage 5 exit criterion: dependency and container scans with no high/critical findings.
+rem Release check: dependency and container scans with no high/critical findings.
 rem Open-source scanners only: pip-audit (PyPA), npm audit, Trivy (Aqua Security). Log: tmp\security-scan.log
 setlocal
 cd /d "%~dp0.."

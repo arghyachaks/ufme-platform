@@ -1,4 +1,4 @@
-"""Stage 3: matching runs, match groups (proposals), members, and reviewer labels."""
+"""Matching runs, match groups (proposals), members, and reviewer labels."""
 
 import uuid
 from datetime import datetime
@@ -75,7 +75,7 @@ class MatchMember(UUIDPk, Timestamps, Base):
 
 
 class MatchLabel(UUIDPk, Timestamps, Base):
-    """Reviewer outcome on a proposal — training data for the learning loop (Stage 3f) and an audit record."""
+    """Reviewer outcome on a proposal — training data for the learning loop and an audit record."""
 
     __tablename__ = "match_label"
 

@@ -54,7 +54,7 @@ class Rule:
         return not self.any_of or any(all(OPS[op](features.get(f), v) for f, op, v in g) for g in self.any_of)
 
 
-# Built-in definitions, mirroring the seeded rules R-001…R-004 (R-005/R-006 are many-to-many, Stage 3c).
+# Built-in definitions, mirroring the seeded rules R-001…R-004 (R-005/R-006 are many-to-many).
 DEFAULT_DEFINITIONS: dict[str, dict[str, Any]] = {
     "R-001": {
         "all": [

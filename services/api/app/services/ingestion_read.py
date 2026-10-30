@@ -194,7 +194,7 @@ def lineage(db: Session, tenant: Tenant, code: str) -> list[dict[str, Any]]:
             "stage": "Candidates",
             "system": "Candidate Generation",
             "at": "—",
-            "detail": "Awaiting the first matching run (Stage 3)",
+            "detail": "Awaiting the first matching run",
             "status": "warn",
         },
     ]

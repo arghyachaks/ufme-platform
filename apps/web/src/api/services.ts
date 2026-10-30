@@ -75,7 +75,7 @@ const actorHeader = (): Record<string, string> => {
   return email ? { "X-Ufme-User": email } : {};
 };
 
-/** Stage 5: a Bearer token from the signed-in session (OIDC), or the demo acting-as header (dev). */
+/** A Bearer token from the signed-in session (OIDC), or the demo acting-as header (dev). */
 async function authHeaders(): Promise<Record<string, string>> {
   if (AUTH_MODE !== "oidc") return actorHeader();
   const token = await accessToken();
@@ -474,7 +474,7 @@ const httpApi: Api = {
 
 export const api: Api = USE_MOCKS ? mockApi : httpApi;
 
-// Dashboard and Reconciliation screens (one payload each until Stage 3-4 split them per endpoint).
+// Dashboard and Reconciliation screens (one payload each).
 export const workspaceApi = USE_MOCKS
   ? {
       recon: () => delay({ ...reconMock } as ReconData, 150),

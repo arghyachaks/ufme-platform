@@ -1,4 +1,4 @@
-"""Group construction (L4, Stage 3c): 1:M, M:1 and M:M matches, plus same-side reversal pairs.
+"""Group construction (L4): 1:M, M:1 and M:M matches, plus same-side reversal pairs.
 
 Runs after the 1:1 assignment on what is still open. Two evidence paths, both reference-led so precision holds:
 - Reference families: raw references reduced to a root ("IC/US01/UK02/1023/2" -> "ICUS01UK021023",

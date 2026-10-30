@@ -1,4 +1,4 @@
-"""Copilot answers. Stage 1: deterministic answers grounded in demo records. Stage 6 replaces this with an LLM
+"""Copilot answers: deterministic answers grounded in demo records (the fallback when no LLM is available).
 that calls the read APIs as tools, keeping the same request/response contract."""
 
 from app.schemas.read import ChatMessageOut

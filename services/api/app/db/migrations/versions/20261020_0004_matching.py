@@ -1,4 +1,4 @@
-"""Stage 3b matching: match_run, match_group, match_member, match_label; match_rule.definition
+"""Matching: match_run, match_group, match_member, match_label; match_rule.definition
 
 Revision ID: 0004
 Revises: 0003

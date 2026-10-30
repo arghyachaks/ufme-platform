@@ -1,4 +1,4 @@
-"""Stage 1 domain tables: exceptions, cases, comments, rules, policies, sources, DQ issues, controls, snapshots
+"""Domain tables: exceptions, cases, comments, rules, policies, sources, DQ issues, controls, snapshots
 
 Revision ID: 0002
 Revises: 0001
