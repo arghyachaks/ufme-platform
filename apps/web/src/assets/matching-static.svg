@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 120" role="img" aria-label="Two ledgers with matched lines">
+  <rect x="8" y="10" width="96" height="100" rx="2" fill="#ffffff" stroke="#00063d" stroke-width="1.5"/>
+  <rect x="18" y="20" width="30" height="5" fill="#00063d"/>
+  <rect x="18" y="34" width="76" height="14" fill="#d2ffc1"/><rect x="22" y="39" width="34" height="4" fill="#00063d"/>
+  <rect x="18" y="54" width="76" height="14" fill="#d2ffc1"/><rect x="22" y="59" width="26" height="4" fill="#00063d"/>
+  <rect x="18" y="74" width="76" height="14" fill="#d2ffc1"/><rect x="22" y="79" width="38" height="4" fill="#00063d"/>
+  <rect x="216" y="10" width="96" height="100" rx="2" fill="#ffffff" stroke="#00063d" stroke-width="1.5"/>
+  <rect x="226" y="20" width="30" height="5" fill="#00063d"/>
+  <rect x="226" y="34" width="76" height="14" fill="#d2ffc1"/><rect x="230" y="39" width="34" height="4" fill="#00063d"/>
+  <rect x="226" y="54" width="76" height="14" fill="#d2ffc1"/><rect x="230" y="59" width="26" height="4" fill="#00063d"/>
+  <rect x="226" y="74" width="76" height="14" fill="#d2ffc1"/><rect x="230" y="79" width="38" height="4" fill="#00063d"/>
+  <path d="M94 41 C 150 41, 170 61, 226 61" fill="none" stroke="#0a4733" stroke-width="2"/>
+  <path d="M94 61 C 150 61, 170 41, 226 41" fill="none" stroke="#0a4733" stroke-width="2"/>
+  <path d="M94 81 C 150 81, 170 81, 226 81" fill="none" stroke="#0a4733" stroke-width="2"/>
+  <rect x="154" y="45" width="10" height="10" fill="#0a4733"/>
+  <rect x="154" y="76" width="10" height="10" fill="#0a4733"/>
+</svg>

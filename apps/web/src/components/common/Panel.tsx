@@ -25,12 +25,12 @@ export function Panel({
         justifyContent="space-between"
         alignItems="center"
         gap={2}
-        sx={{ px: 3, py: 2, borderBottom: "1px solid var(--glass-border)", flexWrap: "wrap" }}
+        sx={{ px: 2, py: 1, borderBottom: "1px solid var(--glass-border)", flexWrap: "wrap" }}
       >
-        <Typography variant="h6" component="h2" sx={{ fontSize: 24 }}>{title}</Typography>
+        <Typography variant="h6" component="h2" sx={{ fontSize: 19 }}>{title}</Typography>
         {action}
       </Stack>
-      <Box sx={{ minWidth: 0, overflowX: "auto", p: 3 }}>{children}</Box>
+      <Box sx={{ minWidth: 0, overflowX: "auto", p: 2 }}>{children}</Box>
     </Box>
   );
 }

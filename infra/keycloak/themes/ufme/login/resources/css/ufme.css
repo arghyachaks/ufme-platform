@@ -155,3 +155,11 @@ input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #ffffff inset !important
 }
 .pf-v5-c-form-control:hover::before { border-color: var(--ufme-ink) !important; }
 .pf-v5-c-form-control:focus-within::before { border: 2px solid var(--ufme-green) !important; }
+
+/* Visible text cursor in every field (the password field hid it). */
+.pf-v5-c-form-control > input,
+.pf-v5-c-form-control input[type="password"],
+.pf-v5-c-form-control input[type="text"] {
+  caret-color: var(--ufme-ink) !important;
+  -webkit-text-fill-color: var(--ufme-ink) !important;
+}

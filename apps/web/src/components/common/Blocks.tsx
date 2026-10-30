@@ -52,12 +52,12 @@ export function StatGrid({ items }: { items: Kpi[] }) {
         <Box
           key={kpi.label}
           className="card-enter"
-          sx={{ p: 3, borderRadius: "2px", bgcolor: kpi.tone ? toneFill[kpi.tone] : neutralFills[i % neutralFills.length], display: "flex", flexDirection: "column", gap: 1, minWidth: 0 }}
+          sx={{ px: 2, py: 1.5, borderRadius: "2px", bgcolor: kpi.tone ? toneFill[kpi.tone] : neutralFills[i % neutralFills.length], display: "flex", flexDirection: "column", gap: 0.5, minWidth: 0 }}
         >
           <Typography sx={{ fontSize: 14, color: "text.primary" }}>{kpi.label}</Typography>
           <Typography
             className="display"
-            sx={{ fontSize: "clamp(30px, 3vw, 46px)", lineHeight: 1, color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            sx={{ fontSize: "clamp(24px, 2.2vw, 32px)", lineHeight: 1, color: "text.primary", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
           >
             {kpi.value}
           </Typography>

@@ -382,3 +382,11 @@ button, a, .MuiButtonBase-root {
 @keyframes typing { 0%, 80%, 100% { opacity: 0.25; transform: translateY(0); } 40% { opacity: 1; transform: translateY(-3px); } }
 .caret { display: inline-block; width: 7px; height: 13px; margin-left: 2px; vertical-align: -2px; background: var(--brand-indigo); animation: blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity: 0; } }
+
+/* Screens where data matters more than motion (the Dashboard): nothing slides, fades or counts up. */
+.page-enter > .no-motion,
+.no-motion,
+.no-motion * {
+  animation: none !important;
+  transition: none !important;
+}

@@ -1,5 +1,4 @@
-import { CountUp } from "../../components/common/Motion";
-import matchingArt from "../../assets/matching.svg";
+import matchingArt from "../../assets/matching-static.svg";
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Box, Button, LinearProgress, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
@@ -20,48 +19,42 @@ function DashboardPageView({ d }: { d: DashboardData }) {
   const maxTrend = Math.max(...trend);
 
   return (
-    <Stack spacing={3}>
+    <Stack spacing={3} className="no-motion">
       <Box
         component="section"
         aria-label="Today"
         sx={{
           bgcolor: "var(--emerald-soft)",
           borderRadius: "2px",
-          display: "grid",
-          gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "minmax(0, 1.1fr) minmax(0, 1fr)" },
+          display: "flex",
           alignItems: "center",
-          gap: 3,
-          px: { xs: 3, md: 6 },
-          py: { xs: 4, md: 5 },
-          overflow: "hidden",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          px: { xs: 2.5, md: 4 },
+          py: 2,
         }}
       >
-        <Stack spacing={2.5} sx={{ minWidth: 0 }}>
-          <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        <Stack spacing={0.75} sx={{ minWidth: 0, flex: "1 1 420px" }}>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: 12, letterSpacing: "0.04em", textTransform: "uppercase" }}>
             Q3-2026 close · {closeCompletion}% complete
           </Typography>
-          <Typography variant="h4" component="h1" sx={{ fontSize: "clamp(38px, 4vw, 64px)", maxWidth: 640 }}>
+          <Typography variant="h4" component="h1" sx={{ fontSize: "clamp(24px, 2.2vw, 32px)" }}>
             Every intercompany line, matched and explained.
           </Typography>
-          <Typography sx={{ fontSize: 17, color: "text.secondary", maxWidth: 540 }}>
-            Review what the engine couldn&apos;t prove on its own; everything else is already reconciled and in the audit trail.
-          </Typography>
+        </Stack>
+        <Stack direction="row" alignItems="center" gap={3}>
+          <Box component="img" src={matchingArt} alt="" sx={{ height: 72, display: { xs: "none", lg: "block" } }} />
           <Stack direction="row" gap={1.5} flexWrap="wrap">
             <Button variant="contained" component={RouterLink} to="/reconciliation/review">Open review queue</Button>
             <Button variant="outlined" component={RouterLink} to="/reconciliation/runs">Run reconciliation</Button>
           </Stack>
         </Stack>
-        <Box
-          component="img"
-          src={matchingArt}
-          alt="Two ledgers whose lines are being matched to each other"
-          sx={{ width: "100%", maxWidth: 560, justifySelf: "center", display: { xs: "none", md: "block" } }}
-        />
       </Box>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", xl: "minmax(0, 1fr) minmax(0, 2fr)" }, gap: 3, "& > *": { minWidth: 0 } }}>
         <Panel title="Period close" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Q3-2026</Typography>}>
           <Typography className="display" sx={{ fontSize: "clamp(32px, 2.6vw, 40px)", lineHeight: 1 }}>
-            <CountUp value={`${closeCompletion}%`} />
+            {`${closeCompletion}%`}
           </Typography>
           <Typography sx={{ fontSize: 12, color: "text.secondary", mb: 1.5 }}>Close completion</Typography>
           <LinearProgress variant="determinate" value={closeCompletion} sx={{ height: 6, borderRadius: 99, mb: 1.5, mt: 1.5, "& .MuiLinearProgress-bar": { background: "var(--brand-indigo)" } }} />
@@ -98,7 +91,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
                       {item.label}
                     </Typography>
                     <Typography className="display" sx={{ fontSize: "clamp(17px, 1.35vw, 21px)", lineHeight: 1.2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      <CountUp value={item.value} />
+                      {item.value}
                     </Typography>
                     <Typography sx={{ fontSize: 11, color: "text.secondary" }}>{item.hint}</Typography>
                   </Box>
@@ -127,7 +120,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
               }}
             >
               <Typography className="display" sx={{ fontSize: "clamp(20px, 1.6vw, 24px)", lineHeight: 1.1, color: item.tone === "crit" ? "error.main" : item.tone === "warn" ? "warning.main" : "success.main" }}>
-                <CountUp value={String(item.count)} />
+                {String(item.count)}
               </Typography>
               <Typography sx={{ fontSize: 12, fontWeight: 600 }}>{item.label}</Typography>
             </Button>
@@ -287,7 +280,7 @@ function DashboardPageView({ d }: { d: DashboardData }) {
           <Stack direction="row" spacing={1}>
             {sla.map((item) => (
               <Box key={item.label} sx={{ flex: 1, p: 1.25, borderRadius: 1, border: "1px solid", borderColor: "divider" }}>
-                <Typography className="display" sx={{ fontSize: "clamp(20px, 1.6vw, 24px)", lineHeight: 1.1 }}><CountUp value={String(item.count)} /></Typography>
+                <Typography className="display" sx={{ fontSize: "clamp(20px, 1.6vw, 24px)", lineHeight: 1.1 }}>{String(item.count)}</Typography>
                 <StatusPill label={item.label} tone={item.tone} />
               </Box>
             ))}
