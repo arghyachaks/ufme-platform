@@ -26,7 +26,6 @@ html, body#keycloak-bg, .pf-v5-c-login {
   color: var(--ufme-ink);
   font-family: "Geist", Arial, sans-serif;
 }
-.pf-v5-c-login::before, .pf-v5-c-login::after { display: none !important; }
 
 .pf-v5-c-login__container { max-width: 440px; padding-top: 8vh; }
 
@@ -75,7 +74,6 @@ html, body#keycloak-bg, .pf-v5-c-login {
   border-radius: 4px !important;
   min-height: 44px;
 }
-.pf-v5-c-form-control:focus-within { outline: 2px solid var(--ufme-green); outline-offset: 0; }
 
 .pf-v5-c-button.pf-m-primary {
   --pf-v5-c-button--m-primary--BackgroundColor: var(--ufme-green);
@@ -107,3 +105,45 @@ html, body#keycloak-bg, .pf-v5-c-login {
 }
 .pf-v5-c-form-control::before { border-color: rgba(0, 6, 61, 0.45) !important; }
 input:-webkit-autofill { -webkit-box-shadow: 0 0 0 40px #ffffff inset !important; -webkit-text-fill-color: #00063d !important; }
+
+/* One focus border only: PatternFly's underline (::after) is hidden, the outline is drawn by ::before. */
+.pf-v5-c-form-control::after { display: none !important; }
+.pf-v5-c-form-control:focus-within::before { border: 2px solid var(--ufme-green) !important; }
+.pf-v5-c-form-control > input:focus { outline: none !important; box-shadow: none !important; }
+
+/* Jasper-style split: a pastel story panel with an animated matching diagram, the form on white. */
+@media (min-width: 1000px) {
+  .pf-v5-c-login { min-height: 100vh; padding-left: 52vw !important; display: flex; align-items: center; }
+  .pf-v5-c-login__container { padding-top: 0; margin: 0 auto; width: 100%; }
+  .pf-v5-c-login::before {
+    content: "";
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 52vw;
+    background: #e6ffd9 url("../img/hero.svg") center 62% / min(78%, 640px) auto no-repeat;
+    border-right: 1px solid var(--ufme-ink);
+  }
+  .pf-v5-c-login::after {
+    content: "Every intercompany line, matched and explained.";
+    position: fixed;
+    top: 9vh;
+    left: 5vw;
+    width: 40vw;
+    max-width: 620px;
+    font-family: "Newsreader", Georgia, serif;
+    font-size: clamp(34px, 3.4vw, 56px);
+    line-height: 1.02;
+    letter-spacing: -0.03em;
+    color: var(--ufme-ink);
+    animation: ufme-rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+@media (min-width: 1000px) and (max-height: 760px) {
+  .pf-v5-c-login::before { background-position: center 78%; background-size: min(62%, 520px) auto; }
+}
+
+/* Gentle entrance for the form card and wordmark. */
+@keyframes ufme-rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+#kc-header-wrapper { animation: ufme-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.pf-v5-c-login__main { animation: ufme-rise 0.8s 0.08s cubic-bezier(0.16, 1, 0.3, 1) both; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }

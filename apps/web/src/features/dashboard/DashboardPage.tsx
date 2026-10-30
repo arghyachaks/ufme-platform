@@ -1,4 +1,5 @@
 import { CountUp } from "../../components/common/Motion";
+import matchingArt from "../../assets/matching.svg";
 import { useState } from "react";
 import { Link as RouterLink } from "react-router-dom";
 import { Box, Button, LinearProgress, Stack, Table, TableBody, TableCell, TableHead, TableRow, Typography } from "@mui/material";
@@ -20,6 +21,43 @@ function DashboardPageView({ d }: { d: DashboardData }) {
 
   return (
     <Stack spacing={3}>
+      <Box
+        component="section"
+        aria-label="Today"
+        sx={{
+          bgcolor: "var(--emerald-soft)",
+          borderRadius: "2px",
+          display: "grid",
+          gridTemplateColumns: { xs: "minmax(0, 1fr)", lg: "minmax(0, 1.1fr) minmax(0, 1fr)" },
+          alignItems: "center",
+          gap: 3,
+          px: { xs: 3, md: 6 },
+          py: { xs: 4, md: 5 },
+          overflow: "hidden",
+        }}
+      >
+        <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontFamily: "var(--font-mono)", fontSize: 13, letterSpacing: "0.04em", textTransform: "uppercase" }}>
+            Q3-2026 close · {closeCompletion}% complete
+          </Typography>
+          <Typography variant="h4" component="h1" sx={{ fontSize: "clamp(38px, 4vw, 64px)", maxWidth: 640 }}>
+            Every intercompany line, matched and explained.
+          </Typography>
+          <Typography sx={{ fontSize: 17, color: "text.secondary", maxWidth: 540 }}>
+            Review what the engine couldn&apos;t prove on its own; everything else is already reconciled and in the audit trail.
+          </Typography>
+          <Stack direction="row" gap={1.5} flexWrap="wrap">
+            <Button variant="contained" component={RouterLink} to="/reconciliation/review">Open review queue</Button>
+            <Button variant="outlined" component={RouterLink} to="/reconciliation/runs">Run reconciliation</Button>
+          </Stack>
+        </Stack>
+        <Box
+          component="img"
+          src={matchingArt}
+          alt="Two ledgers whose lines are being matched to each other"
+          sx={{ width: "100%", maxWidth: 560, justifySelf: "center", display: { xs: "none", md: "block" } }}
+        />
+      </Box>
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "minmax(0, 1fr)", xl: "minmax(0, 1fr) minmax(0, 2fr)" }, gap: 3, "& > *": { minWidth: 0 } }}>
         <Panel title="Period close" action={<Typography sx={{ fontSize: 11, color: "text.secondary" }}>Q3-2026</Typography>}>
           <Typography className="display" sx={{ fontSize: "clamp(32px, 2.6vw, 40px)", lineHeight: 1 }}>
