@@ -46,14 +46,24 @@ function restore(): Tokens | null {
   }
 }
 
-const viaProxy = (url: string) => (PROXY && url.startsWith(ISSUER) ? PROXY + url.slice(ISSUER.length) : url);
+// Endpoint paths relative to the realm. The provider builds absolute URLs from whichever host asked (behind the
+// proxy that is the app's own host), so only the path is trusted: browser navigations (sign-in, sign-out) go to
+// the provider's public address, background token calls go through the same-origin proxy.
+const REALM_PATH = new URL(ISSUER).pathname;
+const relative = (url: string) => {
+  const path = new URL(url, window.location.origin).pathname;
+  return path.startsWith(REALM_PATH) ? path.slice(REALM_PATH.length) : path;
+};
 
 function config(): Promise<Discovery> {
-  discovery ??= fetch(viaProxy(`${ISSUER}/.well-known/openid-configuration`)).then(async (r) => {
+  discovery ??= fetch(`${PROXY || ISSUER}/.well-known/openid-configuration`).then(async (r) => {
     if (!r.ok) throw new Error("The sign-in service isn't reachable.");
     const d = (await r.json()) as Discovery;
-    // Browser navigations (sign-in, sign-out) go to the provider; background token calls stay same-origin.
-    return { ...d, token_endpoint: viaProxy(d.token_endpoint) };
+    return {
+      authorization_endpoint: ISSUER + relative(d.authorization_endpoint),
+      token_endpoint: (PROXY || ISSUER) + relative(d.token_endpoint),
+      end_session_endpoint: d.end_session_endpoint ? ISSUER + relative(d.end_session_endpoint) : undefined,
+    };
   });
   return discovery;
 }
