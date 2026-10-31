@@ -395,6 +395,29 @@ def test_requester_cannot_approve_own_model(db: Any, client: TestClient) -> None
     assert r.status_code == 403 and r.json()["code"] == "sod_violation"
 
 
+def test_plan_first_reminds_only_on_the_first_turn() -> None:
+    from langchain_core.messages import HumanMessage
+
+    seen: list[Any] = []
+
+    class Req:
+        def __init__(self, messages: list[Any]) -> None:
+            self.messages = messages
+
+        def override(self, messages: list[Any]) -> "Req":
+            return Req(messages)
+
+    mw = harness.plan_first()
+    mw.wrap_model_call(Req([HumanMessage("Why is EX-1 open?")]), lambda r: seen.append(r.messages))
+    assert seen[0][-1].content.endswith(harness.PLAN_NUDGE)
+    planned = [
+        HumanMessage("q"),
+        AIMessage(content="", tool_calls=[{"id": "a", "name": "share_thinking", "args": {}}]),
+    ]
+    mw.wrap_model_call(Req(planned), lambda r: seen.append(r.messages))
+    assert seen[1] == planned
+
+
 def test_subagent_cap_trims_parallel_fan_out() -> None:
     cap = harness.subagent_cap(2)
     calls = [{"id": f"t{i}", "name": "task", "args": {}} for i in range(4)] + [
@@ -520,6 +543,7 @@ def test_investigator_pauses_for_a_person_and_resumes_on_their_decision(
     ev = _lines(r.text)
     kinds = [e.get("type") for e in ev]
     assert "todos" in kinds and "approval" in kinds and ev[-1]["type"] == "paused"
+    assert kinds.count("approval") == 1  # the second proposal in the same turn was held back
     appr = next(e for e in ev if e.get("type") == "approval")
     assert appr["name"] == "propose_match" and appr["args"]["item_ids"] == items
     assert db.scalar(select(func.count()).select_from(ApprovalRequest)) == before  # nothing happened yet

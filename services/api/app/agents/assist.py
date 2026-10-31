@@ -70,7 +70,7 @@ def stream(
                     "model": model,
                 }
             ],
-            middleware=[harness.subagent_cap(settings.agent_max_subagents)],
+            middleware=[harness.subagent_cap(settings.agent_max_subagents), harness.plan_first()],
             checkpointer=saver if tid else None,
             name="ufme-assist",
         )

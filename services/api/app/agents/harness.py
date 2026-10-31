@@ -50,11 +50,17 @@ def share_thinking(summary: str, plan: str = "") -> str:
 def subagent_cap(limit: int) -> Any:
     """Middleware: at most `limit` sub-agents started in one step (parallel fan-out cap). Extra `task` calls in
     the same model turn are dropped before they run; the agent can start them in a later step."""
+    return call_cap("task", limit, "ufme_subagent_cap")
+
+
+def call_cap(tool: str, limit: int, label: str) -> Any:
+    """Middleware: at most `limit` calls of `tool` in one model turn; extra ones are dropped before they run.
+    Used for sub-agents (fan-out) and for proposals (a person reviews one proposal at a time)."""
     from langchain.agents.middleware import AgentMiddleware
     from langchain_core.messages import AIMessage
 
-    class SubagentCap(AgentMiddleware):  # type: ignore[misc]
-        name = "ufme_subagent_cap"
+    class CallCap(AgentMiddleware):  # type: ignore[misc]
+        name = label
 
         def after_model(self, state: Any, runtime: Any) -> dict[str, Any] | None:
             msgs = state.get("messages") or []
@@ -63,7 +69,7 @@ def subagent_cap(limit: int) -> Any:
                 return None
             kept, started = [], 0
             for c in last.tool_calls:
-                if c.get("name") == "task":
+                if c.get("name") == tool:
                     started += 1
                     if started > limit:
                         continue
@@ -72,7 +78,40 @@ def subagent_cap(limit: int) -> Any:
                 return None
             return {"messages": [last.model_copy(update={"tool_calls": kept})]}
 
-    return SubagentCap()
+    return CallCap()
+
+
+PLAN_NUDGE = "\n\n(Before anything else, call the share_thinking tool with your summary and plan.)"
+
+
+def plan_first() -> Any:
+    """Middleware: on the first model call of a run, remind the model to share its thinking and plan first.
+    Small local models sometimes skip it; the reminder is added to the request only, never stored."""
+    from langchain.agents.middleware import AgentMiddleware
+    from langchain_core.messages import AIMessage, HumanMessage
+
+    class PlanFirst(AgentMiddleware):  # type: ignore[misc]
+        name = "ufme_plan_first"
+
+        def wrap_model_call(self, request: Any, handler: Any) -> Any:
+            msgs = list(getattr(request, "messages", []) or [])
+            planned = any(
+                isinstance(m, AIMessage)
+                and any(c.get("name") == "share_thinking" for c in m.tool_calls or [])
+                for m in msgs
+            )
+            if planned or not msgs or not isinstance(msgs[-1], HumanMessage):
+                return handler(request)
+            last = msgs[-1]
+            text = last.content if isinstance(last.content, str) else ""
+            msgs[-1] = last.model_copy(update={"content": text + PLAN_NUDGE})
+            try:
+                request = request.override(messages=msgs)
+            except AttributeError:
+                request.messages = msgs
+            return handler(request)
+
+    return PlanFirst()
 
 
 def line(obj: dict[str, Any]) -> str:
@@ -137,26 +176,21 @@ class Mapper:
         return out
 
     def _interrupt(self, items: Any) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = []
+        """A pause for a person. If the model asked for several actions at once, the person reviews the first;
+        the others are declined as "one at a time" when the decision is sent (see investigator.decide)."""
+        reqs: list[dict[str, Any]] = []
+        first_id = ""
         for it in items or ():
             value = getattr(it, "value", it)
-            reqs = (value or {}).get("action_requests") or [] if isinstance(value, dict) else []
-            for r in reqs:
-                pending = {
-                    "name": r.get("name"),
-                    "args": r.get("args") or {},
-                    "description": r.get("description"),
-                }
-                self.interrupted = pending
-                out.append(
-                    {
-                        "type": "approval",
-                        "id": str(getattr(it, "id", "")),
-                        **pending,
-                        "allowed": ["approve", "edit", "reject"],
-                    }
-                )
-        return out
+            if isinstance(value, dict):
+                reqs += value.get("action_requests") or []
+                first_id = first_id or str(getattr(it, "id", ""))
+        if not reqs:
+            return []
+        r = reqs[0]
+        pending = {"name": r.get("name"), "args": r.get("args") or {}, "description": r.get("description")}
+        self.interrupted = {**pending, "count": len(reqs)}
+        return [{"type": "approval", "id": first_id, **pending, "allowed": ["approve", "edit", "reject"]}]
 
     def progress(self, done: int) -> list[dict[str, Any]]:
         """To-do statuses for a plan shared up front (models that don't maintain write_todos themselves):

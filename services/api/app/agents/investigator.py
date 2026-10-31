@@ -81,7 +81,11 @@ def _build(db: Session, tenant: Tenant, actor: Actor, pair: str) -> Callable[[re
             tools=[harness.share_thinking, *fns],
             system_prompt=PROMPT.format(pair=pair, max_props=settings.agent_max_proposals),
             interrupt_on={"propose_match": {"allowed_decisions": ["approve", "edit", "reject"]}},
-            middleware=[harness.subagent_cap(settings.agent_max_subagents)],
+            middleware=[
+                harness.subagent_cap(settings.agent_max_subagents),
+                harness.call_cap("propose_match", 1, "ufme_one_proposal"),
+                harness.plan_first(),
+            ],
             checkpointer=saver,
             name="ufme-recon-investigator",
         )
@@ -153,6 +157,12 @@ def decide(
         d = {"type": "reject", "message": comment or "The reviewer rejected this proposal."}
     from langgraph.types import Command
 
+    held = max(0, int(pending.get("count", 1)) - 1)  # extra proposals from the same turn: one at a time
+    decisions = [d] + [
+        {"type": "reject", "message": "Not reviewed: proposals are reviewed one at a time. Propose it again if "
+         "it is still relevant."}
+    ] * held
+
     rec = harness.Recorder.resume(db, run, actor.email)
     rec.emit({"type": "decision", "decision": decision, "by": actor.email, "comment": comment, "args": args})
     yield harness.line({"type": "decision", "decision": decision, "by": actor.email})
@@ -162,7 +172,7 @@ def decide(
         yield from harness.run_graph(
             _build(db, tenant, actor, pair),
             specs,
-            Command(resume={"decisions": [d]}),
+            Command(resume={"decisions": decisions}),
             rec,
             settings.agent_max_steps,
             {"thread_id": str((run.summary or {}).get("thread"))},
