@@ -68,6 +68,12 @@ The first build takes several minutes. Then open **http://localhost:5173** and s
 listed in [infra/keycloak/README.md](infra/keycloak/README.md) (local development credentials). A synthetic demo
 tenant is seeded on first start; run a reconciliation from **Reconciliation → Runs**.
 
+**Sample data:** ready-made intercompany ledgers are in [`data/samples/`](data/samples/README.txt). Upload one from
+**More → Data sources → Upload file**, then run a reconciliation.
+
+**User manual:** [`docs/user-manual.html`](docs/user-manual.html) walks through every screen, the workflows, the AI
+agents and model setup (download it and open it in a browser, or view it on the project's GitHub Pages site).
+
 For the AI features, either install [Ollama](https://ollama.com) and run `ollama pull gemma4:e4b-it-qat` (local,
 free, about 10 GB; a GPU helps), or connect a hosted LLM as below. Without either, ufme still works and Assist
 gives standard answers.

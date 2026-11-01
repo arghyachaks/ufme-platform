@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ufme User Manual</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#00063d;--muted:#4a4f73;--line:#d9dae3;--green:#0a4733;--lime:#b3ed97;--mint:#e6ffd9;--butter:#fffbb7;--sky:#ceebff;--lav:#e7e3f7;--pink:#ffe8e2;--bg:#fff;--code:#f4f5f9}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#eef0ff;--muted:#b4b8d6;--line:#2c3157;--bg:#0b0f2e;--code:#161b45;--mint:#163a2a;--butter:#3a3712;--sky:#13324a;--lav:#2a2647;--pink:#3d2420}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Geist,system-ui,Arial,sans-serif}
+a{color:inherit;text-underline-offset:3px}
+header.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--ink);display:flex;align-items:center;gap:16px;padding:0 24px;height:60px}
+.logo{font-family:Newsreader,serif;font-size:28px;font-weight:500;letter-spacing:-.8px;display:flex;align-items:baseline;gap:2px;text-decoration:none}
+.logo i{width:7px;height:7px;background:var(--green);display:inline-block}
+header.top span{font-family:'Geist Mono',monospace;font-size:13px;text-transform:uppercase;letter-spacing:.4px}
+.wrap{display:grid;grid-template-columns:260px minmax(0,1fr);max-width:1280px;margin:0 auto}
+nav.toc{position:sticky;top:60px;align-self:start;height:calc(100vh - 60px);overflow:auto;padding:28px 20px 40px 24px;border-right:1px solid var(--line);font-size:14px}
+nav.toc b{display:block;font-family:'Geist Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.4px;margin:18px 0 6px;color:var(--muted)}
+nav.toc a{display:block;padding:4px 0;text-decoration:none}
+nav.toc a:hover{text-decoration:underline}
+main{padding:40px 56px 120px;min-width:0}
+h1{font-family:Newsreader,serif;font-weight:400;font-size:56px;line-height:1.05;letter-spacing:-1.6px;margin:0 0 12px}
+h2{font-family:Newsreader,serif;font-weight:400;font-size:36px;letter-spacing:-.8px;margin:64px 0 12px;padding-top:12px;border-top:1px solid var(--line)}
+h3{font-size:19px;margin:28px 0 8px}
+p,li{max-width:76ch}
+.lead{font-size:19px;color:var(--muted)}
+figure{margin:20px 0 28px}
+figure img{width:100%;border:1px solid var(--ink);border-radius:2px;display:block}
+figcaption{font-size:13px;color:var(--muted);margin-top:6px}
+code,kbd{font-family:'Geist Mono',monospace;font-size:13.5px;background:var(--code);padding:1px 6px;border-radius:2px}
+pre{font-family:'Geist Mono',monospace;font-size:13.5px;background:var(--code);padding:14px 16px;border-radius:2px;overflow:auto}
+table{border-collapse:collapse;width:100%;margin:14px 0 22px;font-size:14.5px}
+th,td{text-align:left;border-bottom:1px solid var(--line);padding:8px 10px;vertical-align:top}
+th{font-weight:600;border-bottom:1px solid var(--ink)}
+.note{border-radius:2px;padding:14px 18px;margin:16px 0}
+.note.tip{background:var(--mint)}.note.warn{background:var(--butter)}.note.info{background:var(--sky)}
+ol.steps{padding-left:22px}ol.steps li{margin:6px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin:20px 0}
+.card{padding:18px;border-radius:2px}
+.card b{display:block;font-family:Newsreader,serif;font-weight:400;font-size:22px;margin-bottom:4px}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}nav.toc{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line)}main{padding:28px 16px 80px}h1{font-size:40px}}
+@media print{nav.toc,header.top{display:none}.wrap{display:block}main{padding:0}h2{page-break-before:always}}
+</style>
+</head>
+<body>
+<header class="top"><a class="logo" href="#top">ufme<i></i></a><span>User manual</span></header>
+<div class="wrap">
+<nav class="toc" aria-label="Contents">
+  <b>Start</b>
+  <a href="#overview">What ufme does</a>
+  <a href="#install">Install and start</a>
+  <a href="#signin">Sign in and roles</a>
+  <a href="#layout">Finding your way</a>
+  <b>Daily work</b>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#data">Load data</a>
+  <a href="#runs">Run a reconciliation</a>
+  <a href="#review">Review suggestions</a>
+  <a href="#manual">Match by hand</a>
+  <a href="#approvals">Approvals</a>
+  <a href="#exceptions">Exceptions and cases</a>
+  <a href="#signoff">Period sign-off</a>
+  <b>Configure and govern</b>
+  <a href="#rules">Rules and policies</a>
+  <a href="#models">Explainability, models, learning</a>
+  <a href="#audit">Audit and SOX</a>
+  <b>AI agents</b>
+  <a href="#assist">ufme Assist</a>
+  <a href="#investigator">Recon Investigator</a>
+  <a href="#agentops">Agent operations</a>
+  <a href="#llm">Connect an LLM</a>
+  <b>Help</b>
+  <a href="#troubleshooting">Troubleshooting</a>
+  <a href="#glossary">Glossary</a>
+</nav>
+<main id="top">
+<h1>ufme user manual</h1>
+<p class="lead">How to load intercompany ledgers, reconcile them, approve the results, sign off the period, and work with ufme's AI agents, with people in charge at every step.</p>
+
+<section id="overview">
+<h2>What ufme does</h2>
+<p>Entities in a group book transactions with each other: loans, service fees, royalties, recharges and dividends. Both sides should agree, but they rarely match exactly because of FX rates, withholding tax, bank fees, timing and typing errors. ufme finds the pairs, explains the differences, and routes everything it isn't sure about to a person.</p>
+<div class="cards">
+  <div class="card" style="background:var(--mint)"><b>Match</b>Automatically matches only when its calibrated confidence keeps errors under 0.5%.</div>
+  <div class="card" style="background:var(--butter)"><b>Explain</b>Every suggestion says why the amounts differ and what decided it.</div>
+  <div class="card" style="background:var(--sky)"><b>Control</b>Approval matrix, segregation of duties, dual control, sign-off and an audit trail auditors can verify.</div>
+  <div class="card" style="background:var(--lav)"><b>Agents</b>AI agents that show their thinking and plan, and only propose; people decide.</div>
+</div>
+</section>
+
+<section id="install">
+<h2>Install and start</h2>
+<p>You need <a href="https://www.docker.com/products/docker-desktop/">Docker Desktop</a> with about 8 GB of memory available to Docker.</p>
+<pre>git clone https://github.com/arghyachaks/ufme-platform.git
+cd ufme-platform
+cp infra/docker/.env.example infra/docker/.env      # optional: keys and LLM settings
+docker compose -f infra/docker/docker-compose.yml up -d --build</pre>
+<p>The first build takes several minutes. When it finishes, open <a href="http://localhost:5173">http://localhost:5173</a>. A demo company with six entities (US01, UK02, DE03, IN04, SG05, BR06) is created automatically.</p>
+<table>
+<tr><th>Service</th><th>Address</th></tr>
+<tr><td>ufme web app</td><td><code>http://localhost:5173</code></td></tr>
+<tr><td>API and interactive API docs</td><td><code>http://localhost:8000/docs</code></td></tr>
+<tr><td>Sign-in service (Keycloak)</td><td><code>http://localhost:8081</code></td></tr>
+</table>
+<div class="note info"><b>AI features.</b> For the agents, either install <a href="https://ollama.com">Ollama</a> and run <code>ollama pull gemma4:e4b-it-qat</code> (local and free; a GPU helps), or connect a hosted model (see <a href="#llm">Connect an LLM</a>). Without either, ufme works normally and Assist gives standard answers.</div>
+<p>To stop ufme: <code>docker compose -f infra/docker/docker-compose.yml stop</code>. Your data is kept for next time.</p>
+</section>
+
+<section id="signin">
+<h2>Sign in and roles</h2>
+<figure><img src="manual/img/01_signin.jpg" alt="ufme sign-in page"><figcaption>Sign-in page.</figcaption></figure>
+<p>Sign in with one of the demo users. All use the local development password <code>ufme-demo</code>. These accounts are for trying ufme on your own computer only; replace them before any real use.</p>
+<table>
+<tr><th>User</th><th>Role</th><th>Entities</th><th>Typical tasks</th></tr>
+<tr><td><code>priya.nair@example.com</code></td><td>Analyst</td><td>US01, UK02</td><td>Review suggestions, match by hand, work exceptions</td></tr>
+<tr><td><code>mei.chen@example.com</code></td><td>Analyst</td><td>DE03</td><td>Same, for DE03</td></tr>
+<tr><td><code>arjun.rao@example.com</code></td><td>Manager</td><td>IN04, SG05</td><td>Approve matches under 50,000 USD</td></tr>
+<tr><td><code>daniel.ortiz@example.com</code></td><td>Controller</td><td>US01, UK02, DE03</td><td>Approve up to 1M USD, register agent models, sign off</td></tr>
+<tr><td><code>liam.walsh@example.com</code></td><td>Finance Director</td><td>All</td><td>Approve above 1M (with a second approver), approve models, final sign-off</td></tr>
+<tr><td><code>sofia.rossi@example.com</code></td><td>Auditor</td><td>All</td><td>Read everything, verify the audit trail, download evidence; cannot change anything</td></tr>
+</table>
+<div class="note tip">You only see the entities you are assigned to. To try the full app, sign in as <b>liam.walsh</b>; to see the controls work, try the same task as two different people.</div>
+</section>
+
+<section id="layout">
+<h2>Finding your way</h2>
+<ul>
+<li><b>Top navigation:</b> Dashboard, Reconciliation, Exceptions, Cases, Rules &amp; Policies, Intelligence, Audit &amp; SOX. Less frequent pages (data, knowledge graph, administration, platform) are under <b>More</b>.</li>
+<li><b>ufme Assist</b> (right-hand panel): ask questions about the close in plain English. See <a href="#assist">ufme Assist</a>.</li>
+<li><b>Your name</b> (top right): your role, and Sign out.</li>
+<li><b>Moon icon:</b> switch between light and dark mode.</li>
+</ul>
+</section>
+
+<section id="dashboard">
+<h2>Dashboard</h2>
+<figure><img src="manual/img/02_dashboard.jpg" alt="Dashboard"><figcaption>Close progress, risk, operational and match-quality figures, your work queue, and high-risk exceptions.</figcaption></figure>
+<p>Start each day here. <b>My work queue</b> shows what is waiting for you: approvals, critical exceptions, SLA breaches and cases. Click <b>Open review queue</b> to start reviewing, or <b>Run reconciliation</b> to match new data.</p>
+</section>
+
+<section id="data">
+<h2>Load data</h2>
+<p>Go to <b>More → Data sources</b>. Each source is a ledger feed (SAP, Oracle, NetSuite and so on).</p>
+<ul>
+<li><b>Sync now</b> pulls from a connected system (in the demo it generates realistic synthetic data).</li>
+<li><b>Upload file</b> loads a CSV export.</li>
+</ul>
+<h3>Try it with the sample files</h3>
+<p>The repository includes ready-made ledgers in <code>data/samples/</code>:</p>
+<table>
+<tr><th>File</th><th>Lines</th><th>Use it to</th></tr>
+<tr><td><code>ic_ledger_small.csv</code></td><td>2,000</td><td>A quick first run (seconds)</td></tr>
+<tr><td><code>ic_ledger_medium.csv</code></td><td>20,000</td><td>A realistic month across six entities</td></tr>
+<tr><td><code>ic_ledger_sap_headers.csv</code></td><td>1,000</td><td>See column mapping work with SAP names (BUKRS, VBUND, WRBTR ...)</td></tr>
+</table>
+<ol class="steps">
+<li>Sign in as <b>liam.walsh</b> and open <b>More → Data sources</b>.</li>
+<li>On a file source card, click <b>Upload file</b> and choose <code>data/samples/ic_ledger_small.csv</code>.</li>
+<li>Watch the load in the table below. Click it to see accepted rows, quarantined rows (deliberate errors in the sample: missing partner, bad amount, duplicate) and data-quality issues.</li>
+<li>Go to <b>Reconciliation → Runs</b> and start a run.</li>
+</ol>
+<p>Your own files need, at minimum, columns for entity, counterparty, amount, currency and date. Common names are recognised automatically (for example <code>company_code</code>/<code>BUKRS</code>, <code>trading_partner</code>/<code>VBUND</code>, <code>amount</code>/<code>WRBTR</code>, <code>currency</code>/<code>WAERS</code>, <code>document_date</code>/<code>BLDAT</code>). A reference and description improve matching.</p>
+<figure><img src="manual/img/15_quality.jpg" alt="Data quality"><figcaption>Data quality: issues found while loading, with resolve and ignore actions.</figcaption></figure>
+</section>
+
+<section id="runs">
+<h2>Run a reconciliation</h2>
+<figure><img src="manual/img/03_runs.jpg" alt="Reconciliation runs"><figcaption>Runs: status, auto-match rate, suggestions and timing for each run.</figcaption></figure>
+<p>A run compares every entity pair. Each candidate pair ends in one of three places:</p>
+<ul>
+<li><b>Auto-matched</b>: confidence is above the proven threshold. No action needed.</li>
+<li><b>Suggested</b>: probably right, but a person must review it.</li>
+<li><b>Unmatched</b>: no convincing partner; it becomes an exception or can be matched by hand.</li>
+</ul>
+</section>
+
+<section id="review">
+<h2>Review suggestions</h2>
+<figure><img src="manual/img/04_review.jpg" alt="Review queue"><figcaption>The review queue, largest exposure first, with the reason the amounts differ.</figcaption></figure>
+<ol class="steps">
+<li>Open <b>Reconciliation → Review</b>.</li>
+<li>Select a suggestion. Read <b>why it differs</b> (for example withholding tax 10%, bank fee, FX) and <b>what decided it</b>.</li>
+<li><b>Accept</b> sends it for approval; <b>Reject</b> closes it. Add a reason; it becomes part of the audit trail and teaches the model.</li>
+</ol>
+</section>
+
+<section id="manual">
+<h2>Match by hand</h2>
+<figure><img src="manual/img/05_manual.jpg" alt="Manual match"><figcaption>Manual match: pick items from both sides of a pair.</figcaption></figure>
+<p>Pick one or more items on each side. ufme accepts the match if the variance is within the tolerance policy (0.5% of exposure, capped at 500 USD), then sends it for approval like any other match.</p>
+</section>
+
+<section id="approvals">
+<h2>Approvals</h2>
+<figure><img src="manual/img/06_approvals.jpg" alt="Approvals"><figcaption>Approvals waiting for you, with SLA, exposure and the required role.</figcaption></figure>
+<table>
+<tr><th>Exposure (USD)</th><th>Who approves</th></tr>
+<tr><td>Under 50,000</td><td>Manager or above</td></tr>
+<tr><td>50,000 to 1,000,000</td><td>Controller or above</td></tr>
+<tr><td>Above 1,000,000</td><td>Finance Director, plus a second approver (dual control)</td></tr>
+</table>
+<p>You can never approve something you submitted yourself (segregation of duties). You can approve, reject, or request more information.</p>
+</section>
+
+<section id="exceptions">
+<h2>Exceptions and cases</h2>
+<figure><img src="manual/img/08_exceptions.jpg" alt="Exceptions"><figcaption>Exceptions with severity, owner, age, SLA and root cause.</figcaption></figure>
+<p>Exceptions are breaks that need work. Group related ones into a <b>case</b> to investigate with colleagues: assign an owner, comment, attach evidence and resolve.</p>
+<figure><img src="manual/img/09_cases.jpg" alt="Cases"><figcaption>Cases.</figcaption></figure>
+</section>
+
+<section id="signoff">
+<h2>Period sign-off</h2>
+<figure><img src="manual/img/07_signoff.jpg" alt="Sign-off"><figcaption>Sign-off readiness per entity, with blockers.</figcaption></figure>
+<p>Each entity signs off the period step by step (Manager, Controller, Finance Director). Sign-off is blocked while there are pending approvals, open critical exceptions, failing controls or no completed run; ufme lists exactly what is blocking it. Each step needs a different person.</p>
+</section>
+
+<section id="rules">
+<h2>Rules and policies</h2>
+<figure><img src="manual/img/10_rules.jpg" alt="Rules"><figcaption>Matching rules.</figcaption></figure>
+<p>Rules describe how items are matched (exact reference, fuzzy reference, FX-aware, timing tolerance, one-to-many). Policies hold tolerances and thresholds. Changes are audited.</p>
+</section>
+
+<section id="models">
+<h2>Explainability, models and learning</h2>
+<figure><img src="manual/img/12_explain.jpg" alt="Explainability"><figcaption>Explainability: the factors behind a match.</figcaption></figure>
+<p><b>Intelligence → Models</b> shows which scoring model is in use and the evidence for each candidate. <b>Intelligence → Learning</b> turns reviewer decisions into training data.</p>
+<ol class="steps">
+<li>After enough decisions, a Controller starts training from the Learning page. The new candidate must pass a promotion gate (no loss of accuracy on held-out data).</li>
+<li>A <b>different</b> Controller or Finance Director promotes it (four eyes).</li>
+<li>If results look wrong, <b>Roll back</b> returns to the previous model instantly. Drift monitoring warns when today's data no longer looks like the training data.</li>
+</ol>
+<figure><img src="manual/img/13_models.jpg" alt="Models"><figcaption>Models, with drift.</figcaption></figure>
+</section>
+
+<section id="audit">
+<h2>Audit and SOX</h2>
+<figure><img src="manual/img/16_audit.jpg" alt="Audit"><figcaption>Audit trail and controls.</figcaption></figure>
+<ul>
+<li>Every action is recorded in a <b>hash-chained audit trail</b>. The Audit page checks the chain each time it opens and shows whether anything was altered or removed.</li>
+<li><b>Export evidence package</b> downloads a signed ZIP of the trail and control results for your auditor.</li>
+<li>SOX controls (approval authority, dual control, segregation of duties, reconciliation complete) are computed from the data, not ticked by hand.</li>
+</ul>
+</section>
+
+<section id="assist">
+<h2>ufme Assist</h2>
+<figure><img src="manual/img/21_assist_expanded.jpg" alt="ufme Assist working"><figcaption>Assist shows its thinking, its plan as a to-do list, and every lookup before answering.</figcaption></figure>
+<p>Type a question in the right-hand panel, for example <i>"What needs my attention to finish the close?"</i> or <i>"Why is EX-8902 open?"</i>.</p>
+<ul>
+<li>While it works, the <b>Working</b> section shows its thinking, its plan (ticking off as it goes) and each lookup with its result. When the answer arrives it folds into one line; click it to see everything again.</li>
+<li>Assist only <b>reads</b>, and only within your entities. It cannot approve, post or change anything.</li>
+<li>Follow-up questions remember the conversation. <b>New conversation</b> (under the box) starts fresh. The stop button ends a run.</li>
+<li>The chip at the top shows <b>PRIVATE · ON-PREMISE</b> when the local model is running.</li>
+</ul>
+</section>
+
+<section id="investigator">
+<h2>Recon Investigator</h2>
+<figure><img src="manual/img/32_decision.jpg" alt="Recon Investigator waiting for a decision"><figcaption>The investigator's plan and steps, and a proposal waiting for your decision.</figcaption></figure>
+<ol class="steps">
+<li>Open <b>Intelligence → Recon Investigator</b>.</li>
+<li>Choose an entity pair (or keep the largest open pair) and optionally a focus, then click <b>Investigate</b>.</li>
+<li>Watch it read the unmatched items and plan. When it proposes a match, it <b>stops and waits</b> for you.</li>
+<li>Review the items and rationale. Choose <b>Approve and submit</b>, edit the rationale and approve, or <b>Reject</b> with a comment. The agent then continues from where it stopped.</li>
+<li>An approved proposal becomes a manual match, which still needs the approver your approval matrix requires.</li>
+</ol>
+<div class="note warn">The agent may be wrong, particularly on a small local model. Treat each proposal like a colleague's suggestion and check the items. Runs waiting for you appear as <b>Waiting for you</b> in Recent investigations; click one to reopen it.</div>
+</section>
+
+<section id="agentops">
+<h2>Agent operations</h2>
+<figure><img src="manual/img/40_ops.jpg" alt="Agent operations"><figcaption>Runs, tokens, cost, work done and data sent outside; anomalies; security and controls.</figcaption></figure>
+<p><b>Intelligence → Agent operations</b> is the control room for every agent. Controllers, Finance Directors and Auditors see all runs; others see their own.</p>
+<ul>
+<li><b>Usage</b> by model and by person, with tokens and cost.</li>
+<li><b>Anomalies</b>: failure spikes, unusual token use, data sent to hosted models, unregistered models, off-hours use.</li>
+<li><b>Security and controls</b>: autonomous actions (always 0), agent write tools (0), data egress, approved hosted models.</li>
+<li><b>Model inventory</b>: every model, where it runs, who requested and approved it, and which agent uses it.</li>
+<li><b>Recent runs</b>: click any run to <b>replay</b> exactly what the agent saw, did and proposed.</li>
+</ul>
+<figure><img src="manual/img/45_replay.jpg" alt="Run replay"><figcaption>Run replay, for risk and audit review.</figcaption></figure>
+</section>
+
+<section id="llm">
+<h2>Connect an LLM</h2>
+<p>Agents use the local Ollama model unless you choose another. There are two ways to add a model.</p>
+<h3>In the app (recommended)</h3>
+<ol class="steps">
+<li>A Controller opens <b>Agent operations → Model inventory and controls → Register a model</b>.</li>
+<li>Choose the provider (OpenAI, Azure OpenAI, Anthropic, Google Gemini, Bedrock, Vertex, Mistral, Ollama or an OpenAI-compatible server), the model id, and the <b>name</b> of the secret that holds the API key. Never type the key itself.</li>
+<li>A <b>different</b> person, a Finance Director, approves it. Hosted models send questions and looked-up data to the provider, so this is a deliberate decision.</li>
+<li>Under <b>Which model each agent uses</b>, pick the model per agent. The local model stays as the fallback.</li>
+</ol>
+<figure><img src="manual/img/43_register.jpg" alt="Register a model"><figcaption>Registering a hosted model.</figcaption></figure>
+<h3>The API key</h3>
+<p>Put keys in <code>infra/docker/.env</code> (start from <code>.env.example</code>; it is never committed), for example <code>ANTHROPIC_API_KEY=...</code>, then restart with <code>docker compose -f infra/docker/docker-compose.yml up -d</code>.</p>
+<h3>By configuration</h3>
+<p>Administrators can also declare models and bindings in <code>.env</code> with <code>AGENT_MODELS</code> and <code>AGENT_BINDINGS</code>; see the README section "Connect an LLM" for one-line examples per provider.</p>
+</section>
+
+<section id="troubleshooting">
+<h2>Troubleshooting</h2>
+<table>
+<tr><th>Problem</th><th>What to do</th></tr>
+<tr><td>The page doesn't load</td><td>Wait for the first build to finish; check Docker Desktop is running and <code>docker compose -f infra/docker/docker-compose.yml ps</code> shows the services up.</td></tr>
+<tr><td>Sign-in fails or loops</td><td>Use <code>http://localhost:5173</code> (not 127.0.0.1); check the sign-in service at <code>http://localhost:8081</code> is up.</td></tr>
+<tr><td>"You aren't assigned to ..."</td><td>You are outside your entity scope. Sign in as a user who covers that entity.</td></tr>
+<tr><td>You can't approve</td><td>The exposure needs a higher role, or you submitted it yourself (segregation of duties).</td></tr>
+<tr><td>Assist says STANDARD ANSWERS</td><td>No model is reachable. Start Ollama (<code>ollama serve</code>) and pull the model, or connect a hosted one.</td></tr>
+<tr><td>A hosted model isn't used</td><td>It must be approved, bound to the agent, and its API key present in <code>.env</code>. Agent operations shows "Key: Missing" if not.</td></tr>
+<tr><td>Upload rejected</td><td>Check the file has entity, counterparty, amount, currency and date columns. Open the load to see which columns were found.</td></tr>
+</table>
+</section>
+
+<section id="glossary">
+<h2>Glossary</h2>
+<table>
+<tr><td><b>Entity pair</b></td><td>Two group companies that trade with each other, for example DE03-IN04.</td></tr>
+<tr><td><b>Exposure</b></td><td>The larger side of a match in USD; drives which role must approve.</td></tr>
+<tr><td><b>Residual</b></td><td>The difference left between the two sides.</td></tr>
+<tr><td><b>Dual control</b></td><td>Two different approvers, required above 1M USD.</td></tr>
+<tr><td><b>Four eyes</b></td><td>A change proposed by one person and approved by another.</td></tr>
+<tr><td><b>Agent</b></td><td>An AI assistant that plans and uses read-only tools; it can only propose.</td></tr>
+<tr><td><b>Run replay</b></td><td>The recorded, step-by-step history of an agent run.</td></tr>
+</table>
+<p style="margin-top:48px;color:var(--muted);font-size:14px">ufme is open source under the Apache 2.0 licence. Created by Arghya Chakraborty.</p>
+</section>
+</main>
+</div>
+</body>
+</html>

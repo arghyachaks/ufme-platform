@@ -1,0 +1,25 @@
+# Runs the same checks as the local pre-push gate on every push and pull request.
+name: ci
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+  workflow_dispatch:
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Backend checks (ruff, mypy, pytest on Postgres, benchmark floors)
+        run: docker compose -f infra/docker/docker-compose.yml --profile test run --rm api-test
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Web type-check and build
+        run: docker compose -f infra/docker/docker-compose.yml --profile test run --rm web-test
