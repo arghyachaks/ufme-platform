@@ -7,10 +7,10 @@ auditor can verify.
 Built and maintained by **[Arghya Chakraborty](https://github.com/arghyachaks)**. Licensed under
 [Apache 2.0](LICENSE); please keep the [NOTICE](NOTICE) when you redistribute it.
 
-[![Watch the 2-minute ufme demo](docs/media/ufme-demo-poster.jpg)](docs/media/ufme-demo.mp4)
+[![ufme agents at work: live thinking, plan, steps, and a proposal waiting for a person](docs/media/ufme-agents-preview.gif)](docs/media/ufme-demo.mp4)
 
-**[▶ Watch the 2-minute demo](docs/media/ufme-demo.mp4)**: the screens, the transparent agents, human approval, and
-the agent operations control room.
+**[▶ Watch the full 2-minute narrated demo](docs/media/ufme-demo.mp4)** (opens GitHub's video player): every screen,
+the transparent agents, human approval, and the agent operations control room.
 
 ---
 
