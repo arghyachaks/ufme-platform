@@ -159,8 +159,11 @@ def decide(
 
     held = max(0, int(pending.get("count", 1)) - 1)  # extra proposals from the same turn: one at a time
     decisions = [d] + [
-        {"type": "reject", "message": "Not reviewed: proposals are reviewed one at a time. Propose it again if "
-         "it is still relevant."}
+        {
+            "type": "reject",
+            "message": "Not reviewed: proposals are reviewed one at a time. Propose it again if "
+            "it is still relevant.",
+        }
     ] * held
 
     rec = harness.Recorder.resume(db, run, actor.email)
