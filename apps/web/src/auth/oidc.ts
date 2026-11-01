@@ -109,9 +109,27 @@ export async function login(returnTo = window.location.pathname + window.locatio
   return new Promise<never>(() => {});
 }
 
+/** Sign-in problems the user can do nothing about (the sign-in service starting up, a used or expired code) are
+ *  retried automatically; this error means the app should show a message and keep retrying. */
+export class SignInUnavailable extends Error {}
+
+const RETRY = "ufme.auth.retry";
+
+function retriesLeft(): boolean {
+  const n = Number(sessionStorage.getItem(RETRY) ?? "0");
+  sessionStorage.setItem(RETRY, String(n + 1));
+  return n < 2;
+}
+
 /** Call once before rendering: finishes a callback, restores a session, or starts sign-in. */
 export async function initAuth(): Promise<void> {
   if (AUTH_MODE !== "oidc") return;
+  try {
+    await config();
+  } catch {
+    discovery = null; // try discovery again next time
+    throw new SignInUnavailable("The sign-in service is starting or not reachable. Retrying…");
+  }
   if (window.location.pathname === CALLBACK) {
     const params = new URLSearchParams(window.location.search);
     const pending = JSON.parse(sessionStorage.getItem(PENDING) ?? "null") as
@@ -121,14 +139,22 @@ export async function initAuth(): Promise<void> {
     if (params.get("error")) throw new Error(params.get("error_description") ?? params.get("error") ?? "Sign-in failed.");
     const code = params.get("code");
     if (!pending || !code || params.get("state") !== pending.state) {
-      await login("/"); // stale or forged callback: start again
+      return login("/"); // reloaded, bookmarked or stale callback: simply start again
     }
-    store(await tokenRequest({ grant_type: "authorization_code", code: code!, redirect_uri: redirectUri(), code_verifier: pending!.verifier }));
-    window.history.replaceState(null, "", pending!.returnTo || "/");
+    try {
+      store(await tokenRequest({ grant_type: "authorization_code", code, redirect_uri: redirectUri(), code_verifier: pending.verifier }));
+    } catch (err) {
+      // the code was already used or expired (back button, slow network): start a fresh sign-in, at most twice
+      if (retriesLeft()) return login(pending.returnTo || "/");
+      throw err;
+    }
+    sessionStorage.removeItem(RETRY);
+    window.history.replaceState(null, "", pending.returnTo || "/");
     return;
   }
   tokens = restore();
   if (!tokens || !(await accessToken())) await login();
+  sessionStorage.removeItem(RETRY);
 }
 
 /** A valid access token, refreshed shortly before it expires; null if the session is gone. */

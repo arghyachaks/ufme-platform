@@ -4,7 +4,7 @@ import { createRoot } from "react-dom/client";
 import { Provider, useSelector } from "react-redux";
 import { CssBaseline, ThemeProvider } from "@mui/material";
 import App from "./app/App";
-import { initAuth } from "./auth/oidc";
+import { SignInUnavailable, initAuth } from "./auth/oidc";
 import { store, type RootState } from "./store";
 import { createAppTheme } from "./theme";
 import "./index.css";
@@ -36,12 +36,14 @@ initAuth()
       </StrictMode>,
     ),
   )
-  .catch((err: unknown) =>
+  .catch((err: unknown) => {
+    const waiting = err instanceof SignInUnavailable;
+    if (waiting) setTimeout(() => window.location.reload(), 5000); // the sign-in service is still starting
     root.render(
       <div style={{ fontFamily: "system-ui, sans-serif", padding: 32, maxWidth: 520 }}>
-        <h2 style={{ fontWeight: 600 }}>Sign-in didn't complete</h2>
+        <h2 style={{ fontWeight: 600 }}>{waiting ? "Connecting to sign-in…" : "Sign-in didn't complete"}</h2>
         <p>{err instanceof Error ? err.message : String(err)}</p>
         <button onClick={() => window.location.assign("/")}>Try again</button>
       </div>,
-    ),
-  );
+    );
+  });

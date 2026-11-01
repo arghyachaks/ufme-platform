@@ -69,6 +69,12 @@ services:
       - ../keycloak/ufme-realm.json:/opt/keycloak/data/import/ufme-realm.json:ro
       - ../keycloak/themes/ufme:/opt/keycloak/themes/ufme:ro  # ufme sign-in theme
     restart: unless-stopped
+    healthcheck:  # the realm answers: sign-in works (the image has bash but no curl)
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /realms/ufme HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
 
   api:
     build: { context: ../../services/api, target: runtime }
@@ -107,8 +113,10 @@ services:
     ports: ["5173:5173"]
     volumes:
       - ../../apps/web/src:/repo/apps/web/src  # live reload of frontend edits
+    restart: unless-stopped
     depends_on:
       api: { condition: service_healthy }
+      keycloak: { condition: service_healthy }  # sign-in must be up before the app is offered
 
   # ---- checks (profile: test) ----
   api-test:

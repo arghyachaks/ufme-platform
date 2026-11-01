@@ -21,8 +21,8 @@ docker info --format 'Docker {{.ServerVersion}}' || fail "Docker is not running 
 step "Build images"
 $DC --profile test build || fail "image build"
 
-step "Start stack (postgres, redis, api, worker, web)"
-$DC up -d --wait postgres redis api worker web || { $DC ps; $DC logs --tail 60 api worker web; fail "stack did not become healthy"; }
+step "Start stack (postgres, redis, keycloak, api, worker, web)"
+$DC up -d --wait postgres redis keycloak api worker web || { $DC ps; $DC logs --tail 60 keycloak api worker web; fail "stack did not become healthy"; }
 $DC exec -T postgres psql -U ufme -d ufme -tc "SELECT 1 FROM pg_database WHERE datname='ufme_test'" | grep -q 1 \
   || $DC exec -T postgres psql -U ufme -d ufme -c "CREATE DATABASE ufme_test OWNER ufme" || fail "create test db"
 
