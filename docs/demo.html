@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ufme Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Geist:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#00063d;--green:#0a4733;--bg:#fff;--muted:#4a4f73}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink:#eef0ff;--bg:#0b0f2e;--muted:#b4b8d6}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 Geist,system-ui,Arial,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:40px 16px 64px}
+.logo{font-family:Newsreader,serif;font-size:30px;font-weight:500;letter-spacing:-.8px;text-decoration:none;color:inherit}
+.logo i{display:inline-block;width:7px;height:7px;background:var(--green);margin-left:2px}
+h1{font-family:Newsreader,serif;font-weight:400;font-size:clamp(30px,5vw,48px);letter-spacing:-1.2px;line-height:1.1;margin:28px 0 10px}
+p{color:var(--muted);max-width:70ch}
+a{color:inherit}
+video{width:100%;border:1px solid var(--ink);border-radius:2px;margin-top:20px;background:#000}
+</style>
+</head>
+<body>
+<main>
+<a class="logo" href="https://github.com/arghyachaks/ufme-platform">ufme<i></i></a>
+<h1>2-minute product demo</h1>
+<p>Every screen, the transparent AI agents (live thinking, plan and steps), human approval of every agent proposal, and the agent operations control room. Narrated: turn your sound on.</p>
+<video controls preload="metadata" poster="media/ufme-demo-poster.jpg">
+  <source src="media/ufme-demo.mp4" type="video/mp4">
+  Your browser can't play this video. <a href="media/ufme-demo.mp4">Download it</a>.
+</video>
+<p style="margin-top:24px"><a href="user-manual.html">User manual</a> · <a href="https://github.com/arghyachaks/ufme-platform">Source on GitHub</a></p>
+</main>
+</body>
+</html>

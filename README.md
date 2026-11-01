@@ -7,10 +7,11 @@ auditor can verify.
 Built and maintained by **[Arghya Chakraborty](https://github.com/arghyachaks)**. Licensed under
 [Apache 2.0](LICENSE); please keep the [NOTICE](NOTICE) when you redistribute it.
 
-[![ufme agents at work: live thinking, plan, steps, and a proposal waiting for a person](docs/media/ufme-agents-preview.gif)](docs/media/ufme-demo.mp4)
+[![ufme agents at work: live thinking, plan, steps, and a proposal waiting for a person](docs/media/ufme-agents-preview.gif)](https://arghyachaks.github.io/ufme-platform/demo.html)
 
-**[▶ Watch the full 2-minute narrated demo](docs/media/ufme-demo.mp4)** (opens GitHub's video player): every screen,
-the transparent agents, human approval, and the agent operations control room.
+*Silent preview above.* **[▶ Watch the full 2-minute narrated demo](https://arghyachaks.github.io/ufme-platform/demo.html)**
+(with sound and player controls): every screen, the transparent agents, human approval, and the agent operations
+control room.
 
 ---
 
@@ -72,7 +73,7 @@ tenant is seeded on first start; run a reconciliation from **Reconciliation → 
 **More → Data sources → Upload file**, then run a reconciliation.
 
 **User manual:** [`docs/user-manual.html`](docs/user-manual.html) walks through every screen, the workflows, the AI
-agents and model setup (download it and open it in a browser, or view it on the project's GitHub Pages site).
+agents and model setup ([read it online](https://arghyachaks.github.io/ufme-platform/user-manual.html)).
 
 For the AI features, either install [Ollama](https://ollama.com) and run `ollama pull gemma4:e4b-it-qat` (local,
 free, about 10 GB; a GPU helps), or connect a hosted LLM as below. Without either, ufme still works and Assist
